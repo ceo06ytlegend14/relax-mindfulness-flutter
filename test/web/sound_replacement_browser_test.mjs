@@ -262,3 +262,21 @@ for (const [width, height] of [[320, 640], [390, 844], [823, 1024], [844, 390]])
     assert.equal(await page.evaluate(() => playing), false);
   });
 }
+
+test('the chooser temporarily hides the real install entry without changing player or install state', async t => {
+  const { page } = await open(t);
+  const entry = page.locator('#sanctuary-install-ui .install-entry');
+  assert.equal(await entry.isVisible(), true);
+  await chooser(page);
+  assert.equal(await page.evaluate(() => document.documentElement.classList.contains('sanctuary-sound-chooser-open')), true);
+  assert.equal(await entry.isVisible(), false);
+  // The player has a separate visibility owner; closing the chooser must not
+  // reveal the entry if a different full-screen overlay still owns the corner.
+  await page.evaluate(() => document.documentElement.classList.add('sanctuary-player-expanded'));
+  await page.locator('#replacement-close').click();
+  await page.waitForFunction(() => !document.documentElement.classList.contains('sanctuary-sound-chooser-open'));
+  assert.equal(await entry.isVisible(), false);
+  await page.evaluate(() => document.documentElement.classList.remove('sanctuary-player-expanded'));
+  assert.equal(await entry.isVisible(), true);
+  assert.equal(await page.evaluate(() => playing), false);
+});

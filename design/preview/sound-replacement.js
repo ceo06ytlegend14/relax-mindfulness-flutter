@@ -154,6 +154,7 @@ function openSoundReplacement(track) {
   $('replacement-off-notice').hidden = levels[track.name] > 0;
   $('replacement-error').hidden = true;
   renderSoundReplacement();
+  document.documentElement.classList.add('sanctuary-sound-chooser-open');
   replacementDialog.showModal();
   replacementDialog.querySelector('.replacement-scroll').scrollTop = 0;
   $('replacement-close').focus({ preventScroll: true });
@@ -180,6 +181,9 @@ $('replacement-use').onclick = () => {
   toast(`${from} replaced with ${to}. Save your mix to keep this version.`);
 };
 $('replacement-close').onclick = () => replacementDialog.close();
-replacementDialog.addEventListener('close', stopSoundPreview);
+replacementDialog.addEventListener('close', () => {
+  stopSoundPreview();
+  document.documentElement.classList.remove('sanctuary-sound-chooser-open');
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopSoundPreview(); });
 addEventListener('pagehide', stopSoundPreview);

@@ -35,7 +35,8 @@
 }
 /* The full-screen Flutter player uses this corner for Minimize. Preserve the
    installer's prompt/installed state; only suppress the overlapping entry. */
-html.sanctuary-player-expanded #sanctuary-install-ui .install-entry { visibility: hidden; pointer-events: none; }
+html.sanctuary-player-expanded #sanctuary-install-ui .install-entry,
+html.sanctuary-sound-chooser-open #sanctuary-install-ui .install-entry { visibility: hidden; pointer-events: none; }
 #sanctuary-install-ui .install-entry svg { width: 18px; height: 18px; flex-shrink: 0; }
 #sanctuary-install-ui .install-entry:hover { background: #10414a; border-color: #78eed0bb; }
 #sanctuary-install-ui .install-entry:disabled { opacity: .7; cursor: wait; }

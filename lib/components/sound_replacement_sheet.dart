@@ -8,6 +8,7 @@ import 'package:relax_mindfulness/models/bundled_recordings.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/services/sound_preview_controller.dart';
+import 'package:relax_mindfulness/services/pwa_player_visibility.dart';
 
 /// Replaces one layer with an existing sound, not several purported recordings
 /// of that sound. No file import or newly licensed audio pack is implied.
@@ -38,6 +39,7 @@ class _SoundReplacementSheetState extends State<SoundReplacementSheet>
   @override
   void initState() {
     super.initState();
+    setPwaSoundChooserOpen(true);
     WidgetsBinding.instance.addObserver(this);
     _preview = SoundPreviewController(
       playerFactory: widget.previewPlayerFactory,
@@ -52,6 +54,7 @@ class _SoundReplacementSheetState extends State<SoundReplacementSheet>
 
   @override
   void dispose() {
+    setPwaSoundChooserOpen(false);
     WidgetsBinding.instance.removeObserver(this);
     _preview.dispose();
     super.dispose();

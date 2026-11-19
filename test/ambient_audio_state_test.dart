@@ -208,4 +208,32 @@ void main() {
       expect(players.single.audible, isFalse);
     },
   );
+  test(
+    'cold-player eviction releases the player and its event subscription',
+    () async {
+      final names = AppState.soundStreamUrls.keys.take(13).toList();
+      for (final name in names) {
+        await app.updateSoundTrackVolume(name, .2);
+      }
+      expect(players, hasLength(13));
+      expect(players.first.events.hasListener, isTrue);
+      await app.updateSoundTrackVolume(names.first, 0);
+      await flushAmbient();
+      expect(players.first.disposed, isTrue);
+      expect(players.first.events.hasListener, isFalse);
+      expect(players.skip(1).every((player) => player.audible), isTrue);
+    },
+  );
+
+  test(
+    'player creation failure is visible without claiming active playback',
+    () async {
+      factory = () => throw StateError('private initialization payload');
+      await app.updateSoundTrackVolume('Soft Rain', .4);
+      expect(players, isEmpty);
+      expect(app.activeAmbientTracks, isEmpty);
+      expect(app.ambientTrackError('Soft Rain'), contains('could not play'));
+      expect(app.ambientTrackError('Soft Rain'), isNot(contains('private')));
+    },
+  );
 }

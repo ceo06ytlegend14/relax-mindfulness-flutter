@@ -76,6 +76,8 @@ jobs:
           lib/models/bundled_recordings.dart lib/models/mixer_catalog.dart
           lib/components/mixer_artwork.dart lib/components/sound_replacement_sheet.dart
           lib/services/sound_preview_controller.dart lib/providers/mixer_controller.dart
+          lib/services/pwa_player_visibility.dart lib/services/pwa_player_visibility_stub.dart
+          lib/services/pwa_player_visibility_web.dart
           test/ambient_audio_state_test.dart test/sound_preview_controller_test.dart
           test/mixer_controller_test.dart test/mixer_catalog_test.dart
           test/support/fake_mixer_app_state.dart test/support/fake_ambient_audio_player.dart

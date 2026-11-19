@@ -302,7 +302,12 @@ void main() {
           textScale: 1.6,
         );
         final options = find.byKey(const ValueKey('options-Soft Rain'));
-        await tester.ensureVisible(options);
+        // In landscape the lazy SliverList has not built this card yet.
+        await tester.scrollUntilVisible(
+          options,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.tap(options);
         await tester.pumpAndSettle();
         final select = find.byKey(

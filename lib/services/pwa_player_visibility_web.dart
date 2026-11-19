@@ -8,3 +8,12 @@ void setPwaPlayerExpanded(bool expanded) {
     expanded,
   );
 }
+
+// Independent from the player class so closing either overlay cannot expose
+// the install entry while the other overlay still owns the screen.
+void setPwaSoundChooserOpen(bool open) {
+  html.document.documentElement?.classes.toggle(
+    'sanctuary-sound-chooser-open',
+    open,
+  );
+}

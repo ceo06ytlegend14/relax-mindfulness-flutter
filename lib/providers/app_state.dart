@@ -1048,13 +1048,12 @@ class AppState extends ChangeNotifier {
         .take(_audioPlayers.length - 12)
         .toList();
     for (final key in coldKeys) {
+      // Another user action may have resumed this track while a previous
+      // eviction was awaiting disposal. Never evict a newly active layer.
+      if ((_targetVolumes[key] ?? 0) > 0) continue;
+      _loadingTracks.remove(key);
       final player = _audioPlayers.remove(key);
-      if (player != null) {
-        try {
-          await player.stop();
-          await player.dispose();
-        } catch (_) {}
-      }
+      if (player != null) await _releaseAmbient(player);
     }
   }
 
