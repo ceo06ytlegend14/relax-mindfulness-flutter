@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/screens/data_backup_screen.dart';
 
 class WellbeingScreen extends StatelessWidget {
   const WellbeingScreen({super.key});
@@ -149,140 +150,12 @@ class WellbeingScreen extends StatelessWidget {
                               child: CupertinoButton(
                                 padding: EdgeInsets.zero,
                                 minSize: 32,
-                                onPressed: () {
-                                  showCupertinoModalPopup(
-                                    context: context,
-                                    builder: (ctx) => CupertinoActionSheet(
-                                      title: const Text('Data Backup & Restore 💾'),
-                                      message: const Text('Prevent data loss across browsers and devices.'),
-                                      actions: [
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final json = state.exportUserDataToJson();
-                                            Clipboard.setData(ClipboardData(text: json));
-                                            showCupertinoDialog(
-                                              context: context,
-                                              barrierDismissible: true,
-                                              builder: (dCtx) {
-                                                Future.delayed(const Duration(seconds: 2), () {
-                                                  if (dCtx.mounted) Navigator.pop(dCtx);
-                                                });
-                                                return const CupertinoAlertDialog(
-                                                  title: Text('Backup Copied ✓'),
-                                                  content: Text('Your streak, presets, and favorites JSON data has been copied to your clipboard.'),
-                                                );
-                                              },
-                                            );
-                                          },
-                                          child: const Text('Export / Backup to Clipboard'),
-                                        ),
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final controller = TextEditingController();
-                                            showCupertinoDialog(
-                                              context: context,
-                                              builder: (dCtx) => CupertinoAlertDialog(
-                                                title: const Text('Restore Data'),
-                                                content: Padding(
-                                                  padding: const EdgeInsets.only(top: 8.0),
-                                                  child: CupertinoTextField(
-                                                    controller: controller,
-                                                    placeholder: 'Paste your backup JSON here...',
-                                                    maxLines: 4,
-                                                    style: const TextStyle(fontSize: 12),
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text('Cancel'),
-                                                    onPressed: () => Navigator.pop(dCtx),
-                                                  ),
-                                                  CupertinoDialogAction(
-                                                    isDefaultAction: true,
-                                                    child: const Text('Restore'),
-                                                    onPressed: () {
-                                                      final success = state.importUserDataFromJson(controller.text.trim());
-                                                      Navigator.pop(dCtx);
-                                                      showCupertinoDialog(
-                                                        context: context,
-                                                        barrierDismissible: true,
-                                                        builder: (resCtx) {
-                                                          Future.delayed(const Duration(seconds: 2), () {
-                                                            if (resCtx.mounted) Navigator.pop(resCtx);
-                                                          });
-                                                          return CupertinoAlertDialog(
-                                                            title: Text(success ? 'Restored Successfully ✓' : 'Restore Failed'),
-                                                            content: Text(success ? 'All your presets and streak history have been restored.' : 'Invalid JSON format. Please verify and try again.'),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          child: const Text('Import / Restore from JSON'),
-                                        ),
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final feedbackCtrl = TextEditingController();
-                                            showCupertinoDialog(
-                                              context: context,
-                                              builder: (fCtx) => CupertinoAlertDialog(
-                                                title: const Text('Feedback & Sound Requests 💌'),
-                                                content: Padding(
-                                                  padding: const EdgeInsets.only(top: 8.0),
-                                                  child: CupertinoTextField(
-                                                    controller: feedbackCtrl,
-                                                    placeholder: 'Describe a feature or sound you would love...',
-                                                    maxLines: 3,
-                                                    style: const TextStyle(fontSize: 13),
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text('Cancel'),
-                                                    onPressed: () => Navigator.pop(fCtx),
-                                                  ),
-                                                  CupertinoDialogAction(
-                                                    isDefaultAction: true,
-                                                    child: const Text('Submit'),
-                                                    onPressed: () {
-                                                      Navigator.pop(fCtx);
-                                                      showCupertinoDialog(
-                                                        context: context,
-                                                        barrierDismissible: true,
-                                                        builder: (sCtx) {
-                                                          Future.delayed(const Duration(seconds: 2), () {
-                                                            if (sCtx.mounted) Navigator.pop(sCtx);
-                                                          });
-                                                          return const CupertinoAlertDialog(
-                                                            title: Text('Thank You! 🌿'),
-                                                            content: Text('Your feedback has been received and helps us improve Sanctuary.'),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          child: const Text('Send Feedback / Sound Request 💌'),
-                                        ),
-                                      ],
-                                      cancelButton: CupertinoActionSheetAction(
-                                        isDefaultAction: true,
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                key: const ValueKey('open-data-backup'),
+                                onPressed: () => Navigator.of(context).push(
+                                  CupertinoPageRoute<void>(
+                                    builder: (_) => const DataBackupScreen(),
+                                  ),
+                                ),
                                 child: Icon(
                                   CupertinoIcons.arrow_down_doc_fill,
                                   color: isClay ? clayText : textPrimary,

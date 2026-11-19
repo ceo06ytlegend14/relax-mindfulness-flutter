@@ -56,7 +56,7 @@ The preview shares the actual **Install app** control, worker and icons with the
 
 ## Validation (2026-11-19)
 
-- **All 83 repository browser/static tests passed:** 31 player/Sleep browser tests, 17 Home/navigation browser tests, 15 static PWA checks and 20 Chromium PWA-controller integration tests. No failures or skipped tests.
+- **All 90 repository browser/static/configuration tests passed:** 31 player/Sleep browser tests, 17 Home/navigation browser tests, 15 static PWA checks, 20 Chromium PWA-controller integration tests and 7 new platform/release-configuration guards. No failures or skipped tests. The configuration guards are structural, not Android compilation; see the [release-readiness plan](../docs/LAUNCH_READINESS.md).
 - The new player/Sleep suite uses actual bundled HTMLAudio samples and a range-capable local server. It covers pause/resume/seek, duration extension/restart/loop, minimize/paused mini-player/Home resume, deadline completion, source failure/retry, loading cancellation, ambient exclusivity, auto-fade volume/expiry, stories/favorites and playlists. Virtual clocks are installed before application timers are created.
 - Responsive checks cover 320/390/823/1440px widths, reachable completion controls, 44px transport targets, long titles, reduced motion, the real install entry's placement/visibility, and distinct painted SVG pixels while all font requests are blocked.
 - The legacy independent-preview interaction runs also passed again: **20 Sounds + 32 Meditate/Sleep checks**. These and the repository browser tests are **not Flutter widget/native-build results**.

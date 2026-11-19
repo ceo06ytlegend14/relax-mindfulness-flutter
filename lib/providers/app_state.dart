@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/main.dart' show localNotifications;
+import 'package:relax_mindfulness/models/user_backup.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 enum AppTab { home, meditate, breathe, sounds, sleep, aiStudio }
@@ -121,9 +122,13 @@ class SoundPreset {
 
 // ─── AppState ─────────────────────────────────────────────────────────────────
 class AppState extends ChangeNotifier {
-  AppState({AudioPlayer? guidedPlayer, DateTime Function()? now})
-    : _guidedPlayer = guidedPlayer ?? AudioPlayer(),
-      _now = now ?? DateTime.now {
+  AppState({
+    AudioPlayer? guidedPlayer,
+    DateTime Function()? now,
+    SharedPreferences? preferences,
+  }) : _prefs = preferences,
+       _guidedPlayer = guidedPlayer ?? AudioPlayer(),
+       _now = now ?? DateTime.now {
     _guidedStateSubscription = _guidedPlayer.playerStateStream.listen(
       (state) {
         if (_guidedDisposed || !hasGuidedSession) return;
@@ -376,11 +381,11 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ─── Data Backup & Restore (Prevents Safari 7-day eviction) ────────────────
+  // ─── Manual device backup (not automatic sync or eviction prevention) ─────
   String exportUserDataToJson() {
     final data = {
-      'version': '2.0.0',
-      'exported_at': DateTime.now().toIso8601String(),
+      'version': UserBackupData.version,
+      'exported_at': _now().toIso8601String(),
       'streak': _streak,
       'longest_streak': _longestStreak,
       'theme_mode': _themeMode.name,
@@ -396,58 +401,115 @@ class AppState extends ChangeNotifier {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
+  bool get isUserDataReady => _prefs != null;
+
+  /// A side-effect-free review. Partial legacy backups preserve omitted fields.
+  UserBackupData validateUserBackupFromJson(String source) {
+    final backup = UserBackupData.parse(
+      source,
+      themeModes: SanctuaryThemeMode.values.map((mode) => mode.name).toSet(),
+    );
+    final streak = backup.values['streak'] as int? ?? _streak;
+    final longest = backup.values['longest_streak'] as int? ?? _longestStreak;
+    if (streak > longest) {
+      throw const FormatException(
+        'Longest streak cannot be shorter than streak.',
+      );
+    }
+    return backup;
+  }
+
   bool importUserDataFromJson(String jsonString) {
+    // Do not let an early restore race the initial preference hydration.
+    if (!isUserDataReady) return false;
+    late final Map<String, dynamic> data;
+    late final List<SoundPreset>? restoredPresets;
+    late final List<SessionRecord>? restoredSessions;
+    late final SanctuaryThemeMode? restoredTheme;
     try {
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      if (map.containsKey('streak')) _streak = (map['streak'] as num).toInt();
-      if (map.containsKey('longest_streak')) _longestStreak = (map['longest_streak'] as num).toInt();
-      if (map.containsKey('theme_mode')) {
-        final modeName = map['theme_mode'] as String;
-        _themeMode = SanctuaryThemeMode.values.firstWhere(
-          (e) => e.name == modeName,
-          orElse: () => _themeMode,
-        );
-      }
-      if (map.containsKey('favorites')) {
-        _favorites
-          ..clear()
-          ..addAll(List<String>.from(map['favorites'] as List));
-      }
-      if (map.containsKey('favorite_sounds')) {
-        _favoriteSounds = Set<String>.from(map['favorite_sounds'] as List);
-      }
-      if (map.containsKey('presets')) {
-        _presets = (map['presets'] as List)
-            .map((p) => SoundPreset.fromJson(p as Map<String, dynamic>))
-            .toList();
-      }
-      if (map.containsKey('renamed_presets')) {
-        _renamedPresets = Map<String, String>.from(map['renamed_presets'] as Map);
-      }
-      if (map.containsKey('sessions')) {
-        _sessions = (map['sessions'] as List)
-            .map((s) => SessionRecord.fromJson(s as Map<String, dynamic>))
-            .toList();
-      }
-      if (map.containsKey('reminder_enabled')) {
-        _reminderEnabled = map['reminder_enabled'] as bool;
-        _reminderHour = (map['reminder_hour'] as int?) ?? 22;
-        _reminderMinute = (map['reminder_minute'] as int?) ?? 0;
-      }
-      _saveFavorites();
-      _savePresets();
-      _saveSessions();
-      _prefs?.setStringList('favorite_sounds', _favoriteSounds.toList());
-      _prefs?.setString('renamed_presets', jsonEncode(_renamedPresets));
-      _prefs?.setInt('streak', _streak);
-      _prefs?.setInt('longest_streak', _longestStreak);
-      _prefs?.setString('theme_mode', _themeMode.name);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint('Error importing user data: $e');
+      data = validateUserBackupFromJson(jsonString).values;
+      restoredPresets = (data['presets'] as List<Map<String, dynamic>>?)
+          ?.map(SoundPreset.fromJson)
+          .toList();
+      restoredSessions = (data['sessions'] as List<Map<String, dynamic>>?)
+          ?.map(SessionRecord.fromJson)
+          .toList();
+      restoredSessions?.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final theme = data['theme_mode'] as String?;
+      restoredTheme = theme == null
+          ? null
+          : SanctuaryThemeMode.values.firstWhere((mode) => mode.name == theme);
+    } catch (_) {
+      // Never log a backup body: session titles and mood history are personal.
+      debugPrint('Backup validation failed; existing profile was not changed.');
       return false;
     }
+
+    // Commit only after every field and model has been validated. In particular,
+    // a bad session near the end cannot clear existing favorites or presets.
+    _streak = data['streak'] as int? ?? _streak;
+    _longestStreak = data['longest_streak'] as int? ?? _longestStreak;
+    _themeMode = restoredTheme ?? _themeMode;
+    if (data.containsKey('favorites')) {
+      _favorites
+        ..clear()
+        ..addAll(data['favorites'] as List<String>);
+    }
+    if (data.containsKey('favorite_sounds')) {
+      _favoriteSounds = (data['favorite_sounds'] as List<String>).toSet();
+    }
+    if (restoredPresets != null) _presets = restoredPresets;
+    if (data.containsKey('renamed_presets')) {
+      _renamedPresets = Map<String, String>.from(
+        data['renamed_presets'] as Map,
+      );
+    }
+    if (restoredSessions != null) {
+      _sessions = restoredSessions;
+      _totalSessions = restoredSessions.length;
+      _practicedToday = _sessions.any(
+        (session) => _sameDay(session.timestamp, _now()),
+      );
+      if (_sessions.isEmpty) {
+        _prefs?.remove('last_practice_ms');
+      } else {
+        final latest = _sessions
+            .map((session) => session.timestamp.millisecondsSinceEpoch)
+            .reduce((a, b) => a > b ? a : b);
+        _prefs?.setInt('last_practice_ms', latest);
+      }
+    }
+    _reminderEnabled = data['reminder_enabled'] as bool? ?? _reminderEnabled;
+    _reminderHour = data['reminder_hour'] as int? ?? _reminderHour;
+    _reminderMinute = data['reminder_minute'] as int? ?? _reminderMinute;
+    // A partial backup must not rewrite unrelated preference categories either.
+    if (data.containsKey('favorites')) _saveFavorites();
+    if (restoredPresets != null) _savePresets();
+    if (restoredSessions != null) _saveSessions();
+    if (data.containsKey('favorite_sounds')) {
+      _prefs?.setStringList('favorite_sounds', _favoriteSounds.toList());
+    }
+    if (data.containsKey('renamed_presets')) {
+      _prefs?.setString('renamed_presets', jsonEncode(_renamedPresets));
+    }
+    if (data.containsKey('streak')) _prefs?.setInt('streak', _streak);
+    if (data.containsKey('longest_streak')) {
+      _prefs?.setInt('longest_streak', _longestStreak);
+    }
+    if (data.containsKey('theme_mode')) {
+      _prefs?.setString('theme_mode', _themeMode.name);
+    }
+    if (data.containsKey('reminder_enabled')) {
+      _prefs?.setBool('reminder_enabled', _reminderEnabled);
+    }
+    if (data.containsKey('reminder_hour')) {
+      _prefs?.setInt('reminder_hour', _reminderHour);
+    }
+    if (data.containsKey('reminder_minute')) {
+      _prefs?.setInt('reminder_minute', _reminderMinute);
+    }
+    notifyListeners();
+    return true;
   }
 
   SanctuaryThemeMode _themeMode = SanctuaryThemeMode.midnightNavy;
@@ -1311,7 +1373,7 @@ class AppState extends ChangeNotifier {
 
   // ─── Init ───────────────────────────────────────────────────────────────────
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    _prefs ??= await SharedPreferences.getInstance();
     _onboardingDone = _prefs!.getBool('onboarding_done') ?? true;
     _streak = _prefs!.getInt('streak') ?? 0;
     _longestStreak = _prefs!.getInt('longest_streak') ?? 0;

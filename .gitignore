@@ -6,6 +6,11 @@
 build/
 *.dill
 
+# Development-only browser checks
+node_modules/
+playwright-report/
+test-results/
+
 # Secrets & Environment variables
 .env
 .env.*
