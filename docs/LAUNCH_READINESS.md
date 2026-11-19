@@ -6,24 +6,26 @@ Updated: 2026-11-19. Product ownership, branding, accounts, spending authority a
 
 A proposed $100,000 traffic budget is not evidence of readiness or authorization to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. No ads, production billing changes, store submission or public release have been made. Existing **Home / Sounds / Meditate / Sleep** navigation and shared playback are retained.
 
-## Engineering evidence and the next gate
+## Engineering gate passed — distribution gates remain open
 
-Latest completed hosted baseline: [c64409d / run 44472985367](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44472985367). **The overall run failed; do not describe it as green.** It established:
+Verified code revision: **`332a3fdc460ae81d580c7203216a9c78e54dbc29`**. [Run 44476084854](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44476084854) completed **successfully in all four jobs** on 2026-11-19. This is evidence for that exact revision, not automatic approval of future code or a store release.
 
 | Check | Observed result |
 | --- | --- |
-| Flutter 3.38.10 analysis and scoped formatting | Passed. Legacy analyzer infos remain advisory; warnings/errors fail. |
-| Flutter regressions | **215 passed, 2 failed, 0 skipped.** Remaining failures were test-owned semantics/timer cleanup, not permission to skip the tests. |
+| Flutter 3.38.10 analysis and scoped formatting | Passed. Legacy analyzer infos remain advisory; analyzer warnings/errors fail. |
+| Flutter regressions | **218 passed, 0 failed, 0 skipped.** No test was disabled to obtain a pass. |
 | Flutter release web compilation | Passed. This does not validate browser audio or installation on every device. |
 | Android debug APK | Compilation passed. |
 | Android unsigned, R8-minified release AAB | Compilation passed; the unused Play SplitInstall shrinker failure is fixed. |
-| iOS unsigned release device build / Xcode 26.3 | Compilation passed. Not an IPA, signed archive or device installation. |
-| Browser/PWA/platform-configuration job | Passed. It includes the independent HTML preview, not native screenshots. |
-| Dependency-lock gate | **Failed:** the RevenueCat SDK upgrade resolved a different lockfile. The exact hosted diff is now reconciled locally; a fresh hosted pass is required. |
+| Android compiled-artifact inspection | Passed: application ID unchanged, minimum API 24 / target API 36, Billing Library 8 metadata, **5 APK / 6 AAB 64-bit libraries** with 16 KB ELF alignment, debug APK ZIP alignment and unsigned AAB. |
+| Android signing rejection test | Passed: a credential-free release without explicit unsigned opt-in failed at the signing guard. |
+| iOS unsigned release device build / Xcode 26.3 | Passed. Not an IPA, signed archive or device installation. |
+| Browser/PWA/platform configuration and Python fixtures | Passed. Local reproduction was **96/96 browser/source tests** and **15/15 Python tests**; the browser preview is independent HTML, not native screenshots. |
+| Dependency-lock gate | Passed on Flutter, Android and iOS. RevenueCat 10.19.1 and direct url_launcher are reconciled in the committed lockfile. |
 
-The follow-up fixes keep semantics disposal inside the test body and let the paywall fixture dispose its controller with the widget tree. They also add static built-Android checks (identity, target API, Billing Library metadata, 16 KB native-library/APK alignment, unsigned AAB) and a negative release-signing test. **Execution of that follow-up, including a clean lockfile, is still pending.** No gate was disabled to obtain a pass.
+The earlier lock drift, regression failures and new artifact parser's legacy-AAPT assumptions are resolved. The parser now supports current AAPT2 output without reducing the required API/Billing levels. CI inspected real generated Android artifacts, separately from the Python verifier fixtures. Static alignment does **not** prove behavior on a 16 KB device or validate Play-generated APKs. No app binary was uploaded.
 
-Local follow-up checks: **96/96 browser/PWA/source-configuration tests** and **15/15 Python diagnostic/artifact-verifier fixture tests** passed, with no skipped browser tests. The Python fixtures are not checks of a real APK/AAB. Flutter/Dart are unavailable in the sandbox; hosted Flutter/native CI remains the compilation/test authority.
+Flutter/Dart are unavailable in the local sandbox; hosted Flutter/native CI is the compilation/test authority. The next milestone is an **owner-approved, signed internal candidate with real-device evidence**, not public submission or paid acquisition.
 
 ## Implemented safety boundaries
 
@@ -38,7 +40,6 @@ Local follow-up checks: **96/96 browser/PWA/source-configuration tests** and **1
 
 | Priority | Boundary / source | Why it blocks launch | Required evidence |
 | --- | --- | --- | --- |
-| P0 | Clean hosted run — `.github/workflows/quality.yml`, `test/`, `pubspec.lock` | Individual build steps pass, but the latest complete run is still red. Preview success cannot prove native correctness. | Green lock/analysis/format/tests/web/native gates on one exact commit, then record and test the signed candidate. |
 | P0 | Credential incident — historical AI key / repository history | A removed client key may still be usable by others. | Owner revokes/rotates it in the provider account and reviews usage/cost exposure. Never paste a replacement here or compile it into the app. Remote AI is out of this release unless separately designed/approved with server-side authorization, consent and cost limits. |
 | P0 | Billing and real value — `lib/services/subscription_controller.dart`, `lib/screens/premium_screen.dart` | Code/fake-gateway tests cannot prove receipt mapping, real offers, store behavior or a worthwhile paid benefit. | Owner-approved products/entitlement mapping and real legal/support pages; both stores' sandbox matrix for cancellation/pending/restore/expiry/refund/reinstall and localization. Confirm Premium's actual benefits. Sales stay disabled until approved. See [BILLING.md](BILLING.md). |
 | P0 | Packaging/signing/identity — native projects | Credentials are intentionally absent. iOS still uses **Zen Night / com.sagozen.zennight**, unlike Sanctuary. Unsigned compilation is not distribution. | Confirm existing app/customer history before any rename; owner-controlled signing, signed install/upgrade/device tests and store validation. [NATIVE_RELEASE.md](NATIVE_RELEASE.md) gives the runbook. |
