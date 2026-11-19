@@ -63,13 +63,22 @@ def check_archive(file, *, unsigned_bundle=False):
 
 def check_manifest(badging, tree):
     app_id = re.search(r"package: name='([^']+)'", badging)
-    minimum = re.search(r"(?:^|\n)sdkVersion:'(\d+)'", badging)
-    target = re.search(r"targetSdkVersion:'(\d+)'", badging)
+    # Build-tools 36's AAPT2 uses minSdkVersion; legacy aapt used sdkVersion.
+    # Neither compileSdkVersion nor a missing minimum may satisfy this gate.
+    minimum = re.search(r"(?m)^[ \t]*(?:minSdkVersion|sdkVersion):'(\d+)'", badging)
+    target = re.search(r"(?m)^[ \t]*targetSdkVersion:'(\d+)'", badging)
     if not app_id or app_id[1] != 'com.sanctuary.relax_mindfulness':
         raise ValueError('The compiled Android application ID changed unexpectedly.')
     if not minimum or int(minimum[1]) != 24 or not target or int(target[1]) < 36:
-        raise ValueError('Compiled Android min/target SDK values do not meet the declared 24/36 baseline.')
-    billing = re.search(r'com\.google\.android\.play\.billingclient\.version[^\n]*\n\s*A: android:value[^\n]*?"(\d+)\.[^"\n]*"', tree)
+        raise ValueError('Compiled Android min/target SDK values do not meet the declared 24/36 baseline. '
+                         f'Observed min={minimum[1] if minimum else "missing"}, '
+                         f'target={target[1] if target else "missing"}.')
+    # AAPT2 prints the full Android namespace URI; aapt prints its short prefix.
+    billing = re.search(
+        r'com\.google\.android\.play\.billingclient\.version[^\n]*\n\s*A:\s+'
+        r'(?:android:|http://schemas\.android\.com/apk/res/android:)value[^\n]*?"(\d+)\.[^"\n]*"',
+        tree,
+    )
     if not billing or int(billing[1]) < 8:
         raise ValueError('Compiled manifest does not declare supported Play Billing Library 8+ metadata.')
     return int(target[1]), int(billing[1])

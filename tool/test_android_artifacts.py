@@ -55,10 +55,18 @@ class AndroidArtifactTest(unittest.TestCase):
                 check_archive(file, unsigned_bundle=True)
 
     def test_manifest_requires_stable_identity_api_and_billing_metadata(self):
-        badging = "package: name='com.sanctuary.relax_mindfulness'\nsdkVersion:'24'\ntargetSdkVersion:'36'"
-        tree = 'A: android:name(0x01010003)="com.google.android.play.billingclient.version"\n  A: android:value(0x01010024)="8.3.0"'
+        # Actual AAPT2 build-tools 36 spelling, not legacy aapt's sdkVersion.
+        badging = "package: name='com.sanctuary.relax_mindfulness'\nminSdkVersion:'24'\ntargetSdkVersion:'36'"
+        tree = ('A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.play.billingclient.version"\n'
+                '  A: http://schemas.android.com/apk/res/android:value(0x01010024)="8.3.0"')
         self.assertEqual(check_manifest(badging, tree), (36, 8))
-        for bad in [badging.replace("'36'", "'35'"), badging.replace('com.sanctuary.relax_mindfulness', 'com.example.app')]:
+        # Support the older spelling/prefix too, without accepting weaker SDKs.
+        legacy_badging = badging.replace('minSdkVersion:', 'sdkVersion:')
+        legacy_tree = tree.replace('http://schemas.android.com/apk/res/android:', 'android:')
+        self.assertEqual(check_manifest(legacy_badging, legacy_tree), (36, 8))
+        for bad in [badging.replace("'36'", "'35'"), badging.replace("'24'", "'23'"),
+                    badging.replace('minSdkVersion:', 'compileSdkVersion:'),
+                    badging.replace('com.sanctuary.relax_mindfulness', 'com.example.app')]:
             with self.assertRaises(ValueError):
                 check_manifest(bad, tree)
         for bad in ['', tree.replace('8.3.0', '7.0.0')]:
