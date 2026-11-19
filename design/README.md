@@ -10,7 +10,7 @@ These screenshots are from an **independent interactive browser design preview**
 | Sounds | [Sounds](moonlit-mixer-preview.png) | [Sounds — phone](moonlit-mixer-mobile-preview.png) |
 | Meditate | [Meditate](meditate-preview.png) | [Meditate — phone](meditate-mobile-preview.png) |
 
-The player and Sleep captures were refreshed for the sunrise-lake / moonlit-blue update. They show real bundled audio playing in the independent preview, not a fabricated playback state. Home, Sounds and Meditate captures illustrate the preceding redesigns.
+The player and Sleep captures were refreshed for the sunrise-lake / moonlit-blue update. They show real bundled audio playing in the independent preview, not a fabricated playback state. Home and Meditate captures illustrate the preceding redesigns; Sounds is refreshed for the cover/replacement update below.
 
 ## Sound covers and one-layer replacement
 
@@ -21,7 +21,7 @@ The Sounds captures above are refreshed for the new covers and ⋯ controls. Two
 
 All 75 cards have local decorative covers. The chooser uses only **six existing bundled recordings**, with explicit eight-second Preview and separate Use sound. It is a one-layer sound swap, **not newly licensed alternate takes of each sound**. It preserves the layer’s level, other layers, paused state, saved mixes and the four-tab footer; aliases cannot be added as purported unique recordings. New packs/imports/same-sound variants are deferred. Missing sources are now labeled rather than substituted with unrelated rain: 35 configured card names, 40 needing a recording. See the [source/rights audit](../docs/SOUND_LIBRARY.md).
 
-Local verification after this update: **115/115 browser tests** (including 19 new cover/replacement/actual-audio checks) and **15/15 Python fixtures** passed. The Flutter/native results later in this document describe the earlier exact `332a3fd` baseline; new code needs its own hosted verification.
+Local verification after this update: **116/116 browser tests** (including 20 new cover/replacement/actual-audio checks) and **15/15 Python fixtures** passed. The Flutter/native results below are freshly verified for this exact sound-library implementation at `d6447f6`.
 
 ## Open the interactive design preview
 
@@ -67,12 +67,12 @@ The preview shares the actual **Install app** control, worker and icons with the
 
 ## Validation (2026-11-19)
 
-- **All 96 repository browser/PWA/source-configuration tests passed**, with no failures/skips, on 2026-11-19. This includes player/Sleep, Home/navigation, PWA/install-controller and expanded platform/billing/release-configuration guards. Those guards inspect source; they are not compilation evidence. See the [release-readiness plan](../docs/LAUNCH_READINESS.md).
+- **All 116 repository browser/PWA/source-configuration tests passed**, with no failures/skips, on 2026-11-19. This includes player/Sleep, Home/navigation, PWA/install-controller and expanded platform/billing/release-configuration guards. Those guards inspect source; they are not compilation evidence. See the [release-readiness plan](../docs/LAUNCH_READINESS.md).
 - The new player/Sleep suite uses actual bundled HTMLAudio samples and a range-capable local server. It covers pause/resume/seek, duration extension/restart/loop, minimize/paused mini-player/Home resume, deadline completion, source failure/retry, loading cancellation, ambient exclusivity, auto-fade volume/expiry, stories/favorites and playlists. Virtual clocks are installed before application timers are created.
 - Responsive checks cover 320/390/823/1440px widths, reachable completion controls, 44px transport targets, long titles, reduced motion, the real install entry's placement/visibility, and distinct painted SVG pixels while all font requests are blocked.
 - The legacy independent-preview interaction runs also passed again: **20 Sounds + 32 Meditate/Sleep checks**. These and the repository browser tests are **not Flutter widget/native-build results**.
 - All `lib/` and `test/` Dart files passed a tree-sitter syntax parse. Changed implementation/test sections were formatted; literal asset paths, JavaScript syntax checks and `git diff --check` passed. This is not Dart type analysis or compilation.
-- Hosted Flutter regressions now **pass**: [332a3fd / run 44476084854](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44476084854) completed **218/218 tests with no failures/skips**. Guided session/player, Home, mixer, Sleep, reflection, backup and store-controller/widget tests are part of that real Flutter suite, not the independent preview tests.
+- Hosted Flutter regressions now **pass**: [d6447f6 / run 44483121445](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44483121445) completed **260/260 tests with no failures/skips**. Guided session/player, Home, mixer, Sleep, reflection, backup and store-controller/widget tests are part of that real Flutter suite, not the independent preview tests.
 - **All four jobs in that run are green**, including clean dependency locks, Flutter analysis/scoped formatting/release web compilation, the browser/Python job and **Android debug, R8-minified unsigned release and iOS unsigned release compilation**. Built-Android identity/API/Billing/16 KB alignment and negative signing-guard checks passed too. Flutter/Dart SDKs are unavailable in the local sandbox. No compiled Flutter/device screenshots, signed installs, real platform audio interruption results or actual home-screen installation evidence have been produced. All screenshots above remain independent HTML captures; a green workflow is not store-release approval.
 
 Run the repository browser/PWA suites with Playwright/Chromium as described in [PWA checks](../docs/PWA.md#checks):

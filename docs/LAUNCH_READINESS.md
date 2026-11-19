@@ -6,25 +6,25 @@ Updated: 2026-11-19. Product ownership, branding, accounts, spending authority a
 
 A proposed $100,000 traffic budget is not evidence of readiness or authorization to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. No ads, production billing changes, store submission or public release have been made. Existing **Home / Sounds / Meditate / Sleep** navigation and shared playback are retained.
 
-## Sound-library follow-up (new code requires fresh verification)
+## Sound-library follow-up — freshly verified
 
-The [sound-library audit](SOUND_LIBRARY.md) records consistent covers, a six-bundled-sound one-layer replacement chooser and removal of unrelated generic-rain fallback. **35/75 cards have a configured source; 40 remain visible and explicitly need recordings.** No new audio licensing or same-sound takes are claimed. Local browser checks are now **115/115**; Python fixtures **15/15**. The green engineering baseline below is for `332a3fd`, not automatic verification of this follow-up. Owner-controlled media rights and signed-device audio gates remain open.
+The [sound-library audit](SOUND_LIBRARY.md) records consistent covers, a six-bundled-sound one-layer replacement chooser and removal of unrelated generic-rain fallback. **35/75 cards have a configured source; 40 remain visible and explicitly need recordings.** No new audio licensing or same-sound takes are claimed. Local browser checks are now **116/116**; Python fixtures **15/15**. The exact green revision below includes this follow-up; it is not a store/content-rights approval. Owner-controlled media rights and signed-device audio gates remain open.
 
 ## Engineering gate passed — distribution gates remain open
 
-Verified code revision: **`332a3fdc460ae81d580c7203216a9c78e54dbc29`**. [Run 44476084854](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44476084854) completed **successfully in all four jobs** on 2026-11-19. This is evidence for that exact revision, not automatic approval of future code or a store release.
+Verified code revision: **`d6447f6417e864b3194483722ef0cc98a3bc866d`**. [Run 44483121445](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44483121445) completed **successfully in all four jobs** on 2026-11-19. This is evidence for that exact revision, not automatic approval of future code or a store release.
 
 | Check | Observed result |
 | --- | --- |
 | Flutter 3.38.10 analysis and scoped formatting | Passed. Legacy analyzer infos remain advisory; analyzer warnings/errors fail. |
-| Flutter regressions | **218 passed, 0 failed, 0 skipped.** No test was disabled to obtain a pass. |
+| Flutter regressions | **260 passed, 0 failed, 0 skipped.** No test was disabled to obtain a pass. |
 | Flutter release web compilation | Passed. This does not validate browser audio or installation on every device. |
 | Android debug APK | Compilation passed. |
 | Android unsigned, R8-minified release AAB | Compilation passed; the unused Play SplitInstall shrinker failure is fixed. |
 | Android compiled-artifact inspection | Passed: application ID unchanged, minimum API 24 / target API 36, Billing Library 8 metadata, **5 APK / 6 AAB 64-bit libraries** with 16 KB ELF alignment, debug APK ZIP alignment and unsigned AAB. |
 | Android signing rejection test | Passed: a credential-free release without explicit unsigned opt-in failed at the signing guard. |
 | iOS unsigned release device build / Xcode 26.3 | Passed. Not an IPA, signed archive or device installation. |
-| Browser/PWA/platform configuration and Python fixtures | Passed. Local reproduction was **96/96 browser/source tests** and **15/15 Python tests**; the browser preview is independent HTML, not native screenshots. |
+| Browser/PWA/platform configuration and Python fixtures | Passed. Local reproduction was **116/116 browser/source tests** and **15/15 Python tests**; the browser preview is independent HTML, not native screenshots. |
 | Dependency-lock gate | Passed on Flutter, Android and iOS. RevenueCat 10.19.1 and direct url_launcher are reconciled in the committed lockfile. |
 
 The earlier lock drift, regression failures and new artifact parser's legacy-AAPT assumptions are resolved. The parser now supports current AAPT2 output without reducing the required API/Billing levels. CI inspected real generated Android artifacts, separately from the Python verifier fixtures. Static alignment does **not** prove behavior on a 16 KB device or validate Play-generated APKs. No app binary was uploaded.

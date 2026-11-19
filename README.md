@@ -8,12 +8,12 @@ A Flutter app for ambient sound mixing, timed calming sessions, breathing and sl
 
 All **75 sound cards have local cover art**, including Rain on Leaves and Urban Rain. Use **a card’s ⋯ → Replace sound → Preview → Use sound** to swap only that layer from six existing bundled clips. Opening the chooser never autoplays; other layers and the current level are preserved, paused selections stay paused, and saved mixes remember the real chosen name. Packs, personal imports and new same-sound recording variants are deferred—not invented from duplicate audio.
 
-The source audit found **35 cards with configured audio and 40 without**. Unconfigured cards remain visible but are labeled; they no longer silently play generic rain. Existing media rights and device playback still need review. See the [sound-library inventory and scope](docs/SOUND_LIBRARY.md). Local browser checks for this update are **115/115**, including playback of all six bundled clips; the older hosted results below are baseline evidence, not verification of this new code.
+The source audit found **35 cards with configured audio and 40 without**. Unconfigured cards remain visible but are labeled; they no longer silently play generic rain. Existing media rights and device playback still need review. See the [sound-library inventory and scope](docs/SOUND_LIBRARY.md). Local browser checks for this update are **116/116**, including playback of all six bundled clips; the exact hosted verification below also covers this sound-library update.
 
 ## Run the Flutter app
 
 - Minimum **Flutter 3.32 / Dart 3.8**, matching `pubspec.lock`.
-- Use the quality automation pin **Flutter 3.38.10** to reproduce web/Android/iOS results, with **Android API 36 / minimum API 24** and **Xcode 26.3**. All four hosted jobs pass at verified code revision **`332a3fd`**, including lock/tests and unsigned Android/iOS release compilation. Signed-device/store validation is still required; see the [native release runbook](docs/NATIVE_RELEASE.md).
+- Use the quality automation pin **Flutter 3.38.10** to reproduce web/Android/iOS results, with **Android API 36 / minimum API 24** and **Xcode 26.3**. All four hosted jobs pass at verified code revision **`d6447f6`**, including lock/tests and unsigned Android/iOS release compilation. Signed-device/store validation is still required; see the [native release runbook](docs/NATIVE_RELEASE.md).
 
 ```sh
 flutter pub get --enforce-lockfile
@@ -44,7 +44,7 @@ npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Verification on 2026-11-19: [**all four hosted jobs passed** at `332a3fd`](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44476084854), including **218/218 Flutter tests**, analysis/scoped formatting/web compilation, clean dependency locks, Android debug/unsigned release, iOS unsigned release and built-Android safety checks. Android artifact inspection verifies the unchanged identity, API 36, Billing Library 8, 16 KB native-library/APK alignment and unsigned release output; a real negative signing test verifies the fail-closed guard. Local reproduction also passes **96/96 browser/PWA/source-configuration checks** and **15/15 Python diagnostic/verifier fixtures**. No tests were skipped. These are engineering gates, **not signed installation or store approval**. Flutter/Dart SDKs are unavailable in the local sandbox; hosted CI is the real Flutter compilation/test gate.
+Verification on 2026-11-19: [**all four hosted jobs passed** at `d6447f6`](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44483121445), including **260/260 Flutter tests**, analysis/scoped formatting/web compilation, clean dependency locks, Android debug/unsigned release, iOS unsigned release and built-Android safety checks. Android artifact inspection verifies the unchanged identity, API 36, Billing Library 8, 16 KB native-library/APK alignment and unsigned release output; a real negative signing test verifies the fail-closed guard. Local reproduction also passes **116/116 browser/PWA/source-configuration checks** and **15/15 Python diagnostic/verifier fixtures**. No tests were skipped. These are engineering gates, **not signed installation or store approval**. Flutter/Dart SDKs are unavailable in the local sandbox; hosted CI is the real Flutter compilation/test gate.
 
 For checks without a browser download: `npm run test:pwa` and `npm run test:platform`. `PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can point to existing tools; see [PWA checks](docs/PWA.md#checks).
 
