@@ -137,8 +137,9 @@ void main() {
     );
     await tester.pump();
     await tester.tap(find.text('Save name'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     expect(app.renamed['🌧️ Rainy Cabin'], 'Quiet cabin');
+    expect(find.byType(CupertinoAlertDialog), findsNothing);
     expect(find.text('Quiet cabin'), findsOneWidget);
   });
 }

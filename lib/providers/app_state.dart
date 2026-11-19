@@ -6,9 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/main.dart' show localNotifications;
 import 'package:relax_mindfulness/models/user_backup.dart';
+import 'package:relax_mindfulness/services/subscription_controller.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 enum AppTab { home, meditate, breathe, sounds, sleep, aiStudio }
@@ -126,9 +126,12 @@ class AppState extends ChangeNotifier {
     AudioPlayer? guidedPlayer,
     DateTime Function()? now,
     SharedPreferences? preferences,
+    SubscriptionController? subscriptions,
   }) : _prefs = preferences,
+       _subscriptions = subscriptions ?? SubscriptionController(),
        _guidedPlayer = guidedPlayer ?? AudioPlayer(),
        _now = now ?? DateTime.now {
+    _subscriptions.addListener(_subscriptionChanged);
     _guidedStateSubscription = _guidedPlayer.playerStateStream.listen(
       (state) {
         if (_guidedDisposed || !hasGuidedSession) return;
@@ -543,64 +546,23 @@ class AppState extends ChangeNotifier {
     return '${activeTracks.first} + ${activeTracks.length - 1} more';
   }
 
-  bool _isPremium = false;
-  bool _trialActive = false;
-  int _trialDaysLeft = 7;
-  DateTime? _trialStartDate;
+  // Store access is never loaded from the legacy is_premium/trial_* flags.
+  // AppState owns this controller, including when injected for tests.
+  final SubscriptionController _subscriptions;
+  SubscriptionController get subscriptions => _subscriptions;
   int _totalSessions = 0;
 
-  bool get isPremium => _isPremium;
-  bool get trialActive => _trialActive;
-  int get trialDaysLeft => _trialDaysLeft;
-  bool get hasFullAccess => _isPremium || _trialActive;
+  bool get isPremium => _subscriptions.hasFullAccess;
+  bool get trialActive => _subscriptions.trialActive;
+  int get trialDaysLeft => _subscriptions.trialDaysLeft;
+  bool get hasFullAccess => _subscriptions.hasFullAccess;
 
-  Future<void> purchasePremium() async {
-    _isPremium = true;
-    _trialActive = false;
-    await _prefs?.setBool('is_premium', true);
-    await _prefs?.setBool('trial_active', false);
-    notifyListeners();
-  }
+  Future<void> initializePurchases() => _subscriptions.initialize();
+  Future<void> refreshPurchaseStatus() => _subscriptions.refresh();
+  Future<BillingResult> restorePurchase() => _subscriptions.restore();
 
-  Future<void> startFreeTrial() async {
-    if (_isPremium || _trialActive) return;
-    _trialActive = true;
-    _trialStartDate = DateTime.now();
-    _trialDaysLeft = 7;
-    await _prefs?.setBool('trial_active', true);
-    await _prefs?.setString('trial_start', _trialStartDate!.toIso8601String());
-    notifyListeners();
-  }
-
-  Future<void> restorePurchase() async {
-    try {
-      final customerInfo = await Purchases.restorePurchases();
-      final isPro = customerInfo.entitlements.all["premium"]?.isActive ?? false;
-      if (isPro) {
-        _isPremium = true;
-        _prefs?.setBool('is_premium', true);
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint("Restore error: $e");
-    }
-  }
-
-  void _loadPremiumState() {
-    _isPremium = _prefs?.getBool('is_premium') ?? false;
-    _trialActive = _prefs?.getBool('trial_active') ?? false;
-    final trialStartStr = _prefs?.getString('trial_start');
-    if (trialStartStr != null && _trialActive) {
-      _trialStartDate = DateTime.tryParse(trialStartStr);
-      if (_trialStartDate != null) {
-        final elapsed = DateTime.now().difference(_trialStartDate!).inDays;
-        _trialDaysLeft = (7 - elapsed).clamp(0, 7);
-        if (_trialDaysLeft <= 0) {
-          _trialActive = false;
-          _prefs?.setBool('trial_active', false);
-        }
-      }
-    }
+  void _subscriptionChanged() {
+    if (!_guidedDisposed) notifyListeners();
   }
 
   bool _onboardingDone = true;
@@ -1408,7 +1370,6 @@ class AppState extends ChangeNotifier {
 
     _loadRecents();
     _loadReminder();
-    _loadPremiumState();
 
     try {
       final session = await AudioSession.instance;
@@ -1645,6 +1606,8 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _guidedDisposed = true;
+    _subscriptions.removeListener(_subscriptionChanged);
+    _subscriptions.dispose();
     ++_guidedRequest;
     _sleepTimer?.cancel();
     _guidedTimer?.cancel();

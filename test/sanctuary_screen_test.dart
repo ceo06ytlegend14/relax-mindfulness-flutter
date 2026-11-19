@@ -219,7 +219,8 @@ void main() {
   ) async {
     final app = await mountSanctuary(tester, const SleepScreen());
     await tester.tap(find.byKey(const ValueKey('set-sleep-timer')));
-    await tester.pump(const Duration(milliseconds: 400));
+    // Let the modal finish entering before hit-testing its header controls.
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('confirm-sleep-timer')));
     await tester.pump(const Duration(milliseconds: 400));
     expect(app.timerSeconds, 1800);
@@ -234,7 +235,8 @@ void main() {
   ) async {
     final app = await mountSanctuary(tester, const SleepScreen());
     await tester.tap(find.byKey(const ValueKey('set-sleep-timer')));
-    await tester.pump(const Duration(milliseconds: 400));
+    // Let the modal finish entering before hit-testing its header controls.
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pump(const Duration(milliseconds: 400));
     expect(app.timerSeconds, isNull);

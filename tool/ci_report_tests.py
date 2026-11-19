@@ -85,6 +85,7 @@ def main():
         return 1
     success, summary, annotations = report(Path(sys.argv[1]).read_text(errors='replace'))
     print(summary)
+    print(f'::notice title=Flutter test totals::{escape(summary)}')
     for annotation in annotations:
         print(annotation)
     summary_file = os.environ.get('GITHUB_STEP_SUMMARY')

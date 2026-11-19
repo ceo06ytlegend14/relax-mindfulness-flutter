@@ -830,11 +830,7 @@ class _TrackCard extends StatelessWidget {
           HapticFeedback.lightImpact();
           state.toggleFavoriteSound(track.name);
         },
-        child: AnimatedSize(
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 180),
-          alignment: Alignment.topCenter,
+        child: _MotionAwareTrackSize(
           child: MixerSurface(
             metrics: metrics,
             active: selected,
@@ -1014,6 +1010,25 @@ class _TrackCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Reduced motion removes size animation rather than running AnimatedSize at
+/// zero duration, which can synchronously dirty itself during layout.
+class _MotionAwareTrackSize extends StatelessWidget {
+  const _MotionAwareTrackSize({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context))
+      return child;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 }

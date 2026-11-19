@@ -31,6 +31,8 @@ Future<void> mountReflection(
 }
 
 Future<void> tapReflection(WidgetTester tester, String key) async {
+  // Render controller-driven enabled/disabled changes before hit testing.
+  await tester.pump();
   final target = find.byKey(ValueKey(key));
   await tester.ensureVisible(target);
   await tester.tap(target);

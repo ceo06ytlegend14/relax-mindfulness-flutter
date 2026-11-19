@@ -99,7 +99,7 @@ test('Android toolchain explicitly targets the current Play API floor', async ()
   assert.match(gradle, /compileSdk = 36/);
   assert.match(gradle, /targetSdk = 36/);
   assert.match(gradle, /minSdk = 24/);
-  assert.match(settings, /com\.android\.application"\) version "8\.9\.1"/);
+  assert.match(settings, /com\.android\.application"\) version "8\.13\.2"/);
   assert.match(gradle, /isCoreLibraryDesugaringEnabled = true/);
   assert.match(gradle, /desugar_jdk_libs:2\.1\.4/);
 });
@@ -124,4 +124,29 @@ test('reflection studio has no provider credential, external AI call or false sa
   assert.match(studio, /This is not AI or music generation/);
   assert.match(studio, /Clipboard\.setData/);
   assert.match(studio, /Clipboard access failed\. Nothing was saved/);
+});
+
+test('store access cannot be granted by legacy local premium/trial preference methods', async () => {
+  const state = await readFile(path.join(root, 'lib/providers/app_state.dart'), 'utf8');
+  const billing = await readFile(path.join(root, 'lib/services/subscription_controller.dart'), 'utf8');
+  const paywall = await readFile(path.join(root, 'lib/screens/premium_screen.dart'), 'utf8');
+  const pubspec = await readFile(path.join(root, 'pubspec.yaml'), 'utf8');
+  assert.doesNotMatch(state, /Future<void> (?:purchasePremium|startFreeTrial)\(/);
+  assert.doesNotMatch(state, /(?:getBool|setBool)\(['"](?:is_premium|trial_active)['"]/);
+  assert.match(billing, /this\.purchasesEnabled = false/);
+  assert.match(billing, /entitlements\.active\[configuration\.entitlementId\]/);
+  assert.match(billing, /REVENUECAT_IOS_API_KEY/);
+  assert.match(billing, /REVENUECAT_ANDROID_API_KEY/);
+  assert.match(billing, /privacyUri != null &&\s*termsUri != null/);
+  assert.match(paywall, /product\.priceString/);
+  assert.match(paywall, /launchUrl/);
+  assert.doesNotMatch(paywall, /Start 7-Day|\$6\.99|\$39\.99|Save 60%|Narrated bedtime|Full 78/);
+  assert.match(pubspec, /purchases_flutter: 10\.19\.1/);
+});
+
+test('release shrinking does not keep unused Flutter split-install code or hide its missing dependency', async () => {
+  const rules = await readFile(path.join(root, 'android/app/proguard-rules.pro'), 'utf8');
+  assert.doesNotMatch(rules, /^-keep class io\.flutter\.\*\*/m);
+  assert.doesNotMatch(rules, /^-dontwarn com\.google\.android\.play\.core/m);
+  assert.match(rules, /^-keep class io\.flutter\.plugins\.\*\*/m);
 });

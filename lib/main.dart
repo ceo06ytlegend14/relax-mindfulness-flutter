@@ -1,14 +1,13 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
@@ -23,22 +22,14 @@ import 'package:relax_mindfulness/components/glass_components.dart';
 import 'package:relax_mindfulness/components/guided_player.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 
-import 'dart:ui' show PlatformDispatcher;
-
 final FlutterLocalNotificationsPlugin localNotifications =
     FlutterLocalNotificationsPlugin();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Global Error Boundaries to eliminate unhandled crash states
-  FlutterError.onError = (FlutterErrorDetails details) {
-    debugPrint('Global FlutterError caught: ${details.exceptionAsString()}');
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Global Async Error caught: $error');
-    return true; // Handled safely without freezing or crashing the app
-  };
+  // Keep Flutter/platform error reporting intact. Recoverable feature failures
+  // are handled at their boundaries, not silently declared globally handled.
 
   // Make status bar transparent for edge-to-edge iOS design
   SystemChrome.setSystemUIOverlayStyle(
@@ -55,8 +46,8 @@ void main() {
 
   final appState = AppState();
 
-  // 🚀 CRITICAL FOR IOS: Launch root UI IMMEDIATELY so the native window renders within 50ms.
-  // This completely eliminates iOS SpringBoard 0x8badf00d watchdog boot termination in TestFlight.
+  // Render the root before native setup rather than blocking the first frame.
+  // Cold-start timing/watchdog behavior still requires real-device measurement.
   runApp(
     ChangeNotifierProvider.value(value: appState, child: const SanctuaryApp()),
   );
@@ -104,22 +95,9 @@ Future<void> _initNativeServices(AppState appState) async {
     debugPrint("Notifications init error: $e");
   }
 
-  // 4. RevenueCat (In-App Purchases)
-  const revenueCatKey = String.fromEnvironment(
-    'REVENUECAT_API_KEY',
-    defaultValue: '',
-  );
-  if (!kIsWeb &&
-      (Platform.isIOS || Platform.isMacOS) &&
-      revenueCatKey.isNotEmpty &&
-      !revenueCatKey.contains('your_revenuecat_key')) {
-    try {
-      await Purchases.setLogLevel(LogLevel.debug);
-      await Purchases.configure(PurchasesConfiguration(revenueCatKey));
-    } catch (e) {
-      debugPrint("RevenueCat init error: $e");
-    }
-  }
+  // 4. Store SDK setup uses platform-specific PUBLIC keys. No local premium
+  // preference, automatic trial or successful payment callback grants access.
+  await appState.initializePurchases();
 
   // 5. Deep Link Handling (Web)
   if (kIsWeb) {
@@ -246,7 +224,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         lifecycleState == AppLifecycleState.hidden) {
       context.read<AppState>().setBackgroundMode(true);
     } else if (lifecycleState == AppLifecycleState.resumed) {
-      context.read<AppState>().setBackgroundMode(false);
+      final app = context.read<AppState>();
+      app.setBackgroundMode(false);
+      unawaited(app.refreshPurchaseStatus());
     }
   }
 

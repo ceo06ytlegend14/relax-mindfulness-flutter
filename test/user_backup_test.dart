@@ -180,7 +180,7 @@ void main() {
     );
     final preset = (backup.values['presets'] as List).single;
     expect(
-      () => (preset['volumes'] as Map)['Soft Rain'] = 2,
+      () => (preset['volumes'] as Map)['Soft Rain'] = 2.0,
       throwsUnsupportedError,
     );
   });
