@@ -208,7 +208,7 @@ const oceanSleepJourney = SleepSoundscape(
   id: 'ocean-sleep',
   title: 'Ocean Sleep',
   minutes: 45,
-  artwork: 'assets/images/sleep/ocean_journey.webp',
+  artwork: 'assets/images/sleep/moonlit_shore.webp',
   levels: {'Ocean Waves': 0.7, 'Soft Rain': 0.3},
 );
 
@@ -217,7 +217,7 @@ const sleepSoundscapes = [
     id: 'ocean-waves',
     title: 'Ocean Waves',
     minutes: 45,
-    artwork: 'assets/images/sleep/ocean_waves.webp',
+    artwork: 'assets/images/sleep/ocean_journey.webp',
     levels: {'Ocean Waves': 0.6},
   ),
   SleepSoundscape(
@@ -238,7 +238,7 @@ const sleepSoundscapes = [
     id: 'heavy-rain',
     title: 'Heavy Rain',
     minutes: 30,
-    artwork: 'assets/images/sleep/heavy_rain.webp',
+    artwork: 'assets/images/sleep/rain_window.webp',
     levels: {'Heavy Rain': 0.6},
   ),
   SleepSoundscape(
@@ -328,10 +328,20 @@ String sleepArtworkForTrack(String name) {
     if (soundscape.title == name) return soundscape.artwork;
   }
   return switch (name) {
-    'Soft Rain' => 'assets/images/mixer/soft_rain.webp',
-    'Rain on Window' => 'assets/images/mixer/rain_window.webp',
+    'Soft Rain' || 'Rain on Window' => 'assets/images/sleep/rain_window.webp',
     'Soothing Breeze' ||
     'Mountain Stream' => 'assets/images/meditate/quiet_mind.webp',
     _ => 'assets/images/sleep/continue_listening.webp',
   };
+}
+
+/// Full-resolution artwork for the player, not enlarged carousel thumbnails.
+String guidedPlayerArtwork(String title) {
+  if (sleepStories.any((story) => story.title == title) ||
+      meditationSessions.any(
+        (session) => session.title == title && session.intent == 'Sleep',
+      )) {
+    return 'assets/images/sleep/moonlit_shore.webp';
+  }
+  return 'assets/images/player/comfort_art.webp';
 }

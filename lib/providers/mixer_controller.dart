@@ -25,7 +25,7 @@ class MixerController extends ChangeNotifier {
 
   String get category => _category;
   String? get preset => _preset;
-  bool get isPlaying => _app.isAnyAudioPlaying;
+  bool get isPlaying => _app.activeAmbientTracks.isNotEmpty;
   int get selectedCount => _levels.values.where((v) => v > 0).length;
   Map<String, double> get levels => Map.unmodifiable(_levels);
   double volume(String name) => _levels[name] ?? 0;

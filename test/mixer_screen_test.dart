@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
-import 'package:relax_mindfulness/screens/home_screen.dart';
+import 'package:relax_mindfulness/screens/sounds_screen.dart';
 
 import 'support/fake_mixer_app_state.dart';
 
@@ -31,7 +31,7 @@ Future<FakeMixerAppState> mountMixer(WidgetTester tester, double width) async {
           data: MediaQuery.of(context).copyWith(disableAnimations: true),
           child: child!,
         ),
-        home: const HomeScreen(),
+        home: const SoundsScreen(),
       ),
     ),
   );
@@ -47,7 +47,7 @@ void main() {
     await loader.load();
   });
   for (final width in [320.0, 390.0, 823.0]) {
-    testWidgets('landing mixer renders without overflow at width $width', (
+    testWidgets('Sounds mixer renders without overflow at width $width', (
       tester,
     ) async {
       final app = await mountMixer(tester, width);

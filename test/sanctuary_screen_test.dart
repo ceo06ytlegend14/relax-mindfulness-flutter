@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
@@ -95,7 +96,10 @@ void main() {
           width: width,
         );
         expect(find.byKey(const ValueKey('sleep-title')), findsOneWidget);
-        expect(find.text('Sleep Sanctuary'), findsOneWidget);
+        expect(
+          find.text('Good evening. Let the day drift away.'),
+          findsOneWidget,
+        );
         expect(find.text('31 min remaining'), findsNothing);
         expect(find.text('68%'), findsNothing);
         expect(app.active, isEmpty);
@@ -116,6 +120,53 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'Sleep uses the new local moonlit ocean art, not a screenshot UI',
+    (tester) async {
+      await mountSanctuary(tester, const SleepScreen(), width: 390);
+      final hero = find.byKey(const ValueKey('moonlit-ocean-journey'));
+      final image = tester.widget<Image>(
+        find.descendant(of: hero, matching: find.byType(Image)),
+      );
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/images/sleep/moonlit_shore.webp',
+      );
+      expect(
+        find.descendant(of: hero, matching: find.text('Ocean Sleep')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('all five Sleep mixer controls have distinct vector symbols', (
+    tester,
+  ) async {
+    await mountSanctuary(tester, const SleepScreen(), width: 390);
+    final symbols = <SanctuarySymbol>[];
+    for (final label in ['Ocean', 'Rain', 'Wind', 'Thunder', 'Nature']) {
+      final control = find.byKey(ValueKey('quick-$label'));
+      await reveal(tester, control);
+      final icon = tester.widget<SanctuaryIcon>(
+        find.descendant(of: control, matching: find.byType(SanctuaryIcon)),
+      );
+      symbols.add(icon.symbol);
+      expect(
+        find.descendant(of: control, matching: find.byType(Icon)),
+        findsNothing,
+      );
+    }
+    expect(symbols, [
+      SanctuarySymbol.waves,
+      SanctuarySymbol.rain,
+      SanctuarySymbol.wind,
+      SanctuarySymbol.bolt,
+      SanctuarySymbol.tree,
+    ]);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('daily journey begins and pauses the correct session', (
     tester,

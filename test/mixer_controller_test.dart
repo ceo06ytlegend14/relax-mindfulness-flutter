@@ -77,6 +77,17 @@ void main() {
     },
   );
 
+  test('guided playback is not reported as an active ambient mixer', () async {
+    await app.playGuidedSession('Gentle Relief & Comfort', 15);
+    expect(app.isGuidedPlaying, isTrue);
+    expect(mixer.isPlaying, isFalse);
+    expect(mixer.levels, {'Soft Rain': 0.3});
+    mixer.togglePlayback();
+    expect(mixer.isPlaying, isTrue);
+    expect(app.isGuidedPlaying, isFalse);
+    expect(app.hasGuidedSession, isTrue);
+  });
+
   test('shuffle selects exactly three independent tracks', () {
     mixer.shuffle();
     expect(mixer.selectedCount, 3);

@@ -12,7 +12,7 @@ import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/screens/wellbeing_screen.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
-/// The reference-inspired mixer, also used as the app's landing page.
+/// The dedicated reference-inspired mixer. Home has its own daily dashboard.
 class SoundsScreen extends StatelessWidget {
   const SoundsScreen({super.key});
 
@@ -345,7 +345,8 @@ class SoundsScreen extends StatelessWidget {
                         29 * s,
                         12,
                         29 * s,
-                        MediaQuery.paddingOf(context).bottom + 32,
+                        MediaQuery.paddingOf(context).bottom +
+                            (state.hasGuidedSession ? 126 : 32),
                       ),
                       sliver: SliverToBoxAdapter(
                         child: Column(

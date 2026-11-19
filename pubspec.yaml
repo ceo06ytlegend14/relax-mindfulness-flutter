@@ -39,6 +39,7 @@ flutter:
     - assets/images/
     - assets/images/mixer/
     - assets/images/meditate/
+    - assets/images/player/
     - assets/images/sleep/
     - assets/fonts/mixer/OFL.txt
     - assets/fonts/editorial/OFL.txt

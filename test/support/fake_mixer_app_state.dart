@@ -12,7 +12,13 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   final List<(String, int)> guidedRequests = [];
   String? guidedTitle;
   int guidedSeconds = 0;
+  int guidedTotal = 0;
   bool guidedPlaying = false;
+  bool guidedLoading = false;
+  bool guidedExpanded = false;
+  bool guidedLoop = true;
+  String? guidedError;
+  final List<bool> guidedCompletions = [];
   int? timerSeconds;
   int? timerTotal;
   AppTab selectedTab = AppTab.home;
@@ -26,6 +32,10 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
       guidedPlaying || active.values.any((value) => value > 0);
   @override
   bool get isBackgroundMode => false;
+  @override
+  AppWallpaper get wallpaper => AppWallpaper.pureObsidian;
+  @override
+  bool get showMoodDialog => false;
   @override
   Set<String> get favoriteSounds => Set.unmodifiable(starred);
   @override
@@ -47,6 +57,8 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   Future<void> updateSoundTrackVolume(String name, double volume) async {
     if (volume > 0) {
+      guidedPlaying = false;
+      guidedLoading = false;
       active[name] = volume;
     } else {
       active.remove(name);
@@ -57,7 +69,11 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   Future<void> stopAllAudio() async {
     guidedPlaying = false;
+    guidedLoading = false;
+    guidedExpanded = false;
     guidedTitle = null;
+    guidedSeconds = 0;
+    guidedTotal = 0;
     active.clear();
     notifyListeners();
   }
@@ -91,22 +107,96 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   bool get isGuidedPlaying => guidedPlaying;
   @override
+  bool get isGuidedLoading => guidedLoading;
+  @override
+  bool get hasGuidedSession => guidedTitle != null;
+  @override
+  bool get isGuidedPlayerExpanded => hasGuidedSession && guidedExpanded;
+  @override
+  bool get canSeekGuidedSession => hasGuidedSession && !guidedLoading;
+  @override
+  String? get guidedPlaybackError => guidedError;
+  @override
+  bool get isGuidedLooping => guidedLoop;
+  @override
   String? get currentGuidedTitle => guidedTitle;
   @override
   int get guidedRemainingSec => guidedSeconds;
   @override
+  int get guidedTotalSec => guidedTotal;
+  @override
+  int get guidedElapsedSec => guidedTotal - guidedSeconds;
+  @override
   Future<void> playGuidedSession(String title, int durationMins) async {
     active.clear();
-    guidedTitle = title;
-    guidedSeconds = durationMins * 60;
+    if (guidedTitle != title || guidedSeconds <= 0) {
+      guidedTitle = title;
+      guidedTotal = durationMins * 60;
+      guidedSeconds = guidedTotal;
+      guidedRequests.add((title, durationMins));
+    }
     guidedPlaying = true;
-    guidedRequests.add((title, durationMins));
+    guidedExpanded = true;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> resumeGuidedSession() async {
+    if (!hasGuidedSession) return;
+    active.clear();
+    guidedPlaying = true;
+    guidedError = null;
+    notifyListeners();
+  }
+
+  @override
+  void showGuidedPlayer() {
+    guidedExpanded = true;
+    notifyListeners();
+  }
+
+  @override
+  void minimizeGuidedPlayer() {
+    guidedExpanded = false;
     notifyListeners();
   }
 
   @override
   Future<void> pauseGuidedSession() async {
     guidedPlaying = false;
+    notifyListeners();
+  }
+
+  @override
+  void extendGuidedSession(int minutes) {
+    guidedSeconds += minutes * 60;
+    guidedTotal += minutes * 60;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> toggleGuidedLoop() async {
+    guidedLoop = !guidedLoop;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> seekGuidedSession(int elapsedSeconds) async {
+    guidedSeconds =
+        guidedTotal - elapsedSeconds.clamp(0, guidedTotal - 1).toInt();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> restartGuidedSession() => seekGuidedSession(0);
+  @override
+  Future<void> stopGuidedSession({bool completed = false}) async {
+    guidedCompletions.add(completed);
+    guidedPlaying = false;
+    guidedExpanded = false;
+    guidedTitle = null;
+    guidedSeconds = 0;
+    guidedTotal = 0;
     notifyListeners();
   }
 

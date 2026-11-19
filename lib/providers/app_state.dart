@@ -121,16 +121,67 @@ class SoundPreset {
 
 // ─── AppState ─────────────────────────────────────────────────────────────────
 class AppState extends ChangeNotifier {
+  AppState({AudioPlayer? guidedPlayer, DateTime Function()? now})
+    : _guidedPlayer = guidedPlayer ?? AudioPlayer(),
+      _now = now ?? DateTime.now {
+    _guidedStateSubscription = _guidedPlayer.playerStateStream.listen(
+      (state) {
+        if (_guidedDisposed || !hasGuidedSession) return;
+        if (_isGuidedPlaying &&
+            state.processingState == ProcessingState.completed) {
+          unawaited(stopGuidedSession(completed: true));
+          return;
+        }
+        // Follow platform interruptions and activation refusal too, not just taps.
+        // A queued old event must not override the player's current intent.
+        if (!_guidedReady || _isGuidedLoading) return;
+        if (_isGuidedPlaying && !state.playing && !_guidedPlayer.playing) {
+          _freezeGuidedClock();
+          _isGuidedPlaying = false;
+          notifyListeners();
+        } else if (!_isGuidedPlaying &&
+            state.playing &&
+            _guidedPlayer.playing) {
+          _startGuidedPlayback(_guidedRequest);
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // Source loading has its own ordered local/CDN fallback handling.
+        if (!_isGuidedLoading) _failGuidedPlayback(_guidedRequest, error);
+      },
+    );
+    _guidedPlaybackSubscription = _guidedPlayer.playbackEventStream.listen(
+      (_) {},
+      onError: (Object error, StackTrace stack) {
+        // Source loading has its own ordered local/CDN fallback handling.
+        if (!_isGuidedLoading) _failGuidedPlayback(_guidedRequest, error);
+      },
+    );
+  }
+
   SharedPreferences? _prefs;
 
   final Map<String, AudioPlayer> _audioPlayers = {};
   final Set<String> _loadingTracks = {};
   final Map<String, double> _targetVolumes = {};
 
-  final AudioPlayer _guidedPlayer = AudioPlayer();
+  final AudioPlayer _guidedPlayer;
+  final DateTime Function() _now;
+  StreamSubscription<PlayerState>? _guidedStateSubscription;
+  StreamSubscription<PlaybackEvent>? _guidedPlaybackSubscription;
+  bool _guidedDisposed = false;
+  int _guidedRequest = 0;
+  bool _guidedReady = false;
   bool _isGuidedPlaying = false;
+  bool _isGuidedLoading = false;
+  bool _isGuidedPlayerExpanded = false;
+  String? _guidedPlaybackError;
   String? _currentGuidedTitle;
   int _guidedRemainingSec = 0;
+  int _guidedTotalSec = 0;
+  int _guidedListenedMs = 0;
+  DateTime? _guidedDeadline;
+  DateTime? _guidedListeningStartedAt;
   Timer? _guidedTimer;
 
   // Master Gain Limiter & Sleep Fade Control
@@ -147,9 +198,29 @@ class AppState extends ChangeNotifier {
   bool get isSleepTimerRunning => _sleepTimerRemainingSec != null && _sleepTimerRemainingSec! > 0;
 
   bool get isGuidedPlaying => _isGuidedPlaying;
+  bool get isGuidedLoading => _isGuidedLoading;
+  bool get hasGuidedSession => _currentGuidedTitle != null;
+  bool get isGuidedPlayerExpanded =>
+      hasGuidedSession && _isGuidedPlayerExpanded;
+  String? get guidedPlaybackError => _guidedPlaybackError;
   String? get currentGuidedTitle => _currentGuidedTitle;
-  int get guidedRemainingSec => _guidedRemainingSec;
-  
+  int get guidedTotalSec => _guidedTotalSec;
+  int get guidedRemainingSec {
+    final deadline = _guidedDeadline;
+    if (deadline == null) return _guidedRemainingSec;
+    return ((deadline.difference(_now()).inMilliseconds + 999) ~/ 1000)
+        .clamp(0, _guidedTotalSec)
+        .toInt();
+  }
+
+  int get guidedElapsedSec =>
+      (_guidedTotalSec - guidedRemainingSec).clamp(0, _guidedTotalSec).toInt();
+  bool get canSeekGuidedSession =>
+      hasGuidedSession &&
+      _guidedReady &&
+      !_isGuidedLoading &&
+      (_guidedPlayer.duration?.inMilliseconds ?? 0) > 0;
+
   static const Map<String, String> soundStreamUrls = {
     'Soft Rain': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/light-rain.mp3',
     'Thunderstorm': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/thunder.mp3',
@@ -628,95 +699,288 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // Timed calming audio, not per-session narration. Loading never consumes the
+  // session timer; pausing retains both the session and the source position.
   Future<void> playGuidedSession(String title, int durationMins) async {
-    await pauseAllAmbientSoundTracks();
+    if (durationMins <= 0 || _guidedDisposed) return;
+    if (_currentGuidedTitle == title && guidedRemainingSec > 0) {
+      showGuidedPlayer();
+      await resumeGuidedSession();
+      return;
+    }
 
-    _guidedTimer?.cancel();
+    final request = ++_guidedRequest;
+    _freezeGuidedClock();
     _currentGuidedTitle = title;
-    _guidedRemainingSec = durationMins * 60;
-    _isGuidedPlaying = true;
+    _guidedTotalSec = durationMins * 60;
+    _guidedRemainingSec = _guidedTotalSec;
+    _guidedListenedMs = 0;
+    _guidedReady = false;
+    _isGuidedPlaying = false;
+    _isGuidedLoading = true;
+    _isGuidedPlayerExpanded = true;
+    _guidedPlaybackError = null;
     notifyListeners();
 
-    _guidedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_isGuidedPlaying || _guidedRemainingSec <= 0) {
-        timer.cancel();
-        stopGuidedSession(completed: true, durationMins: durationMins);
-      } else {
-        _guidedRemainingSec--;
-        notifyListeners();
-      }
-    });
-
     try {
-      await _guidedPlayer.setAsset('assets/sounds/calm_guided.mp3');
-      await _guidedPlayer.setLoopMode(LoopMode.one);
-      await _guidedPlayer.setVolume(0.35);
-      _guidedPlayer.play();
-    } catch (e) {
-      debugPrint('Local guided asset failed, falling back to CDN: $e');
-      final rawUrl = guidedAudioUrls[title] ?? guidedAudioUrls['Calm Mountain Horizon']!;
-      final cdnUrl = _resolveCdnUrl(rawUrl);
-
-      try {
-        await _guidedPlayer.setUrl(cdnUrl);
-        await _guidedPlayer.setLoopMode(LoopMode.one);
-        await _guidedPlayer.setVolume(0.35);
-        _guidedPlayer.play();
-      } catch (e2) {
-        debugPrint('Error starting guided audio on CDN, trying fallback: $e2');
-        try {
-          await _guidedPlayer.setUrl(rawUrl);
-          await _guidedPlayer.setLoopMode(LoopMode.one);
-          await _guidedPlayer.setVolume(0.35);
-          _guidedPlayer.play();
-        } catch (e3) {
-          debugPrint('Guided audio fallback error: $e3');
-        }
-      }
+      await _guidedPlayer.stop();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await pauseAllAmbientSoundTracks();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _loadGuidedAudio(request);
+      if (!_isCurrentGuidedRequest(request)) return;
+      _startGuidedPlayback(request);
+    } catch (error) {
+      _failGuidedPlayback(request, error);
     }
   }
 
   bool _isGuidedLooping = true;
   bool get isGuidedLooping => _isGuidedLooping;
 
-  void extendGuidedSession(int extraMins) {
-    _guidedRemainingSec += extraMins * 60;
+  bool _isCurrentGuidedRequest(int request) =>
+      !_guidedDisposed && request == _guidedRequest && hasGuidedSession;
+
+  Future<void> _loadGuidedAudio(int request) async {
+    final title = _currentGuidedTitle;
+    final rawUrl =
+        guidedAudioUrls[title] ?? guidedAudioUrls['Calm Mountain Horizon']!;
+    Object? lastError;
+    for (final source in [
+      'assets/sounds/calm_guided.mp3',
+      _resolveCdnUrl(rawUrl),
+      rawUrl,
+    ]) {
+      if (!_isCurrentGuidedRequest(request)) return;
+      try {
+        if (source.startsWith('assets/')) {
+          await _guidedPlayer.setAsset(source);
+        } else {
+          await _guidedPlayer.setUrl(source);
+        }
+        if (!_isCurrentGuidedRequest(request)) return;
+        await _guidedPlayer.setLoopMode(
+          _isGuidedLooping ? LoopMode.one : LoopMode.off,
+        );
+        if (!_isCurrentGuidedRequest(request)) return;
+        await _guidedPlayer.setVolume(0.35);
+        if (!_isCurrentGuidedRequest(request)) return;
+        _guidedReady = true;
+        // A retry preserves elapsed session time rather than silently starting over.
+        if (guidedElapsedSec > 0) await _seekGuidedAudio(guidedElapsedSec);
+        return;
+      } catch (error) {
+        lastError = error;
+        debugPrint('Could not load guided audio source: $error');
+      }
+    }
+    throw lastError ?? StateError('No calming audio source is available.');
+  }
+
+  void _startGuidedPlayback(int request) {
+    if (!_isCurrentGuidedRequest(request)) return;
+    _isGuidedLoading = false;
+    _guidedPlaybackError = null;
+    _isGuidedPlaying = true;
+    final now = _now();
+    _guidedDeadline = now.add(Duration(seconds: _guidedRemainingSec));
+    _guidedListeningStartedAt = now;
+    _guidedTimer?.cancel();
+    _guidedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_isCurrentGuidedRequest(request) || !_isGuidedPlaying) return;
+      if (guidedRemainingSec <= 0) {
+        unawaited(stopGuidedSession(completed: true));
+      } else {
+        notifyListeners();
+      }
+    });
+    notifyListeners();
+    // just_audio's play future finishes when playback stops, not when it starts.
+    unawaited(
+      _guidedPlayer.play().catchError((Object error) {
+        _failGuidedPlayback(request, error);
+      }),
+    );
+  }
+
+  void _freezeGuidedClock() {
+    final remaining = guidedRemainingSec;
+    final started = _guidedListeningStartedAt;
+    if (started != null) {
+      // Do not count time beyond an expired deadline when a background timer is late.
+      final deadline = _guidedDeadline;
+      final now = _now();
+      final end = deadline != null && now.isAfter(deadline) ? deadline : now;
+      final listened = end.difference(started).inMilliseconds;
+      if (listened > 0) _guidedListenedMs += listened;
+    }
+    _guidedRemainingSec = remaining;
+    _guidedDeadline = null;
+    _guidedListeningStartedAt = null;
+    _guidedTimer?.cancel();
+    _guidedTimer = null;
+  }
+
+  void _failGuidedPlayback(int request, Object error) {
+    if (!_isCurrentGuidedRequest(request)) return;
+    ++_guidedRequest;
+    _freezeGuidedClock();
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    _guidedReady = false;
+    _guidedPlaybackError =
+        'Audio could not start. Check your connection and try again.';
+    debugPrint('Guided playback error: $error');
+    unawaited(
+      _guidedPlayer.pause().catchError((Object pauseError) {
+        debugPrint('Could not pause failed guided audio: $pauseError');
+      }),
+    );
     notifyListeners();
   }
 
-  void toggleGuidedLoop() {
-    _isGuidedLooping = !_isGuidedLooping;
-    if (_isGuidedLooping) {
-      _guidedPlayer.setLoopMode(LoopMode.one);
-    } else {
-      _guidedPlayer.setLoopMode(LoopMode.off);
+  void showGuidedPlayer() {
+    if (!hasGuidedSession) return;
+    _isGuidedPlayerExpanded = true;
+    notifyListeners();
+  }
+
+  void minimizeGuidedPlayer() {
+    _isGuidedPlayerExpanded = false;
+    notifyListeners();
+  }
+
+  Future<void> resumeGuidedSession() async {
+    if (!hasGuidedSession ||
+        _isGuidedPlaying ||
+        _isGuidedLoading ||
+        _guidedDisposed)
+      return;
+    if (_guidedRemainingSec <= 0) return;
+    final request = ++_guidedRequest;
+    _isGuidedLoading = true;
+    _guidedPlaybackError = null;
+    notifyListeners();
+    try {
+      await pauseAllAmbientSoundTracks();
+      if (!_isCurrentGuidedRequest(request)) return;
+      if (!_guidedReady) await _loadGuidedAudio(request);
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _guidedPlayer.setLoopMode(
+        _isGuidedLooping ? LoopMode.one : LoopMode.off,
+      );
+      if (!_isCurrentGuidedRequest(request)) return;
+      _startGuidedPlayback(request);
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
+  }
+
+  Future<void> pauseGuidedSession() async {
+    if (!hasGuidedSession) return;
+    ++_guidedRequest; // Prevent an in-flight load or play failure from reviving audio.
+    _freezeGuidedClock();
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    notifyListeners();
+    try {
+      await _guidedPlayer.pause();
+    } catch (error) {
+      debugPrint('Could not pause guided audio: $error');
+    }
+  }
+
+  void extendGuidedSession(int extraMins) {
+    if (!hasGuidedSession || extraMins <= 0) return;
+    final extra = extraMins * 60;
+    _guidedRemainingSec = guidedRemainingSec + extra;
+    _guidedTotalSec += extra;
+    if (_guidedDeadline != null) {
+      _guidedDeadline = _guidedDeadline!.add(Duration(seconds: extra));
     }
     notifyListeners();
   }
 
-  void restartGuidedSession(int initialMins) {
-    _guidedRemainingSec = initialMins * 60;
-    _guidedPlayer.seek(Duration.zero);
+  Future<void> toggleGuidedLoop() async {
+    if (!hasGuidedSession || _isGuidedLoading) return;
+    final request = _guidedRequest;
+    _isGuidedLooping = !_isGuidedLooping;
     notifyListeners();
+    try {
+      await _guidedPlayer.setLoopMode(
+        _isGuidedLooping ? LoopMode.one : LoopMode.off,
+      );
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
   }
 
-  Future<void> pauseGuidedSession() async {
-    _guidedTimer?.cancel();
-    await _guidedPlayer.pause();
-    _isGuidedPlaying = false;
-    notifyListeners();
+  Future<void> _seekGuidedAudio(int elapsedSeconds) async {
+    final duration = _guidedPlayer.duration?.inMilliseconds ?? 0;
+    final milliseconds = elapsedSeconds * 1000;
+    final position = duration <= 0
+        ? milliseconds
+        : _isGuidedLooping
+        ? milliseconds % duration
+        : milliseconds.clamp(0, duration - 1).toInt();
+    await _guidedPlayer.seek(Duration(milliseconds: position));
   }
 
-  Future<void> stopGuidedSession({bool completed = false, int durationMins = 10}) async {
-    _guidedTimer?.cancel();
-    await _guidedPlayer.stop();
+  Future<void> seekGuidedSession(int elapsedSeconds) async {
+    if (!canSeekGuidedSession) return;
+    final wasPlaying = _isGuidedPlaying;
+    final request = ++_guidedRequest;
+    _freezeGuidedClock();
     _isGuidedPlaying = false;
-    final title = _currentGuidedTitle ?? 'Guided Meditation';
+    _isGuidedLoading = true;
+    // Seeking does not count skipped time as listening or complete a session.
+    final elapsed = elapsedSeconds.clamp(0, _guidedTotalSec - 1).toInt();
+    _guidedRemainingSec = _guidedTotalSec - elapsed;
+    notifyListeners();
+    try {
+      await _guidedPlayer.pause();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _seekGuidedAudio(elapsed);
+      if (!_isCurrentGuidedRequest(request)) return;
+      _isGuidedLoading = false;
+      if (wasPlaying) {
+        _startGuidedPlayback(request);
+      } else {
+        notifyListeners();
+      }
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
+  }
+
+  Future<void> restartGuidedSession() async {
+    // Restart the actual selected (and possibly extended) duration, never 10 min.
+    await seekGuidedSession(0);
+  }
+
+  Future<void> stopGuidedSession({bool completed = false}) async {
+    final title = _currentGuidedTitle;
+    ++_guidedRequest;
+    _freezeGuidedClock();
+    final listenedMinutes = _guidedListenedMs ~/ Duration.millisecondsPerMinute;
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    _isGuidedPlayerExpanded = false;
+    _guidedReady = false;
+    _guidedPlaybackError = null;
     _currentGuidedTitle = null;
-    notifyListeners();
-
-    if (completed) {
-      recordSession(title, 'Meditation', durationMins);
+    _guidedRemainingSec = 0;
+    _guidedTotalSec = 0;
+    _guidedListenedMs = 0;
+    if (!_guidedDisposed) notifyListeners();
+    try {
+      await _guidedPlayer.stop();
+    } catch (error) {
+      debugPrint('Could not stop guided audio: $error');
+    }
+    // Do not manufacture a ten-minute completion or count skipped/paused time.
+    if (!_guidedDisposed && completed && title != null && listenedMinutes > 0) {
+      recordSession(title, 'Meditation', listenedMinutes);
     }
   }
 
@@ -760,7 +1024,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateSoundTrackVolume(String name, double volume) async {
-    if (volume > 0 && _isGuidedPlaying) {
+    if (volume > 0 && (_isGuidedPlaying || _isGuidedLoading)) {
       await pauseGuidedSession();
     }
 
@@ -1318,8 +1582,12 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _guidedDisposed = true;
+    ++_guidedRequest;
     _sleepTimer?.cancel();
     _guidedTimer?.cancel();
+    _guidedStateSubscription?.cancel();
+    _guidedPlaybackSubscription?.cancel();
     _guidedPlayer.dispose();
     for (final player in _audioPlayers.values) {
       player.dispose();

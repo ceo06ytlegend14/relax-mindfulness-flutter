@@ -165,7 +165,7 @@ void main() {
     });
   });
 
-  testWidgets('Test 1: App initializes and renders HomeScreen with Serenly navigation', (WidgetTester tester) async {
+  testWidgets('Test 1: App initializes and renders a distinct Home dashboard with Sanctuary navigation', (WidgetTester tester) async {
     final appState = AppState();
     await appState.init();
 
@@ -179,13 +179,14 @@ void main() {
 
     // Verify Tab scaffold & items
     expect(find.byType(CupertinoTabBar), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.descendant(
-      of: find.byType(CupertinoTabBar),
-      matching: find.text('Sounds'),
-    ), findsOneWidget);
-    expect(find.text('Meditate'), findsOneWidget);
-    expect(find.text('Sleep'), findsOneWidget);
+    for (final label in ['Home', 'Sounds', 'Meditate', 'Sleep']) {
+      expect(find.descendant(
+        of: find.byType(CupertinoTabBar),
+        matching: find.text(label),
+      ), findsOneWidget);
+    }
+    expect(find.byKey(const ValueKey('home-title')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mixer-title')), findsNothing);
   });
 
   testWidgets('Test 2: Tab switching between screens works smoothly', (WidgetTester tester) async {

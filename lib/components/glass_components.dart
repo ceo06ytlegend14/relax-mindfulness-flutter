@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
+import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/theme/responsive.dart';
 
@@ -596,522 +599,206 @@ class _MoodCheckInDialogState extends State<MoodCheckInDialog>
   }
 }
 
-// ─── GuidedPlayerOverlay (Soft Healing Audio Player) ─────────────────────
-class GuidedPlayerOverlay extends StatefulWidget {
-  const GuidedPlayerOverlay({super.key});
+// ─── Shared floating player: real playback, plus a retained paused session. ───
+class SanctuaryMiniPlayer extends StatelessWidget {
+  const SanctuaryMiniPlayer({super.key});
 
   @override
-  State<GuidedPlayerOverlay> createState() => _GuidedPlayerOverlayState();
-}
+  Widget build(BuildContext context) => Consumer2<AppState, MixerController>(
+    builder: (context, app, mixer, _) {
+      final ambient = app.activeAmbientTracks.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final guided = app.hasGuidedSession && ambient.isEmpty;
+      if (!guided && ambient.isEmpty) return const SizedBox.shrink();
+      final width = MediaQuery.sizeOf(context).width;
+      final s = (width / 430).clamp(0.85, 1.45).toDouble();
+      final title = guided
+          ? app.currentGuidedTitle!
+          : mixer.preset ??
+                (ambient.length == 1
+                    ? ambient.first.key
+                    : '${ambient.first.key} + ${ambient.length - 1} more');
+      final artwork = guided
+          ? guidedPlayerArtwork(title)
+          : ambient.any((entry) => entry.key == 'Ocean Waves')
+          ? oceanSleepJourney.artwork
+          : sleepArtworkForTrack(ambient.first.key);
+      final playing = guided ? app.isGuidedPlaying : ambient.isNotEmpty;
+      final subtitle = guided
+          ? app.isGuidedLoading
+                ? 'Preparing calming audio…'
+                : app.guidedPlaybackError != null
+                ? 'Audio unavailable · tap to retry'
+                : '${app.isGuidedPlaying ? 'A moment of calm' : 'Session paused'} · ${(app.guidedRemainingSec / 60).ceil()} min left'
+          : app.isSleepTimerRunning
+          ? 'Auto-fade · ${(app.sleepTimerRemainingSec! / 60).ceil()} min left'
+          : '${ambient.length} ${ambient.length == 1 ? 'sound' : 'sounds'} · Your quiet space';
+      void openPlayer() {
+        if (guided) {
+          app.showGuidedPlayer();
+        } else {
+          showCupertinoModalPopup<void>(
+            context: context,
+            builder: (_) => const ActivePlayingListModal(),
+          );
+        }
+      }
 
-class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        if (!state.isGuidedPlaying) return const SizedBox();
-
-        final mins = state.guidedRemainingSec ~/ 60;
-        final secs = state.guidedRemainingSec % 60;
-        final title = state.currentGuidedTitle ?? 'Peaceful Haven Journey';
-
-        final Map<String, String> sessionArtworks = {
-          'Peaceful Haven Journey': 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
-          'Gentle Relief & Comfort': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
-          'Soft Body Rest & Ease': 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=800&q=80',
-          'Calm Mountain Horizon': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-          'Peaceful Morning Awakening': 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80',
-          'Peaceful Morning Start': 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80',
-          'Quiet Mind Sanctuary': 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80',
-          'Cozy Bedtime Slumber': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-          'Warm Heart Comfort': 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=800&q=80',
-          'Healing Crystal Chimes': 'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=800&q=80',
-          'Loving Warmth & Peace': 'https://images.unsplash.com/photo-1528319725582-ddc096101511?auto=format&fit=crop&w=800&q=80',
-        };
-
-        final artworkUrl = sessionArtworks[title] ?? 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80';
-
-        final Map<String, (Color, Color)> sessionThemeColors = {
-          'Quiet Mind Sanctuary': (const Color(0xFFF59E0B), const Color(0xFFFCD34D)), // Golden Amber
-          'Peaceful Haven Journey': (const Color(0xFF10B981), const Color(0xFF34D399)), // Emerald Forest
-          'Gentle Relief & Comfort': (const Color(0xFF14B8A6), const Color(0xFF2DD4BF)), // Soft Teal
-          'Soft Body Rest & Ease': (const Color(0xFFF43F5E), const Color(0xFFFB7185)), // Rose Coral
-          'Calm Mountain Horizon': (const Color(0xFF38BDF8), const Color(0xFF7DD3FC)), // Sky Azure
-          'Peaceful Morning Awakening': (const Color(0xFFF59E0B), const Color(0xFFFDE68A)), // Morning Sun
-          'Peaceful Morning Start': (const Color(0xFFF59E0B), const Color(0xFFFDE68A)),
-          'Cozy Bedtime Slumber': (const Color(0xFF8B5CF6), const Color(0xFFA78BFA)), // Twilight Violet
-          'Warm Heart Comfort': (const Color(0xFFEC4899), const Color(0xFFF472B6)), // Warm Pink
-          'Healing Crystal Chimes': (const Color(0xFFA855F7), const Color(0xFFC084FC)), // Amethyst
-          'Loving Warmth & Peace': (const Color(0xFFF97316), const Color(0xFFFB923C)), // Warm Amber
-          'The Starry Night': (const Color(0xFF6366F1), const Color(0xFF818CF8)), // Indigo Night
-          'The Lighthouse Keeper': (const Color(0xFF0EA5E9), const Color(0xFF38BDF8)), // Ocean Azure
-          'Whispering Forest': (const Color(0xFF059669), const Color(0xFF10B981)), // Pine Green
-        };
-        final (primaryColor, accentColor) = sessionThemeColors[title] ?? (tealPrimary, mintAccent);
-
-        return Material(
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              // 🖼️ 1. HD Organic Blurred Artwork Background with Harmonic Color Tint
-              Positioned.fill(
-                child: Image.network(
-                  artworkUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(color: primaryColor.withOpacity(0.2)),
-                ),
+      return Padding(
+        padding: EdgeInsets.fromLTRB(14 * s, 0, 14 * s, 4),
+        child: Container(
+          key: const ValueKey('sanctuary-mini-player'),
+          padding: EdgeInsets.all(9 * s),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30 * s),
+            gradient: const LinearGradient(
+              colors: [Color(0xF0204264), Color(0xF0071A32)],
+            ),
+            border: Border.all(color: const Color(0x9964EBD6)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x77031321),
+                blurRadius: 25,
+                offset: Offset(0, 6),
               ),
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          const Color(0xFF04090E).withOpacity(0.72),
-                          primaryColor.withOpacity(0.18),
-                          const Color(0xFF03070C).withOpacity(0.94),
-                        ],
-                      ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: guided
+                      ? 'Open $title session player'
+                      : 'Open active sound controls',
+                  button: true,
+                  child: CupertinoButton(
+                    key: const ValueKey('open-mini-player'),
+                    padding: EdgeInsets.zero,
+                    onPressed: openPlayer,
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16 * s),
+                          child: Image.asset(
+                            artwork,
+                            width: 54 * s,
+                            height: 54 * s,
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                        SizedBox(width: 12 * s),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'MixerSans',
+                                  color: Colors.white,
+                                  fontSize: 15 * s,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              SizedBox(height: 4 * s),
+                              Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'MixerSans',
+                                  color: const Color(0xFFB9D0E3),
+                                  fontSize: 11 * s,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-
-              // 🌿 2. Full Player Content Interface
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Column(
-                    children: [
-                      // Top Navigation Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: primaryColor.withOpacity(0.35)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.graphic_eq_rounded, color: primaryColor, size: 16),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'NATURAL SOOTHING AUDIO STREAM',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // iOS-style chevron down dismiss button
-                          CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: () => state.stopGuidedSession(completed: false),
-                            child: const Icon(CupertinoIcons.chevron_down, color: Colors.white, size: 28),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-
-                      // 🖼️ 3. Centerpiece HD Artwork Card with Harmonic Breathing Glow Aura
-                      AnimatedBuilder(
-                        animation: _pulseCtrl,
-                        builder: (_, __) {
-                          final auraScale = 1.0 + (0.06 * _pulseCtrl.value);
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Pulsing Aura Ring 1 (Matches Track Color)
-                              Transform.scale(
-                                scale: auraScale * 1.18,
-                                child: Container(
-                                  width: 220,
-                                  height: 220,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: primaryColor.withOpacity(0.16 * _pulseCtrl.value),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: primaryColor.withOpacity(0.42 * _pulseCtrl.value),
-                                        blurRadius: 55,
-                                        spreadRadius: 18,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Pulsing Aura Ring 2 (Matches Track Accent)
-                              Transform.scale(
-                                scale: auraScale,
-                                child: Container(
-                                  width: 200,
-                                  height: 200,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(36),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: accentColor.withOpacity(0.35),
-                                        blurRadius: 32,
-                                        spreadRadius: 6,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // High Definition Artwork Image Container
-                              Container(
-                                width: 200,
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(32),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.5),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: Image.network(
-                                    artworkUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => Container(
-                                      color: primaryColor.withOpacity(0.2),
-                                      child: const Icon(Icons.spa_rounded, color: Colors.white, size: 64),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
+              SizedBox(width: 6 * s),
+              Semantics(
+                label: playing ? 'Pause audio' : 'Resume session',
+                button: true,
+                child: CupertinoButton(
+                  key: const ValueKey('mini-player-play-pause'),
+                  padding: EdgeInsets.zero,
+                  minSize: 44,
+                  onPressed: app.isGuidedLoading
+                      ? null
+                      : () {
+                          HapticFeedback.lightImpact();
+                          if (guided) {
+                            if (playing) {
+                              app.pauseGuidedSession();
+                            } else {
+                              app.resumeGuidedSession();
+                            }
+                          } else {
+                            app.saveCachedVolumes(Map.fromEntries(ambient));
+                            app.stopAllAudio();
+                          }
                         },
+                  child: Container(
+                    width: max(40.0, 42 * s),
+                    height: max(40.0, 42 * s),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0x660B646C),
+                      border: Border.all(
+                        color: const Color(0xFF56EBCB),
+                        width: 1.4,
                       ),
-                      const SizedBox(height: 32),
-
-                      // Title & Description
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: -0.4,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      Text(
-                        'Soft continuous natural soundscape • Deep stress relief',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.65),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ⏱️ Large Glowing Timer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSoundWave(accentColor: primaryColor),
-                          const SizedBox(width: 14),
-                          Text(
-                            '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}',
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1.5,
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x3356EBCB), blurRadius: 14),
+                      ],
+                    ),
+                    child: Center(
+                      child: app.isGuidedLoading
+                          ? const CupertinoActivityIndicator(
+                              color: Color(0xFF9BFFE6),
+                            )
+                          : SanctuaryIcon(
+                              playing
+                                  ? SanctuarySymbol.pause
+                                  : SanctuarySymbol.play,
+                              color: const Color(0xFFB5FFEA),
+                              size: 23 * s,
                             ),
-                          ),
-                          const SizedBox(width: 14),
-                          AnimatedSoundWave(accentColor: primaryColor),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Interactive Live Playback Controls (+10m, Loop ♾️, Restart 🔄)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GlassChip(
-                            label: '+10 Min',
-                            isSelected: false,
-                            onTap: () => state.extendGuidedSession(10),
-                          ),
-                          const SizedBox(width: 12),
-                          GlassChip(
-                            label: state.isGuidedLooping ? 'Loop ♾️ On' : 'Loop Off',
-                            isSelected: state.isGuidedLooping,
-                            selectedColor: primaryColor,
-                            onTap: () => state.toggleGuidedLoop(),
-                          ),
-                          const SizedBox(width: 12),
-                          GlassChip(
-                            label: 'Restart 🔄',
-                            isSelected: false,
-                            onTap: () => state.restartGuidedSession(10),
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      // Complete Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: GlassPillButton(
-                          text: 'Complete & End Session',
-                          icon: Icons.check_circle_outline_rounded,
-                          containerColor: primaryColor,
-                          contentColor: Colors.black,
-                          onTap: () => state.stopGuidedSession(completed: true),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
+                  ),
+                ),
+              ),
+              Semantics(
+                label: 'Stop all audio',
+                button: true,
+                child: CupertinoButton(
+                  key: const ValueKey('close-mini-player'),
+                  minSize: 44,
+                  padding: EdgeInsets.zero,
+                  onPressed: app.stopAllAudio,
+                  child: SanctuaryIcon(
+                    SanctuarySymbol.close,
+                    color: const Color(0xFFB9D0E3),
+                    size: 19 * s,
                   ),
                 ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-// ─── SanctuaryMiniPlayer (Floating Bottom Mini-Player with Equalizer Waveform) ──
-// ─── SanctuaryMiniPlayer (Floating Bottom Mini-Player with Equalizer & Close Button) ──
-class SanctuaryMiniPlayer extends StatelessWidget {
-  const SanctuaryMiniPlayer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        if (!state.isAnyAudioPlaying) return const SizedBox.shrink();
-
-        final activeCount = (state.isGuidedPlaying ? 1 : 0) + state.activeAmbientTracks.length;
-
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          child: Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF10202E).withOpacity(0.98),
-                  const Color(0xFF07121C).withOpacity(0.98),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(35),
-              border: Border.all(color: tealPrimary.withOpacity(0.55), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: tealPrimary.withOpacity(0.3),
-                  blurRadius: 22,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // 🎵 Tap to open Playing List Modal
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      showCupertinoModalPopup(
-                        context: context,
-                        builder: (_) => const ActivePlayingListModal(),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [tealPrimary.withOpacity(0.3), tealPrimary.withOpacity(0.15)],
-                            ),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: tealPrimary.withOpacity(0.4)),
-                          ),
-                          child: AnimatedSoundWave(
-                            accentColor: tealPrimary,
-                            amplitude: state.isGuidedPlaying
-                                ? state.guidanceGuidedAmplitude
-                                : state.activeMixAmplitude,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'NOW PLAYING ($activeCount)',
-                                    style: const TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: tealPrimary,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(CupertinoIcons.chevron_up, color: tealPrimary, size: 11),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                state.activePlayingLabel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // ⏯️ Pause / Play Button
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    if (state.isGuidedPlaying) {
-                      state.pauseGuidedSession();
-                    } else {
-                      state.stopAllAudio();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [tealPrimary, mintAccent],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: tealPrimary.withOpacity(0.35),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          CupertinoIcons.pause_fill,
-                          color: Colors.black,
-                          size: 14,
-                        ),
-                        SizedBox(width: 5),
-                        Text(
-                          'Pause All',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // ✕ Close & Dismiss Button (Stops All Audio & Hides Mini Player)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    state.stopAllAudio();
-                  },
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: coralAccent.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: coralAccent.withOpacity(0.4), width: 1.2),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        CupertinoIcons.xmark,
-                        color: coralAccent,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
 }
 
 // ─── 🎧 ActivePlayingListModal (Soundscape Mixer & Active Tracks Sheet) ───────

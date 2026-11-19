@@ -1,0 +1,72 @@
+/* Moonlit-blue Sleep refresh. Navigation remains the existing teal four tabs. */
+.sleep-page {
+  background: radial-gradient(ellipse at 80% 4%, #14366b55, transparent 42%), #03162f;
+  --mist: #c0cee8;
+}
+.sleep-page .retreat-inner { padding-top: calc(32px * var(--s)); }
+.sleep-page .page-heading { min-height: 44px; }
+.sleep-page .scenery {
+  height: calc(620px * var(--s));
+  opacity: .8;
+  background-image: linear-gradient(0deg, #03162f, #03162f30 60%, #03162f10), url('assets/images/sleep/night_sky.webp');
+}
+.sleep-page .sleep-welcome { display: flex; align-items: center; gap: calc(9px * var(--s)); margin-top: calc(12px * var(--s)); font-size: max(12px, calc(21px * var(--t))); color: #b9c5dd; }
+.sleep-welcome > svg { width: max(14px, calc(21px * var(--t))); height: max(14px, calc(21px * var(--t))); color: #f5c96d; }
+.sleep-page .night-surface { background: linear-gradient(135deg, #203c69dc, #091d3ce2); border-color: #88a6d945; }
+.sleep-page .night-glow { border-color: #88a6d98c; box-shadow: 0 0 20px #3b73c733, 0 5px 18px #0005, inset 0 1px 8px #b7ddff08; }
+.sleep-page .timer-bar { margin-top: calc(22px * var(--s)); }
+.sleep-page .ocean-journey {
+  min-height: max(218px, calc(348px * var(--s)));
+  padding: max(17px, calc(29px * var(--s)));
+  margin-top: calc(22px * var(--s));
+  border-radius: max(23px, calc(32px * var(--s)));
+  background: #0b2855;
+}
+.ocean-journey::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: url('assets/images/sleep/moonlit_shore.webp') 60% center/cover;
+  filter: brightness(1.45) saturate(1.3);
+}
+.ocean-journey::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent 50%, #04182d8a), linear-gradient(90deg, #08244ad2, #0e2e6550 52%, #04183208), linear-gradient(#5a8aff33, #2461bf44);
+}
+.sleep-page .journey-badge { display: inline-flex; align-items: center; gap: calc(8px * var(--s)); border-color: #f5c96dcc; box-shadow: 0 0 15px #f5c96d22; }
+.journey-badge > svg { width: max(12px, calc(20px * var(--t))); height: max(12px, calc(20px * var(--t))); }
+.sleep-page .journey-circle { width: 44px; height: 44px; }
+.sleep-page .journey-circle > span { width: max(36px, calc(46px * var(--s))); height: max(36px, calc(46px * var(--s))); background: #01274599; border: 1px solid #78eed04d; color: #78eed0; }
+.sleep-page .ocean-journey h3 { font-size: max(31px, calc(55px * var(--t))); letter-spacing: calc(-1.2px * var(--s)); margin-top: calc(5px * var(--s)); line-height: 1.1; }
+.sleep-page .ocean-journey .journey-subtitle { font-size: max(16px, calc(28px * var(--t))); color: #d3e0ff; font-weight: 400; margin-top: calc(5px * var(--s)); }
+.sleep-page .journey-meta { margin-top: calc(23px * var(--s)); font-size: max(12px, calc(20px * var(--t))); }
+.sleep-page .journey-meta svg { color: #ccdcf6; width: max(14px, calc(23px * var(--t))); height: max(14px, calc(23px * var(--t))); }
+.sleep-page .ocean-journey .pill-hit { margin-top: calc(23px * var(--s)); }
+.sleep-page .ocean-glow .pill-body { border-color: #78eed099; background: linear-gradient(130deg, #087b80, #03b6a9, #03515d); color: #f7f8eb; box-shadow: 0 0 calc(22px * var(--s)) #78eed055, inset 0 1px 8px #a4ffec33; }
+.sleep-page .quiet .pill-body { background: linear-gradient(130deg, #4976adaa, #25416fcc); color: #f7f8eb; border-color: #99ddf199; box-shadow: 0 0 calc(22px * var(--s)) #78eed033; }
+.sleep-section-title::before { content: ''; width: 3px; height: max(18px, calc(24px * var(--t))); border-radius: 99px; background: #78eed0; box-shadow: 0 0 10px #43e9cd55; flex-shrink: 0; }
+.sleep-page .progress-fill { background: #78eed0; }
+.sleep-page .progress-track { background: #2c456b; }
+.sleep-page .winddown-tray { gap: calc(16px * var(--s)); padding: 1px 0 2px; }
+.sleep-page .soundscape-card { width: max(98px, calc(174px * var(--s))); border-radius: max(18px, calc(23px * var(--s))); overflow: hidden; padding: 0; }
+.sleep-page .soundscape-image { width: 100%; height: max(93px, calc(165.3px * var(--s))); border: 0; border-radius: 0; }
+.soundscape-image::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 50%, #091b3880); }
+.sleep-page .soundscape-image > span { z-index: 1; right: calc(11px * var(--s)); bottom: calc(11px * var(--s)); padding: max(7px, calc(8px * var(--s))); border: 1px solid #c5e3f9cc; background: #082039a0; font-size: max(17px, calc(24px * var(--t))); }
+.soundscape-caption { display: block; padding: calc(8px * var(--s)) calc(9px * var(--s)) calc(11px * var(--s)) calc(12px * var(--s)); }
+.sleep-page .soundscape-name { margin: 0; font-size: max(11.5px, calc(19px * var(--t))); }
+.soundscape-bottom { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: calc(3px * var(--s)); }
+.sleep-page .soundscape-duration { margin: 0; font-size: max(10.5px, calc(17px * var(--t))); }
+.soundscape-bottom > svg { font-size: max(13px, calc(20px * var(--t))); color: #78eed0; }
+.sleep-page .soundscape-card.is-playing { border-color: #78eed0a0; box-shadow: 0 0 16px #43e9cd22; }
+.sleep-page .quick-mixer { border-color: #88a6d98c; box-shadow: 0 0 20px #3b73c722, inset 0 1px 8px #b7ddff08; }
+.sleep-page .quick-orb { background: radial-gradient(circle at 35% 20%, #365685, #192f54); color: #d7e6ff; }
+.sleep-page .quick-track[data-quick=Thunder] .quick-orb { color: #f5c96d; }
+.sleep-page .quick-track[aria-pressed=true] .quick-orb { background: radial-gradient(#1d7c8c, #163a65); border-color: #78eed08c; box-shadow: 0 0 16px #56ebcb33; color: #78eed0; }
+.sleep-page .quick-level > span { background: #78eed0; }
+.sleep-page .story-play { color: #78eed0; }
+.sleep-page .story-buttons button[aria-pressed=true] { color: #78eed0; }
+.sleep-page .retreat-inner { padding-bottom: 115px; }

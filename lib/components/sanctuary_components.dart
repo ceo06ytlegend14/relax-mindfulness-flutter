@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 
 abstract final class SanctuaryPalette {
   static const forest = Color(0xFF001A15);
@@ -114,6 +115,8 @@ class SanctuaryPillButton extends StatelessWidget {
     required this.metrics,
     this.icon,
     this.trailingIcon,
+    this.symbol,
+    this.glow = false,
     this.gold = false,
     this.quiet = false,
     this.semanticLabel,
@@ -125,14 +128,17 @@ class SanctuaryPillButton extends StatelessWidget {
   final VoidCallback onPressed;
   final SanctuaryMetrics metrics;
   final IconData? icon, trailingIcon;
-  final bool gold, quiet;
+  final SanctuarySymbol? symbol;
+  final bool gold, quiet, glow;
   final String? semanticLabel;
   final Key? buttonKey;
 
   @override
   Widget build(BuildContext context) {
     final color = gold ? SanctuaryPalette.gold : SanctuaryPalette.mint;
-    final foreground = quiet ? SanctuaryPalette.cream : const Color(0xFF002B26);
+    final foreground = quiet || glow
+        ? SanctuaryPalette.cream
+        : const Color(0xFF002B26);
     return Semantics(
       label: semanticLabel ?? label,
       button: true,
@@ -154,7 +160,13 @@ class SanctuaryPillButton extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: quiet
-                  ? const [Color(0xFF959FC9), Color(0xFF7F8AB7)]
+                  ? const [Color(0xAA4976AD), Color(0xCC25416F)]
+                  : glow
+                  ? const [
+                      Color(0xFF087B80),
+                      Color(0xFF03B6A9),
+                      Color(0xFF03515D),
+                    ]
                   : gold
                   ? const [Color(0xFFFFD980), Color(0xFFEFBF5F)]
                   : const [
@@ -164,11 +176,9 @@ class SanctuaryPillButton extends StatelessWidget {
                     ],
             ),
             border: Border.all(
-              color: (quiet ? SanctuaryPalette.lavender : color).withOpacity(
-                0.6,
-              ),
+              color: (quiet ? const Color(0xFF99DDF1) : color).withOpacity(0.6),
             ),
-            boxShadow: gold || quiet
+            boxShadow: gold || quiet || glow
                 ? [
                     BoxShadow(
                       color: color.withOpacity(0.24),
@@ -180,8 +190,19 @@ class SanctuaryPillButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
-                Icon(icon, size: metrics.font(23, min: 14), color: foreground),
+              if (symbol != null || icon != null) ...[
+                if (symbol != null)
+                  SanctuaryIcon(
+                    symbol!,
+                    size: metrics.font(23, min: 14),
+                    color: foreground,
+                  )
+                else
+                  Icon(
+                    icon,
+                    size: metrics.font(23, min: 14),
+                    color: foreground,
+                  ),
                 SizedBox(width: metrics.space(9)),
               ],
               Text(
@@ -229,6 +250,18 @@ class SleepSectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
+      Container(
+        width: 3,
+        height: metrics.font(24, min: 18),
+        margin: EdgeInsets.only(right: metrics.space(13)),
+        decoration: BoxDecoration(
+          color: SanctuaryPalette.mint,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: const [
+            BoxShadow(color: Color(0x5543E9CD), blurRadius: 10),
+          ],
+        ),
+      ),
       Expanded(
         child: Text(
           title,
@@ -257,8 +290,8 @@ class SleepSectionHeading extends StatelessWidget {
                   color: SanctuaryPalette.mist,
                 ),
               ),
-              Icon(
-                CupertinoIcons.chevron_right,
+              SanctuaryIcon(
+                SanctuarySymbol.chevronRight,
                 size: metrics.font(18, min: 11),
                 color: SanctuaryPalette.mist,
               ),
@@ -275,14 +308,14 @@ BoxDecoration sleepSurface({double radius = 26, bool glow = false}) =>
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xD0162543), Color(0xDA071B38)],
+        colors: [Color(0xDC203C69), Color(0xE2091D3C)],
       ),
       border: Border.all(
-        color: const Color(0xFF526486).withOpacity(glow ? 0.6 : 0.16),
+        color: const Color(0xFF88A6D9).withOpacity(glow ? 0.55 : 0.27),
       ),
       boxShadow: glow
           ? const [
-              BoxShadow(color: Color(0x33465688), blurRadius: 14),
+              BoxShadow(color: Color(0x333B73C7), blurRadius: 20),
               BoxShadow(
                 color: Color(0x55000000),
                 blurRadius: 18,

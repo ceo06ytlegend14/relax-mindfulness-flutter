@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/sanctuary_components.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
@@ -22,11 +23,11 @@ class _SleepScreenState extends State<SleepScreen> {
   bool _savedStoriesOnly = false;
 
   static const _quickTracks = [
-    ('Ocean', CupertinoIcons.waveform, 'Ocean Waves'),
-    ('Rain', CupertinoIcons.cloud_rain_fill, 'Soft Rain'),
-    ('Wind', CupertinoIcons.wind, 'Soothing Breeze'),
-    ('Thunder', CupertinoIcons.bolt_fill, 'Thunderstorm'),
-    ('Nature', CupertinoIcons.leaf_arrow_circlepath, 'Mountain Stream'),
+    ('Ocean', SanctuarySymbol.waves, 'Ocean Waves'),
+    ('Rain', SanctuarySymbol.rain, 'Soft Rain'),
+    ('Wind', SanctuarySymbol.wind, 'Soothing Breeze'),
+    ('Thunder', SanctuarySymbol.bolt, 'Thunderstorm'),
+    ('Nature', SanctuarySymbol.tree, 'Mountain Stream'),
   ];
 
   Future<void> _showTimerPicker() async {
@@ -47,6 +48,14 @@ class _SleepScreenState extends State<SleepScreen> {
       soundscape.levels,
       name: soundscape.title,
     );
+  }
+
+  bool _isSoundscapePlaying(AppState app, SleepSoundscape soundscape) {
+    final active = app.activeAmbientTracks;
+    return active.length == soundscape.levels.length &&
+        soundscape.levels.entries.every(
+          (entry) => ((active[entry.key] ?? 0) - entry.value).abs() < 0.01,
+        );
   }
 
   void _toggleQuickTrack(String name) {
@@ -159,9 +168,9 @@ class _SleepScreenState extends State<SleepScreen> {
                 left: 0,
                 right: 0,
                 child: SanctuaryBackdrop(
-                  asset: 'assets/images/sleep/moonlit_ocean.webp',
+                  asset: 'assets/images/sleep/night_sky.webp',
                   color: SanctuaryPalette.navy,
-                  height: m.space(410),
+                  height: m.space(620),
                 ),
               ),
               SafeArea(
@@ -174,86 +183,55 @@ class _SleepScreenState extends State<SleepScreen> {
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           m.space(29),
-                          m.space(40),
+                          m.space(32),
                           m.space(29),
-                          160,
+                          MediaQuery.paddingOf(context).bottom + 150,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Sleep',
-                              key: const ValueKey('sleep-title'),
-                              style: m.sans(
-                                48,
-                                min: 29,
-                                weight: FontWeight.w700,
-                                height: 1.15,
-                                tracking: -1.4,
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              child: Text(
+                                'Sleep',
+                                key: const ValueKey('sleep-title'),
+                                style: m.sans(
+                                  48,
+                                  min: 29,
+                                  weight: FontWeight.w700,
+                                  height: 1.15,
+                                  tracking: -1.4,
+                                ),
                               ),
                             ),
-                            SizedBox(height: m.space(24)),
+                            SizedBox(height: m.space(12)),
                             Row(
                               children: [
-                                Text(
-                                  'Good Evening',
-                                  style: m.sans(
-                                    23,
-                                    min: 13,
-                                    color: SanctuaryPalette.mist,
-                                    weight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(width: m.space(10)),
-                                Icon(
-                                  CupertinoIcons.moon_fill,
-                                  size: m.font(24, min: 15),
+                                SanctuaryIcon(
+                                  SanctuarySymbol.moon,
+                                  size: m.font(21, min: 14),
                                   color: SanctuaryPalette.gold,
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: m.space(4)),
-                            Text(
-                              'Sleep Sanctuary',
-                              style: m.sans(
-                                44,
-                                min: 25,
-                                weight: FontWeight.w700,
-                                height: 1.15,
-                                tracking: -1.3,
-                              ),
-                            ),
-                            SizedBox(height: m.space(8)),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  const TextSpan(
-                                    text:
-                                        'Everything you need for a perfect night’s rest ',
-                                  ),
-                                  WidgetSpan(
-                                    alignment: PlaceholderAlignment.middle,
-                                    child: Icon(
-                                      CupertinoIcons.heart,
-                                      size: m.font(21, min: 12),
+                                SizedBox(width: m.space(9)),
+                                Expanded(
+                                  child: Text(
+                                    'Good evening. Let the day drift away.',
+                                    style: m.sans(
+                                      21,
+                                      min: 12,
                                       color: SanctuaryPalette.mist,
                                     ),
                                   ),
-                                ],
-                              ),
-                              style: m.sans(
-                                22,
-                                min: 12,
-                                color: SanctuaryPalette.mist,
-                              ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: m.space(30)),
+                            SizedBox(height: m.space(22)),
                             _TimerBar(
                               metrics: m,
                               app: app,
                               onSet: _showTimerPicker,
                             ),
-                            SizedBox(height: m.space(27)),
+                            SizedBox(height: m.space(22)),
                             _OceanJourney(
                               metrics: m,
                               playing: oceanPlaying,
@@ -294,13 +272,22 @@ class _SleepScreenState extends State<SleepScreen> {
                                   for (final soundscape in sleepSoundscapes)
                                     Padding(
                                       padding: EdgeInsets.only(
-                                        right: m.space(20),
+                                        right: m.space(16),
                                       ),
                                       child: _SoundscapeCard(
                                         soundscape: soundscape,
                                         metrics: m,
+                                        playing: _isSoundscapePlaying(
+                                          app,
+                                          soundscape,
+                                        ),
                                         onPressed: () =>
-                                            _playSoundscape(soundscape),
+                                            _isSoundscapePlaying(
+                                              app,
+                                              soundscape,
+                                            )
+                                            ? mixer.togglePlayback()
+                                            : _playSoundscape(soundscape),
                                       ),
                                     ),
                                 ],
@@ -320,7 +307,10 @@ class _SleepScreenState extends State<SleepScreen> {
                                 horizontal: m.space(13),
                                 vertical: m.space(17),
                               ),
-                              decoration: sleepSurface(radius: m.space(28)),
+                              decoration: sleepSurface(
+                                radius: m.space(28),
+                                glow: true,
+                              ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -429,8 +419,8 @@ class _SleepScreenState extends State<SleepScreen> {
                                 decoration: sleepSurface(radius: m.space(22)),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      CupertinoIcons.moon_stars,
+                                    SanctuaryIcon(
+                                      SanctuarySymbol.moon,
                                       size: m.font(33, min: 25),
                                       color: SanctuaryPalette.lavender,
                                     ),
@@ -460,8 +450,8 @@ class _SleepScreenState extends State<SleepScreen> {
                                         ],
                                       ),
                                     ),
-                                    Icon(
-                                      CupertinoIcons.chevron_right,
+                                    SanctuaryIcon(
+                                      SanctuarySymbol.chevronRight,
                                       size: m.font(22, min: 15),
                                       color: SanctuaryPalette.lavender,
                                     ),
@@ -507,8 +497,8 @@ class _TimerBar extends StatelessWidget {
       decoration: sleepSurface(radius: 100, glow: true),
       child: Row(
         children: [
-          Icon(
-            CupertinoIcons.clock_fill,
+          SanctuaryIcon(
+            SanctuarySymbol.clock,
             color: SanctuaryPalette.gold,
             size: m.font(28, min: 20),
           ),
@@ -551,8 +541,8 @@ class _TimerBar extends StatelessWidget {
                 ),
                 if (!app.isSleepTimerRunning) ...[
                   SizedBox(width: m.space(10)),
-                  Icon(
-                    CupertinoIcons.chevron_right,
+                  SanctuaryIcon(
+                    SanctuarySymbol.chevronRight,
                     size: m.font(24, min: 15),
                     color: SanctuaryPalette.cream,
                   ),
@@ -580,16 +570,20 @@ class _OceanJourney extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = metrics;
     return Container(
+      key: const ValueKey('moonlit-ocean-journey'),
       clipBehavior: Clip.antiAlias,
-      decoration: sleepSurface(radius: m.space(32), glow: true),
+      decoration: sleepSurface(radius: math.max(23.0, m.space(32)), glow: true),
       child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: m.space(300)),
+        constraints: BoxConstraints(minHeight: math.max(218.0, m.space(348))),
         child: Stack(
           children: [
             Positioned.fill(
               child: Image.asset(
                 oceanSleepJourney.artwork,
                 fit: BoxFit.cover,
+                alignment: const Alignment(0.45, 0),
+                color: const Color(0x775A8AFF),
+                colorBlendMode: BlendMode.softLight,
                 excludeFromSemantics: true,
               ),
             ),
@@ -598,22 +592,33 @@ class _OceanJourney extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xB5011632),
-                      Color(0x30001535),
-                      Color(0x08001832),
+                      Color(0xD208244A),
+                      Color(0x500E2E65),
+                      Color(0x08041832),
                     ],
-                    stops: [0, 0.6, 1],
+                    stops: [0, 0.52, 1],
+                  ),
+                ),
+              ),
+            ),
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x00233F76),
+                      Color(0x00233F76),
+                      Color(0x8A04182D),
+                    ],
+                    stops: [0, 0.5, 1],
                   ),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                m.space(24),
-                m.space(19),
-                m.space(22),
-                m.space(20),
-              ),
+              padding: EdgeInsets.all(math.max(17.0, m.space(29))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -621,113 +626,128 @@ class _OceanJourney extends StatelessWidget {
                     children: [
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: m.space(18),
-                          vertical: m.space(7),
+                          horizontal: m.space(17),
+                          vertical: m.space(8),
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0x55091B36),
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(
-                            color: SanctuaryPalette.gold,
-                            width: 1.3,
+                            color: SanctuaryPalette.gold.withOpacity(0.8),
                           ),
                           boxShadow: const [
-                            BoxShadow(color: Color(0x33F5C96D), blurRadius: 15),
+                            BoxShadow(color: Color(0x22F5C96D), blurRadius: 15),
                           ],
                         ),
-                        child: Text(
-                          'Tonight’s Journey',
-                          style: m.sans(
-                            19,
-                            min: 11,
-                            color: SanctuaryPalette.gold,
-                            weight: FontWeight.w500,
-                            height: 1.1,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SanctuaryIcon(
+                              SanctuarySymbol.moon,
+                              size: m.font(20, min: 12),
+                              color: SanctuaryPalette.gold,
+                            ),
+                            SizedBox(width: m.space(8)),
+                            Text(
+                              'Tonight’s Journey',
+                              style: m.sans(
+                                19,
+                                min: 11,
+                                color: SanctuaryPalette.gold,
+                                weight: FontWeight.w500,
+                                height: 1.1,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        minSize: 44,
-                        onPressed: onPressed,
-                        child: Container(
-                          width: math.max(36.0, m.space(58)),
-                          height: math.max(36.0, m.space(58)),
-                          decoration: const BoxDecoration(
-                            color: Color(0xA0031831),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            playing
-                                ? CupertinoIcons.pause_fill
-                                : CupertinoIcons.chevron_right,
-                            size: m.font(29, min: 19),
-                            color: Colors.white,
-                            semanticLabel: playing
-                                ? 'Pause Ocean Sleep'
-                                : 'Start Ocean Sleep',
+                      Semantics(
+                        label: playing
+                            ? 'Pause Ocean Sleep'
+                            : 'Start Ocean Sleep',
+                        button: true,
+                        child: CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minSize: 44,
+                          onPressed: onPressed,
+                          child: Container(
+                            width: math.max(36.0, m.space(46)),
+                            height: math.max(36.0, m.space(46)),
+                            decoration: BoxDecoration(
+                              color: const Color(0x99012745),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: SanctuaryPalette.mint.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Center(
+                              child: SanctuaryIcon(
+                                playing
+                                    ? SanctuarySymbol.pause
+                                    : SanctuarySymbol.chevronRight,
+                                size: m.font(26, min: 19),
+                                color: SanctuaryPalette.mint,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: m.space(3)),
+                  SizedBox(height: m.space(5)),
                   Text(
                     'Ocean Sleep',
                     style: m.sans(
-                      44,
-                      min: 27,
+                      55,
+                      min: 31,
                       weight: FontWeight.w700,
-                      height: 1.12,
-                      tracking: -1,
+                      height: 1.1,
+                      tracking: -1.2,
                     ),
                   ),
-                  SizedBox(height: m.space(3)),
+                  SizedBox(height: m.space(5)),
                   Text(
                     'Deep Relaxation',
-                    style: m.sans(25, min: 14, weight: FontWeight.w500),
+                    style: m.sans(28, min: 16, color: const Color(0xFFD3E0FF)),
                   ),
-                  SizedBox(height: m.space(13)),
+                  SizedBox(height: m.space(23)),
                   Row(
                     children: [
-                      Icon(
-                        CupertinoIcons.clock,
-                        size: m.font(21, min: 13),
-                        color: SanctuaryPalette.gold,
+                      SanctuaryIcon(
+                        SanctuarySymbol.clock,
+                        size: m.font(23, min: 14),
+                        color: const Color(0xFFCCDCF6),
                       ),
                       SizedBox(width: m.space(8)),
-                      Text('45 min', style: m.sans(19, min: 11.5)),
+                      Text('45 min', style: m.sans(20, min: 12)),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: m.space(14)),
+                        padding: EdgeInsets.symmetric(horizontal: m.space(17)),
                         child: Text(
                           '|',
                           style: m.sans(20, color: SanctuaryPalette.mist),
                         ),
                       ),
-                      Icon(
-                        CupertinoIcons.music_note,
-                        size: m.font(22, min: 14),
-                        color: SanctuaryPalette.gold,
+                      SanctuaryIcon(
+                        SanctuarySymbol.waves,
+                        size: m.font(24, min: 15),
+                        color: const Color(0xFFCCDCF6),
                       ),
-                      SizedBox(width: m.space(7)),
+                      SizedBox(width: m.space(8)),
                       Flexible(
-                        child: Text(
-                          'Ocean + Rain',
-                          style: m.sans(19, min: 11.5),
-                        ),
+                        child: Text('Ocean + Rain', style: m.sans(20, min: 12)),
                       ),
                     ],
                   ),
-                  SizedBox(height: m.space(16)),
+                  SizedBox(height: m.space(23)),
                   SanctuaryPillButton(
                     buttonKey: const ValueKey('begin-ocean-sleep'),
                     label: playing ? 'Pause Sleep' : 'Begin Sleep',
-                    icon: playing
-                        ? CupertinoIcons.pause_fill
-                        : CupertinoIcons.play_fill,
+                    symbol: playing
+                        ? SanctuarySymbol.pause
+                        : SanctuarySymbol.play,
                     metrics: m,
-                    gold: true,
+                    glow: true,
                     onPressed: onPressed,
                   ),
                 ],
@@ -783,7 +803,9 @@ class _ContinueListening extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(m.space(16)),
             child: Image.asset(
-              sleepArtworkForTrack(mainTrack),
+              mixer.preset == oceanSleepJourney.title
+                  ? oceanSleepJourney.artwork
+                  : sleepArtworkForTrack(mainTrack),
               width: math.max(44.0, m.space(80)),
               height: math.max(52.0, m.space(80)),
               fit: BoxFit.cover,
@@ -837,8 +859,8 @@ class _ContinueListening extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 4,
-                            color: SanctuaryPalette.gold,
-                            backgroundColor: const Color(0xFF3A4665),
+                            color: SanctuaryPalette.mint,
+                            backgroundColor: const Color(0xFF2C456B),
                           ),
                         ),
                       ),
@@ -862,6 +884,7 @@ class _ContinueListening extends StatelessWidget {
                 ? 'Resume'
                 : 'Play',
             metrics: m,
+            symbol: playing ? SanctuarySymbol.pause : SanctuarySymbol.play,
             quiet: true,
             onPressed: onPressed,
           ),
@@ -875,18 +898,21 @@ class _SoundscapeCard extends StatelessWidget {
   const _SoundscapeCard({
     required this.soundscape,
     required this.metrics,
+    required this.playing,
     required this.onPressed,
   });
   final SleepSoundscape soundscape;
   final SanctuaryMetrics metrics;
+  final bool playing;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final m = metrics;
-    final size = math.max(86.0, m.space(152));
+    final size = math.max(98.0, m.space(174));
     return Semantics(
-      label: '${soundscape.title}, ${soundscape.minutes} minutes',
+      label:
+          '${playing ? 'Pause' : 'Play'} ${soundscape.title}, ${soundscape.minutes} minutes',
       button: true,
       onTap: onPressed,
       excludeSemantics: true,
@@ -894,37 +920,58 @@ class _SoundscapeCard extends StatelessWidget {
         key: ValueKey('soundscape-${soundscape.id}'),
         padding: EdgeInsets.zero,
         onPressed: onPressed,
-        child: SizedBox(
+        child: Container(
           width: size,
+          clipBehavior: Clip.antiAlias,
+          decoration: sleepSurface(
+            radius: math.max(18.0, m.space(23)),
+            glow: playing,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              SizedBox(
                 width: size,
-                height: size,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(m.space(23)),
-                  border: Border.all(
-                    color: const Color(0xFF68839B).withOpacity(0.4),
-                  ),
-                ),
+                height: size * 0.95,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(soundscape.artwork, fit: BoxFit.cover),
-                    Positioned(
-                      right: m.space(10),
-                      bottom: m.space(10),
-                      child: Container(
-                        padding: EdgeInsets.all(m.space(7)),
-                        decoration: const BoxDecoration(
-                          color: Color(0x99010E21),
-                          shape: BoxShape.circle,
+                    Image.asset(
+                      soundscape.artwork,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.transparent,
+                            Color(0x80091B38),
+                          ],
+                          stops: [0, 0.5, 1],
                         ),
-                        child: Icon(
-                          CupertinoIcons.chevron_right,
-                          size: m.font(22, min: 15),
+                      ),
+                    ),
+                    Positioned(
+                      right: m.space(11),
+                      bottom: m.space(11),
+                      child: Container(
+                        padding: EdgeInsets.all(math.max(7.0, m.space(8))),
+                        decoration: BoxDecoration(
+                          color: const Color(0xA0082039),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFC5E3F9).withOpacity(0.8),
+                          ),
+                        ),
+                        child: SanctuaryIcon(
+                          playing
+                              ? SanctuarySymbol.pause
+                              : SanctuarySymbol.play,
+                          size: m.font(24, min: 17),
                           color: SanctuaryPalette.cream,
                         ),
                       ),
@@ -932,22 +979,49 @@ class _SoundscapeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: m.space(9)),
-              Text(
-                soundscape.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: m.sans(
-                  20,
-                  min: 12,
-                  weight: FontWeight.w600,
-                  tracking: -0.3,
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  m.space(12),
+                  m.space(8),
+                  m.space(9),
+                  m.space(11),
                 ),
-              ),
-              SizedBox(height: m.space(2)),
-              Text(
-                '${soundscape.minutes} min',
-                style: m.sans(18, min: 11, color: SanctuaryPalette.mist),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      soundscape.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: m.sans(
+                        19,
+                        min: 11.5,
+                        weight: FontWeight.w600,
+                        tracking: -0.3,
+                      ),
+                    ),
+                    SizedBox(height: m.space(3)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${soundscape.minutes} min',
+                            style: m.sans(
+                              17,
+                              min: 10.5,
+                              color: SanctuaryPalette.mist,
+                            ),
+                          ),
+                        ),
+                        SanctuaryIcon(
+                          SanctuarySymbol.sounds,
+                          size: m.font(20, min: 13),
+                          color: SanctuaryPalette.mint,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -966,7 +1040,7 @@ class _QuickTrack extends StatelessWidget {
     required this.onPressed,
   });
   final String label;
-  final IconData icon;
+  final SanctuarySymbol icon;
   final double volume;
   final SanctuaryMetrics metrics;
   final VoidCallback onPressed;
@@ -995,26 +1069,28 @@ class _QuickTrack extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: active
-                      ? const [Color(0xFF58607B), Color(0xFF303C5A)]
-                      : const [Color(0xFF39435F), Color(0xFF242F4A)],
+                      ? const [Color(0xFF1D7C8C), Color(0xFF163A65)]
+                      : const [Color(0xFF365685), Color(0xFF192F54)],
                 ),
                 border: Border.all(
                   color:
-                      (active ? SanctuaryPalette.gold : SanctuaryPalette.mist)
+                      (active ? SanctuaryPalette.mint : SanctuaryPalette.mist)
                           .withOpacity(active ? 0.55 : 0.12),
                 ),
                 boxShadow: active
                     ? const [
-                        BoxShadow(color: Color(0x33F5C96D), blurRadius: 16),
+                        BoxShadow(color: Color(0x3356EBCB), blurRadius: 16),
                       ]
                     : null,
               ),
-              child: Icon(
+              child: SanctuaryIcon(
                 icon,
                 size: m.font(37, min: 23),
-                color: label == 'Thunder' || active
+                color: active
+                    ? SanctuaryPalette.mint
+                    : label == 'Thunder'
                     ? SanctuaryPalette.gold
-                    : const Color(0xFFE1E5F4),
+                    : const Color(0xFFD7E6FF),
               ),
             ),
             SizedBox(height: m.space(9)),
@@ -1039,7 +1115,7 @@ class _QuickTrack extends StatelessWidget {
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: volume.clamp(0.0, 1.0).toDouble(),
-                child: const ColoredBox(color: SanctuaryPalette.gold),
+                child: const ColoredBox(color: SanctuaryPalette.mint),
               ),
             ),
           ],
@@ -1154,11 +1230,14 @@ class _StoryCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             minSize: 44,
             onPressed: onSave,
-            child: Icon(
-              saved ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-              size: m.font(26, min: 20),
-              color: saved ? SanctuaryPalette.gold : SanctuaryPalette.mist,
-              semanticLabel: '${saved ? 'Unsave' : 'Save'} ${story.title}',
+            child: Semantics(
+              label: '${saved ? 'Unsave' : 'Save'} ${story.title}',
+              button: true,
+              child: SanctuaryIcon(
+                saved ? SanctuarySymbol.heartFill : SanctuarySymbol.heart,
+                size: m.font(26, min: 20),
+                color: saved ? SanctuaryPalette.mint : SanctuaryPalette.mist,
+              ),
             ),
           ),
           CupertinoButton(
@@ -1166,13 +1245,23 @@ class _StoryCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             minSize: 44,
             onPressed: onPlay,
-            child: Icon(
-              playing
-                  ? CupertinoIcons.pause_circle
-                  : CupertinoIcons.play_circle,
-              size: m.font(37, min: 29),
-              color: SanctuaryPalette.lavender,
-              semanticLabel: '${playing ? 'Pause' : 'Play'} ${story.title}',
+            child: Semantics(
+              label: '${playing ? 'Pause' : 'Play'} ${story.title}',
+              button: true,
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: SanctuaryPalette.mint.withOpacity(0.6),
+                  ),
+                ),
+                child: SanctuaryIcon(
+                  playing ? SanctuarySymbol.pause : SanctuarySymbol.play,
+                  size: m.font(23, min: 18),
+                  color: SanctuaryPalette.mint,
+                ),
+              ),
             ),
           ),
         ],
@@ -1193,8 +1282,8 @@ class _EmptyStories extends StatelessWidget {
     decoration: sleepSurface(radius: metrics.space(24)),
     child: Column(
       children: [
-        const Icon(
-          CupertinoIcons.book,
+        const SanctuaryIcon(
+          SanctuarySymbol.book,
           color: SanctuaryPalette.lavender,
           size: 32,
         ),

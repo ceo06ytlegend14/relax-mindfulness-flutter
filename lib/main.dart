@@ -20,6 +20,8 @@ import 'package:relax_mindfulness/screens/sounds_screen.dart';
 import 'package:relax_mindfulness/screens/sleep_screen.dart';
 import 'package:relax_mindfulness/screens/ai_studio_screen.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/components/guided_player.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 
 import 'dart:ui' show PlatformDispatcher;
 
@@ -263,7 +265,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           });
         }
 
-        final isMixer = state.tab == AppTab.home || state.tab == AppTab.sounds;
+        final hasInlinePlayback =
+            state.tab == AppTab.home || state.tab == AppTab.sounds;
         return LayoutBuilder(
           builder: (context, constraints) {
             final width = math.min(constraints.maxWidth, MixerTheme.maxWidth);
@@ -293,7 +296,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     child: Stack(
                       children: [
                         // Other tabs retain the user's existing wallpaper preference.
-                        if (!isMixer && state.wallpaper.imageUrl.isNotEmpty)
+                        if (!hasInlinePlayback &&
+                            state.wallpaper.imageUrl.isNotEmpty)
                           Positioned.fill(
                             child: Image.network(
                               state.wallpaper.imageUrl,
@@ -339,53 +343,36 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             iconSize: math.max(24.0, 46 * s),
                             height: navHeight,
                             currentIndex: _appTabToIndex(state.tab),
-                            items: [
-                              const BottomNavigationBarItem(
-                                icon: Icon(CupertinoIcons.house),
-                                activeIcon: Icon(
-                                  CupertinoIcons.house,
-                                  shadows: [
-                                    Shadow(
-                                      color: MixerTheme.mint,
-                                      blurRadius: 16,
-                                    ),
-                                  ],
+                            items: const [
+                              BottomNavigationBarItem(
+                                icon: SanctuaryIcon(SanctuarySymbol.home),
+                                activeIcon: SanctuaryIcon(
+                                  SanctuarySymbol.home,
+                                  glow: true,
                                 ),
                                 label: 'Home',
                               ),
                               BottomNavigationBarItem(
-                                icon: MixerEqualizerIcon(
-                                  size: math.max(24.0, 46 * s),
-                                ),
-                                activeIcon: MixerEqualizerIcon(
-                                  size: math.max(24.0, 46 * s),
-                                  active: true,
+                                icon: SanctuaryIcon(SanctuarySymbol.sounds),
+                                activeIcon: SanctuaryIcon(
+                                  SanctuarySymbol.sounds,
+                                  glow: true,
                                 ),
                                 label: 'Sounds',
                               ),
-                              const BottomNavigationBarItem(
-                                icon: Icon(Icons.self_improvement_outlined),
-                                activeIcon: Icon(
-                                  Icons.self_improvement_outlined,
-                                  shadows: [
-                                    Shadow(
-                                      color: MixerTheme.mint,
-                                      blurRadius: 16,
-                                    ),
-                                  ],
+                              BottomNavigationBarItem(
+                                icon: SanctuaryIcon(SanctuarySymbol.meditate),
+                                activeIcon: SanctuaryIcon(
+                                  SanctuarySymbol.meditate,
+                                  glow: true,
                                 ),
                                 label: 'Meditate',
                               ),
-                              const BottomNavigationBarItem(
-                                icon: Icon(Icons.bed_outlined),
-                                activeIcon: Icon(
-                                  Icons.bed_outlined,
-                                  shadows: [
-                                    Shadow(
-                                      color: MixerTheme.mint,
-                                      blurRadius: 16,
-                                    ),
-                                  ],
+                              BottomNavigationBarItem(
+                                icon: SanctuaryIcon(SanctuarySymbol.sleep),
+                                activeIcon: SanctuaryIcon(
+                                  SanctuarySymbol.sleep,
+                                  glow: true,
                                 ),
                                 label: 'Sleep',
                               ),
@@ -402,7 +389,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         ),
 
                         // ── 🎵 Floating Mini Player ───────────────────────────────────
-                        if (state.isAnyAudioPlaying && !isMixer)
+                        if ((state.isAnyAudioPlaying && !hasInlinePlayback) ||
+                            (state.hasGuidedSession &&
+                                state.activeAmbientTracks.isEmpty))
                           Positioned(
                             left: 0,
                             right: 0,
@@ -441,7 +430,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                           ),
 
                         // ── 🎧 Full-Screen Guided Player ──────────────────────────────
-                        if (state.isGuidedPlaying) const GuidedPlayerOverlay(),
+                        if (state.isGuidedPlayerExpanded)
+                          const Positioned.fill(child: GuidedPlayerOverlay()),
                       ],
                     ),
                   ),
