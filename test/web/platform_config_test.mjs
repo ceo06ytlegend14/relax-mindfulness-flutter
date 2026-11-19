@@ -115,3 +115,13 @@ test('iOS keeps the existing identity, HTTPS policy and audio-only background mo
   assert(modes);
   assert.deepEqual([...modes.matchAll(/<string>([^<]+)<\/string>/g)].map(match => match[1]), ['audio']);
 });
+
+test('reflection studio has no provider credential, external AI call or false saving claim', async () => {
+  const studio = await readFile(path.join(root, 'lib/screens/ai_studio_screen.dart'), 'utf8');
+  const pubspec = await readFile(path.join(root, 'pubspec.yaml'), 'utf8');
+  assert.doesNotMatch(studio, /GEMINI_API_KEY|GenerativeModel|generateContent|Save & Close|Generate with Lyria/);
+  assert.doesNotMatch(pubspec, /google_generative_ai:/);
+  assert.match(studio, /This is not AI or music generation/);
+  assert.match(studio, /Clipboard\.setData/);
+  assert.match(studio, /Clipboard access failed\. Nothing was saved/);
+});

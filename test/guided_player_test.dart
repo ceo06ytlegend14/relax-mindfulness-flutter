@@ -77,6 +77,24 @@ void main() {
     // Do not load either icon font: all new player and Sleep symbols are vectors.
   });
 
+  testWidgets('player route exposes explicit accessible control nodes', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    await mountSessionPlayer(tester);
+    final route = tester.widget<Semantics>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics && widget.properties.label == 'Session player',
+      ),
+    );
+    expect(route.explicitChildNodes, isTrue);
+    expect(route.properties.scopesRoute, isTrue);
+    expect(find.bySemanticsLabel('Minimize session player'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final size in const [
     Size(320, 640),
     Size(390, 844),

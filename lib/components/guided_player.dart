@@ -71,6 +71,7 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
       },
       child: BlockSemantics(
         child: Semantics(
+          explicitChildNodes: true,
           scopesRoute: true,
           namesRoute: true,
           label: 'Session player',
