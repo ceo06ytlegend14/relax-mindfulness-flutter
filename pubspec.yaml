@@ -37,4 +37,16 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/mixer/
+    - assets/images/meditate/
+    - assets/images/sleep/
+    - assets/fonts/mixer/OFL.txt
+    - assets/fonts/editorial/OFL.txt
     - assets/sounds/
+  fonts:
+    - family: MixerSans
+      fonts:
+        - asset: assets/fonts/mixer/Roboto.ttf
+    - family: SanctuarySerif
+      fonts:
+        - asset: assets/fonts/editorial/CormorantGaramond.ttf

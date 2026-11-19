@@ -1,0 +1,82 @@
+# Install Sanctuary as a web app
+
+The Flutter web application has an installable manifest, branded home-screen icons, and a small **Install app** control. Installing keeps the existing Home / Sounds / Meditate / Sleep navigation and opens the site in a standalone app window where the browser supports it.
+
+## For users
+
+Open the **deployed Flutter app over HTTPS**, outside an embedded preview:
+
+- **Chrome / Edge (Android or desktop):** choose **Install app**. When the browser provides a native installation prompt, the button opens it. Otherwise it shows browser-menu instructions.
+- **iPhone / iPad:** open the site in Safari, tap **Share → Add to Home Screen**, keep **Open as Web App** enabled if offered, then tap **Add**.
+- **Safari on macOS Sonoma or later:** choose **File → Add to Dock**.
+- **Embedded Arena preview:** choose **Install app → Open in a new tab**, then install from that browser tab. Browsers generally do not offer app installation inside embedded frames.
+
+Menu names and availability vary by browser/version. The web page cannot force installation or bypass the browser's confirmation. The install control is hidden when running in standalone mode or after an `appinstalled` event.
+
+### What installation does not do
+
+This update is focused on **installation**, not full offline support. The worker caches only a small reconnect page. It does **not** download/cache the Flutter bundle, audio library, API responses, or user records. An internet connection is needed to load the app and stream sounds. Saved settings remain in the current browser's storage unless that data is cleared. Installation is not a backup or cross-device sync feature.
+
+## Build and deploy the Flutter app
+
+With a project-compatible Flutter SDK:
+
+```sh
+flutter pub get
+# Domain root deployment:
+flutter build web --release --base-href /
+# Or a project subdirectory (choose this instead of the root build):
+flutter build web --release --base-href /allinone/
+```
+
+Deploy the **contents of `build/web/`**, not the `web/` source directory, to an HTTPS static host. Keep all generated files together. The manifest, icons, installer, and worker use relative URLs so both root and subdirectory deployments work. Service workers may also run on localhost during development; plain HTTP on another device/IP is not a secure context.
+
+`web/flutter_bootstrap.js` is a Flutter build template. The build replaces its `{{flutter_js}}` and `{{flutter_build_config}}` markers. The custom bootstrap deliberately does not register Flutter's generated caching worker; `pwa-install.js` owns registration of the scope-local `install-worker.js`. Do not add a second worker registration for the same app scope.
+
+No page load unregisters other service workers, clears browser data, or automatically reloads a playing app. An existing installation may need all its windows closed and reopened after a deployment before a waiting worker activates normally.
+
+## Implementation
+
+- `web/manifest.json`: stable existing app ID, relative start/scope URLs, standalone launch, navy theme, real 192/512 icons, separate maskable variants. The old icon-as-screenshot placeholders and shortcuts that did not route correctly have been removed rather than advertised as working.
+- `web/icons/`: lotus icons derived from the existing repository artwork, including an opaque 180px Apple touch icon. See the icons README for provenance and safe-area treatment.
+- `web/pwa-install.js` / `.css`: accessible install/help UI; single-use `beforeinstallprompt` handling; accepted/dismissed/error behavior; iOS/macOS/unsupported-browser guidance; top-level-tab guidance for frames; standalone detection.
+- `web/install-worker.js` / `offline.html`: network-first navigation with a tiny reconnect fallback. Non-navigation requests, including audio Range requests, are not intercepted. Cache cleanup is restricted to this worker's own versioned, application-scope prefix.
+- `web/flutter_bootstrap.js`: installs no competing Flutter caching worker.
+
+The former JS integration points are retained: `window.triggerPwaInstall()` opens the prompt or help, and `window.isPwaInstallable` means a **native browser prompt is currently available**, not that iOS/manual installation is impossible. `window.SanctuaryInstall.state` exposes prompt/installed/embedded/secure-context status; changes emit `sanctuary-install-state`.
+
+## Preview versus the real app
+
+The interactive HTML design preview in `design/preview/` shares the actual installer, worker, and icons through repository-relative links. Its own manifest is explicitly named **Sanctuary Design Preview** with a separate app ID. Installing that preview does **not** install or validate the Flutter build; install the deployed Flutter app for the full application.
+
+```sh
+python3 -m http.server 3000 --bind 0.0.0.0 --directory design/preview
+```
+
+## Checks
+
+Static manifest/icon/bootstrap checks require only Node.js:
+
+```sh
+node --test test/web/pwa_manifest_test.mjs
+```
+
+The browser suite requires Playwright and Chromium. Install these in a disposable tools directory if you do not already have them:
+
+```sh
+npm install --prefix /tmp/sanctuary-browser-tools playwright
+/tmp/sanctuary-browser-tools/node_modules/.bin/playwright install chromium
+PLAYWRIGHT_MODULE=/tmp/sanctuary-browser-tools/node_modules/playwright/index.mjs \
+  node --test test/web/pwa_install_browser_test.mjs
+```
+
+`PLAYWRIGHT_MODULE` can name an absolute module path; `CHROMIUM_PATH` can point to an already installed Chromium binary. Browser tests use a local HTTP test server and isolated contexts; they do not install an OS app. Native prompt outcomes are simulated, while manifest parsing, service-worker registration/scope, cache behavior, navigation fallback, and browser UI are exercised in Chromium.
+
+### Results in this workspace (2026-11-19)
+
+- **15 static PWA checks passed** for manifest identity, deployment-relative URLs, icon dimensions/opacity, HTML integration, and bootstrap ownership.
+- **20 Chromium integration tests passed.** Chromium reported no manifest or installability errors for the real preview at `/` and the actual web PWA assets served in framework-free fixtures at `/app/` and `/nested/sanctuary/`. These fixtures validate the installer and deployment paths, not a compiled Flutter runtime. Prompt outcomes and Apple-device environments were simulated; no OS application was installed by the tests.
+- **52 existing browser-preview regression checks passed again** for Sounds, Meditate, Sleep, navigation, and local audio samples.
+- JavaScript syntax checks and `git diff --check` passed.
+
+**The current workspace has no Flutter/Dart SDK.** Flutter analysis, a generated Flutter web build, and actual home-screen installation on iOS/Android/macOS/Windows still need verification before release. Browser-design/PWA-controller checks are not native Flutter test results.

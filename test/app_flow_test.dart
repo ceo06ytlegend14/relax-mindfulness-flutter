@@ -180,7 +180,10 @@ void main() {
     // Verify Tab scaffold & items
     expect(find.byType(CupertinoTabBar), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Sounds'), findsOneWidget);
+    expect(find.descendant(
+      of: find.byType(CupertinoTabBar),
+      matching: find.text('Sounds'),
+    ), findsOneWidget);
     expect(find.text('Meditate'), findsOneWidget);
     expect(find.text('Sleep'), findsOneWidget);
   });

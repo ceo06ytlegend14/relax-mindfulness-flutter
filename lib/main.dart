@@ -5,10 +5,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/screens/home_screen.dart';
 import 'package:relax_mindfulness/screens/meditation_screen.dart';
@@ -20,7 +23,8 @@ import 'package:relax_mindfulness/components/glass_components.dart';
 
 import 'dart:ui' show PlatformDispatcher;
 
-final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin localNotifications =
+    FlutterLocalNotificationsPlugin();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,11 +39,13 @@ void main() {
   };
 
   // Make status bar transparent for edge-to-edge iOS design
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Colors.transparent,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+    ),
+  );
 
   // ── GPU & Image Cache tuning for maximum FPS ──
   PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200 MB
@@ -50,10 +56,7 @@ void main() {
   // 🚀 CRITICAL FOR IOS: Launch root UI IMMEDIATELY so the native window renders within 50ms.
   // This completely eliminates iOS SpringBoard 0x8badf00d watchdog boot termination in TestFlight.
   runApp(
-    ChangeNotifierProvider.value(
-      value: appState,
-      child: const SanctuaryApp(),
-    ),
+    ChangeNotifierProvider.value(value: appState, child: const SanctuaryApp()),
   );
 
   // Initialize native platform services safely in background post-first-frame
@@ -84,11 +87,12 @@ Future<void> _initNativeServices(AppState appState) async {
   try {
     tz.initializeTimeZones();
     if (!kIsWeb) {
-      const DarwinInitializationSettings initSettingsDarwin = DarwinInitializationSettings(
-        requestSoundPermission: false,
-        requestBadgePermission: false,
-        requestAlertPermission: false,
-      );
+      const DarwinInitializationSettings initSettingsDarwin =
+          DarwinInitializationSettings(
+            requestSoundPermission: false,
+            requestBadgePermission: false,
+            requestAlertPermission: false,
+          );
       const InitializationSettings initSettings = InitializationSettings(
         iOS: initSettingsDarwin,
       );
@@ -99,8 +103,14 @@ Future<void> _initNativeServices(AppState appState) async {
   }
 
   // 4. RevenueCat (In-App Purchases)
-  const revenueCatKey = String.fromEnvironment('REVENUECAT_API_KEY', defaultValue: '');
-  if (!kIsWeb && (Platform.isIOS || Platform.isMacOS) && revenueCatKey.isNotEmpty && !revenueCatKey.contains('your_revenuecat_key')) {
+  const revenueCatKey = String.fromEnvironment(
+    'REVENUECAT_API_KEY',
+    defaultValue: '',
+  );
+  if (!kIsWeb &&
+      (Platform.isIOS || Platform.isMacOS) &&
+      revenueCatKey.isNotEmpty &&
+      !revenueCatKey.contains('your_revenuecat_key')) {
     try {
       await Purchases.setLogLevel(LogLevel.debug);
       await Purchases.configure(PurchasesConfiguration(revenueCatKey));
@@ -125,25 +135,29 @@ class SanctuaryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: 'Sanctuary – Relax & Meditate',
-      debugShowCheckedModeBanner: false,
-      theme: buildCupertinoTheme(),
-      builder: (context, child) {
-        // Protect layout against RenderFlex yellow/black overflows on large accessibility fonts
-        final mediaQuery = MediaQuery.of(context);
-        final clampedScaler = mediaQuery.textScaler.clamp(
-          minScaleFactor: 0.85,
-          maxScaleFactor: 1.28,
-        );
-        return MediaQuery(
-          data: mediaQuery.copyWith(textScaler: clampedScaler),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
-      // ── iOS Bouncing Scroll Physics globally ──
-      scrollBehavior: const _IOSScrollBehavior(),
-      home: const AppShell(),
+    return ChangeNotifierProvider(
+      create: (context) => MixerController(context.read<AppState>()),
+      child: CupertinoApp(
+        title: 'Sanctuary – Relax & Meditate',
+        localizationsDelegates: const [DefaultMaterialLocalizations.delegate],
+        debugShowCheckedModeBanner: false,
+        theme: buildCupertinoTheme(),
+        builder: (context, child) {
+          // Protect layout against RenderFlex yellow/black overflows on large accessibility fonts
+          final mediaQuery = MediaQuery.of(context);
+          final clampedScaler = mediaQuery.textScaler.clamp(
+            minScaleFactor: 0.85,
+            maxScaleFactor: 1.28,
+          );
+          return MediaQuery(
+            data: mediaQuery.copyWith(textScaler: clampedScaler),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        // ── iOS Bouncing Scroll Physics globally ──
+        scrollBehavior: const _IOSScrollBehavior(),
+        home: const AppShell(),
+      ),
     );
   }
 }
@@ -154,13 +168,14 @@ class _IOSScrollBehavior extends ScrollBehavior {
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) =>
-      const BouncingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      );
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 
   @override
-  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) =>
-      child; // No scrollbars — pure native iOS feel
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child; // No scrollbars — pure native iOS feel
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
@@ -205,7 +220,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  AppTab _indexToAppTab(int index) => _tabOrder[index.clamp(0, _tabOrder.length - 1)];
+  AppTab _indexToAppTab(int index) =>
+      _tabOrder[index.clamp(0, _tabOrder.length - 1)];
 
   @override
   void initState() {
@@ -224,7 +240,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     // Thermal & battery optimization: pause high-power UI animations on screen sleep
-    if (lifecycleState == AppLifecycleState.paused || lifecycleState == AppLifecycleState.hidden) {
+    if (lifecycleState == AppLifecycleState.paused ||
+        lifecycleState == AppLifecycleState.hidden) {
       context.read<AppState>().setBackgroundMode(true);
     } else if (lifecycleState == AppLifecycleState.resumed) {
       context.read<AppState>().setBackgroundMode(false);
@@ -246,104 +263,192 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           });
         }
 
-        return Stack(
-          children: [
-            // 🖼️ App-Wide Global Living Atmospheric Wallpaper Stack
-            if (state.wallpaper.imageUrl.isNotEmpty)
-              Positioned.fill(
-                child: Image.network(
-                  state.wallpaper.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        final isMixer = state.tab == AppTab.home || state.tab == AppTab.sounds;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = math.min(constraints.maxWidth, MixerTheme.maxWidth);
+            final metrics = MixerMetrics(width);
+            final s = metrics.scale;
+            final navHeight = math.max(68.0, 132 * s);
+            final bottomInset = MediaQuery.paddingOf(context).bottom;
+            final theme = CupertinoTheme.of(context);
+            return ColoredBox(
+              color: MixerTheme.background,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: width,
+                  height: constraints.maxHeight,
+                  child: CupertinoTheme(
+                    data: theme.copyWith(
+                      textTheme: theme.textTheme.copyWith(
+                        tabLabelTextStyle: TextStyle(
+                          fontFamily: MixerTheme.font,
+                          fontSize: math.max(12.0, 24 * s),
+                          color: MixerTheme.muted,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Other tabs retain the user's existing wallpaper preference.
+                        if (!isMixer && state.wallpaper.imageUrl.isNotEmpty)
+                          Positioned.fill(
+                            child: Image.network(
+                              state.wallpaper.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
+                          ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  state.wallpaper.baseColor.withOpacity(0.78),
+                                  state.wallpaper.baseColor.withOpacity(0.94),
+                                  state.wallpaper.baseColor,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // ── 🍎 Authentic Apple iOS Inspired Footer Tab Bar ──────────────
+                        CupertinoTabScaffold(
+                          backgroundColor: Colors.transparent,
+                          controller: _tabController,
+                          tabBar: CupertinoTabBar(
+                            onTap: (index) {
+                              HapticFeedback.selectionClick();
+                              state.setTab(_indexToAppTab(index));
+                            },
+                            backgroundColor: const Color(0xF0001D26),
+                            border: const Border(
+                              top: BorderSide(
+                                color: Color(0xFF21565E),
+                                width: 1,
+                              ),
+                            ),
+                            activeColor: MixerTheme.mint,
+                            inactiveColor: const Color(0xFF7E9AA5),
+                            iconSize: math.max(24.0, 46 * s),
+                            height: navHeight,
+                            currentIndex: _appTabToIndex(state.tab),
+                            items: [
+                              const BottomNavigationBarItem(
+                                icon: Icon(CupertinoIcons.house),
+                                activeIcon: Icon(
+                                  CupertinoIcons.house,
+                                  shadows: [
+                                    Shadow(
+                                      color: MixerTheme.mint,
+                                      blurRadius: 16,
+                                    ),
+                                  ],
+                                ),
+                                label: 'Home',
+                              ),
+                              BottomNavigationBarItem(
+                                icon: MixerEqualizerIcon(
+                                  size: math.max(24.0, 46 * s),
+                                ),
+                                activeIcon: MixerEqualizerIcon(
+                                  size: math.max(24.0, 46 * s),
+                                  active: true,
+                                ),
+                                label: 'Sounds',
+                              ),
+                              const BottomNavigationBarItem(
+                                icon: Icon(Icons.self_improvement_outlined),
+                                activeIcon: Icon(
+                                  Icons.self_improvement_outlined,
+                                  shadows: [
+                                    Shadow(
+                                      color: MixerTheme.mint,
+                                      blurRadius: 16,
+                                    ),
+                                  ],
+                                ),
+                                label: 'Meditate',
+                              ),
+                              const BottomNavigationBarItem(
+                                icon: Icon(Icons.bed_outlined),
+                                activeIcon: Icon(
+                                  Icons.bed_outlined,
+                                  shadows: [
+                                    Shadow(
+                                      color: MixerTheme.mint,
+                                      blurRadius: 16,
+                                    ),
+                                  ],
+                                ),
+                                label: 'Sleep',
+                              ),
+                            ],
+                          ),
+                          tabBuilder: (context, index) {
+                            final tab = _indexToAppTab(index);
+                            return CupertinoTabView(
+                              builder: (ctx) => RepaintBoundary(
+                                child: _buildScreen(tab, ctx),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // ── 🎵 Floating Mini Player ───────────────────────────────────
+                        if (state.isAnyAudioPlaying && !isMixer)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: navHeight + bottomInset + 8,
+                            child: const SanctuaryMiniPlayer(),
+                          ),
+
+                        // Mint indicator follows the real selected tab, not a decorative label.
+                        Positioned(
+                          bottom: bottomInset + 3,
+                          left: width * expectedIndex / 4 + width * 0.065,
+                          width: width * 0.12,
+                          child: IgnorePointer(
+                            child: Container(
+                              height: math.max(2.0, 3 * s),
+                              decoration: BoxDecoration(
+                                color: MixerTheme.mint,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: MixerTheme.mint.withOpacity(0.8),
+                                    blurRadius: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // ── 😊 Mood Check-In Dialog ───────────────────────────────────
+                        if (state.showMoodDialog)
+                          MoodCheckInDialog(
+                            onMoodSelected: (rating) =>
+                                state.submitMood(rating),
+                            onSkip: () => state.dismissMood(),
+                          ),
+
+                        // ── 🎧 Full-Screen Guided Player ──────────────────────────────
+                        if (state.isGuidedPlaying) const GuidedPlayerOverlay(),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      state.wallpaper.baseColor.withOpacity(0.78),
-                      state.wallpaper.baseColor.withOpacity(0.94),
-                      state.wallpaper.baseColor,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── 🍎 Authentic Apple iOS Inspired Footer Tab Bar ──────────────
-            CupertinoTabScaffold(
-              backgroundColor: Colors.transparent,
-              controller: _tabController,
-              tabBar: CupertinoTabBar(
-                onTap: (index) {
-                  HapticFeedback.selectionClick();
-                  state.setTab(_indexToAppTab(index));
-                },
-                backgroundColor: const Color(0xC4081119), // Apple iOS ultra-translucent frosted glass
-                border: const Border(
-                  top: BorderSide(color: Color(0x26FFFFFF), width: 0.5), // Apple standard 0.5px hairline
-                ),
-                activeColor: const Color(0xFF2DD4BF), // iOS Seafoam Cyan
-                inactiveColor: const Color(0xFF8E9BAE), // iOS System Gray 2
-                iconSize: 22,
-                height: 54,
-                currentIndex: _appTabToIndex(state.tab),
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.house),
-                    activeIcon: Icon(CupertinoIcons.house_fill),
-                    label: 'Home',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.waveform_circle),
-                    activeIcon: Icon(CupertinoIcons.waveform_circle_fill),
-                    label: 'Sounds',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.sparkles),
-                    activeIcon: Icon(CupertinoIcons.sparkles),
-                    label: 'Meditate',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.moon_stars),
-                    activeIcon: Icon(CupertinoIcons.moon_stars_fill),
-                    label: 'Sleep',
-                  ),
-                ],
-              ),
-              tabBuilder: (context, index) {
-                final tab = _indexToAppTab(index);
-                return CupertinoTabView(
-                  builder: (ctx) => RepaintBoundary(
-                    child: _buildScreen(tab, ctx),
-                  ),
-                );
-              },
-            ),
-
-            // ── 🎵 Floating Mini Player ───────────────────────────────────
-            if (state.isAnyAudioPlaying)
-              const Positioned(
-                left: 0,
-                right: 0,
-                bottom: 83, // Above CupertinoTabBar (49px) + safe area
-                child: SanctuaryMiniPlayer(),
-              ),
-
-            // ── 😊 Mood Check-In Dialog ───────────────────────────────────
-            if (state.showMoodDialog)
-              MoodCheckInDialog(
-                onMoodSelected: (rating) => state.submitMood(rating),
-                onSkip: () => state.dismissMood(),
-              ),
-
-            // ── 🎧 Full-Screen Guided Player ──────────────────────────────
-            if (state.isGuidedPlaying)
-              const GuidedPlayerOverlay(),
-          ],
+            );
+          },
         );
       },
     );
