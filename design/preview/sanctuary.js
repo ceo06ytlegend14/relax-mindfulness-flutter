@@ -77,7 +77,7 @@ function selectRetreatTab(tab){
   updateSleepState();
 }
 nav.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>selectRetreatTab(b.dataset.tab));
-function applySleepFade(){const remaining=timerRemaining();if(remaining===null||remaining>30)return;const sum=Object.values(levels).reduce((a,b)=>a+b,0),gain=Math.min(1,1/(sum||1)),fade=remaining/30;for(const [name,audio]of players)audio.volume=Math.min(.85,(levels[name]||0)*gain)*fade}
+function applySleepFade(){const remaining=timerRemaining();if(remaining===null||remaining>30)return;const sum=Object.values(levels).reduce((a,b)=>a+b,0),gain=Math.min(1,1/(sum||1)),fade=remaining/30;for(const [name,audio]of players)audio.volume=Math.min(.85,(levels[name]||0)*gain*soundPreviewDuck)*fade}
 const originalSyncAudio=syncAudio;syncAudio=function(){originalSyncAudio();applySleepFade()};
 setInterval(()=>{if(sleepDeadline!==null){if(timerRemaining()<=0){sleepDeadline=null;sleepTimerTotal=0;playing=false;syncAudio();pauseGuided();finishGuidedSession({silent:true});render();toast('Your sleep timer has ended. Rest easy.')}else{applySleepFade();updateSleepState()}}if(guidedSession?.playing){updateSession();if(guidedSession.remaining<=0){finishGuidedSession({automatic:true})}}},1000);
 renderIntents();renderPractices();renderStories();selectRetreatTab(['home','sounds','meditate','sleep'].includes(location.hash.slice(1))?location.hash.slice(1):'home');

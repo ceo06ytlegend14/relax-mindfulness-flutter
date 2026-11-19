@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:relax_mindfulness/main.dart' show localNotifications;
 import 'package:relax_mindfulness/models/user_backup.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
 import 'package:relax_mindfulness/services/subscription_controller.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -124,12 +125,14 @@ class SoundPreset {
 class AppState extends ChangeNotifier {
   AppState({
     AudioPlayer? guidedPlayer,
+    AudioPlayer Function()? ambientPlayerFactory,
     DateTime Function()? now,
     SharedPreferences? preferences,
     SubscriptionController? subscriptions,
   }) : _prefs = preferences,
        _subscriptions = subscriptions ?? SubscriptionController(),
        _guidedPlayer = guidedPlayer ?? AudioPlayer(),
+       _ambientPlayerFactory = ambientPlayerFactory ?? (() => AudioPlayer()),
        _now = now ?? DateTime.now {
     _subscriptions.addListener(_subscriptionChanged);
     _guidedStateSubscription = _guidedPlayer.playerStateStream.listen(
@@ -169,9 +172,23 @@ class AppState extends ChangeNotifier {
 
   SharedPreferences? _prefs;
 
+  final AudioPlayer Function() _ambientPlayerFactory;
   final Map<String, AudioPlayer> _audioPlayers = {};
   final Set<String> _loadingTracks = {};
   final Map<String, double> _targetVolumes = {};
+  final Map<String, String> _ambientErrors = {};
+  final Map<AudioPlayer, StreamSubscription<PlaybackEvent>> _ambientSubscriptions = {};
+  double _previewDuck = 1;
+
+  String? ambientTrackError(String name) => _ambientErrors[name];
+  bool isAmbientTrackLoading(String name) => _loadingTracks.contains(name);
+
+  /// Previewing never changes a saved/selected level or starts a paused mix.
+  void setAmbientPreviewDucking(bool previewing) {
+    if (_guidedDisposed) return;
+    _previewDuck = previewing ? 0.2 : 1;
+    _recalculateGainAndApply();
+  }
 
   final AudioPlayer _guidedPlayer;
   final DateTime Function() _now;
@@ -314,7 +331,9 @@ class AppState extends ChangeNotifier {
     'Heartbeat': 'https://actions.google.com/sounds/v1/human_voices/heartbeat.ogg',
     'Cozy Hearth': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/campfire.mp3',
     'Singing Bowls': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-    'Ambient Piano': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
+    'Temple Bowl': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
+    // Legacy mixes may still name Ambient Piano, but a singing bowl is not a
+    // piano recording. Leave that layer explicitly unconfigured until sourced.
     'Bamboo Chimes': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
     'Soothing Breeze': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
     'Deep Space Drone': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-gamma.wav',
@@ -324,18 +343,10 @@ class AppState extends ChangeNotifier {
     'Space Drift': 'https://actions.google.com/sounds/v1/science_fiction/space_atmosphere.ogg',
   };
 
-  static const Map<String, String> localSoundAssets = {
-    'Soft Rain': 'assets/sounds/soft_rain.mp3',
-    'Ocean Waves': 'assets/sounds/ocean_waves.mp3',
-    'Campfire': 'assets/sounds/campfire.mp3',
-    'Cozy Hearth': 'assets/sounds/campfire.mp3',
-    'Forest Birds': 'assets/sounds/forest_birds.mp3',
-    'Wind Chimes': 'assets/sounds/wind_chimes.mp3',
-    'Bamboo Chimes': 'assets/sounds/wind_chimes.mp3',
-    'Singing Bowl': 'assets/sounds/tibetan_bowls.mp3',
-    'Singing Bowls': 'assets/sounds/tibetan_bowls.mp3',
-    'Tibetan Bowls': 'assets/sounds/tibetan_bowls.mp3',
-  };
+  static const Map<String, String> localSoundAssets = bundledSoundAssets;
+
+  static bool hasAmbientSource(String name) =>
+      localSoundAssets.containsKey(name) || soundStreamUrls.containsKey(name);
 
   static const Map<String, String> guidedAudioUrls = {
     'Calm Mountain Horizon': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
@@ -713,7 +724,7 @@ class AppState extends ChangeNotifier {
     for (final name in _targetVolumes.keys.toList()) {
       _targetVolumes[name] = 0.0;
     }
-    for (final entry in _audioPlayers.entries) {
+    for (final entry in _audioPlayers.entries.toList()) {
       try {
         await entry.value.setVolume(0);
         await entry.value.pause();
@@ -1022,10 +1033,10 @@ class AppState extends ChangeNotifier {
       final target = _targetVolumes[name] ?? 0.0;
       if (target > 0) {
         // Soft per-track cap (0.85 max) + master limiter + sleep fade master
-        final effective = (target * _masterGain * _fadeMaster).clamp(0.0, 0.85);
-        player.setVolume(effective);
+        final effective = (target * _masterGain * _fadeMaster * _previewDuck).clamp(0.0, 0.85);
+        unawaited(player.setVolume(effective).catchError((Object error) {}));
       } else {
-        player.setVolume(0.0);
+        unawaited(player.setVolume(0.0).catchError((Object error) {}));
       }
     }
   }
@@ -1047,91 +1058,151 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  bool _ownsAmbient(String name, AudioPlayer player) =>
+      !_guidedDisposed && identical(_audioPlayers[name], player);
+
+  bool _wantsAmbient(String name, AudioPlayer player) =>
+      _ownsAmbient(name, player) && (_targetVolumes[name] ?? 0) > 0;
+
+  Future<void> _releaseAmbient(AudioPlayer player) async {
+    try {
+      await _ambientSubscriptions.remove(player)?.cancel();
+    } catch (_) {}
+    try {
+      await player.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> _failAmbient(String name, AudioPlayer player) async {
+    if (!_ownsAmbient(name, player)) return;
+    _audioPlayers.remove(name);
+    _loadingTracks.remove(name);
+    _targetVolumes.remove(name);
+    _ambientErrors[name] = 'This recording could not play. Try again or replace this sound.';
+    _recalculateGainAndApply();
+    notifyListeners();
+    await _releaseAmbient(player);
+  }
+
+  void _startAmbient(String name, AudioPlayer player) {
+    if (!_wantsAmbient(name, player) || player.playing) return;
+    // A loop's play future ends at pause/stop, not when playback starts.
+    unawaited(player.play().catchError((Object error, StackTrace stack) {
+      if (_ownsAmbient(name, player)) unawaited(_failAmbient(name, player));
+    }));
+  }
+
   Future<void> updateSoundTrackVolume(String name, double volume) async {
-    if (volume > 0 && (_isGuidedPlaying || _isGuidedLoading)) {
-      await pauseGuidedSession();
-    }
-
-    final url = soundStreamUrls[name] ?? 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg';
-    final effectiveVolume = volume.clamp(0.0, 1.0);
-    _targetVolumes[name] = effectiveVolume;
-
-    if (volume <= 0) {
-      final existingPlayer = _audioPlayers[name];
-      if (existingPlayer != null) {
-        await existingPlayer.setVolume(0);
-        await existingPlayer.pause();
+    if (_guidedDisposed || !volume.isFinite) return;
+    final effectiveVolume = volume.clamp(0.0, 1.0).toDouble();
+    if (effectiveVolume <= 0) {
+      _targetVolumes[name] = 0;
+      final player = _audioPlayers[name];
+      if (player != null) {
+        if (_loadingTracks.remove(name)) {
+          // Remove ownership before disposal: a late load cannot start playback.
+          _audioPlayers.remove(name);
+          await _releaseAmbient(player);
+        } else {
+          try {
+            await player.setVolume(0);
+            if (_wantsAmbient(name, player)) return;
+            await player.pause();
+            if (_wantsAmbient(name, player)) _startAmbient(name, player);
+          } catch (_) {}
+        }
       }
+      if (_guidedDisposed) return;
       _recalculateGainAndApply();
-      _evictColdPlayers();
+      unawaited(_evictColdPlayers());
       notifyListeners();
       return;
     }
 
-    if (!_audioPlayers.containsKey(name)) {
-      final newPlayer = AudioPlayer();
-      _audioPlayers[name] = newPlayer;
-      _loadingTracks.add(name);
-
-      final localAsset = localSoundAssets[name];
-      if (localAsset != null) {
-        try {
-          await newPlayer.setAsset(localAsset);
-          await newPlayer.setLoopMode(LoopMode.one);
-        } catch (e) {
-          debugPrint('Local asset failed for $name ($e), falling back to remote URL');
-          final primaryUrl = _resolveCdnUrl(url);
-          try {
-            await newPlayer.setUrl(primaryUrl);
-            await newPlayer.setLoopMode(LoopMode.one);
-          } catch (e2) {
-            debugPrint('Primary CDN failed for $name, trying fallback: $e2');
-            try {
-              await newPlayer.setUrl(url);
-              await newPlayer.setLoopMode(LoopMode.one);
-            } catch (e3) {
-              debugPrint('Secondary source failed for $name: $e3');
-            }
-          }
-        } finally {
-          _loadingTracks.remove(name);
-        }
-      } else {
-        final primaryUrl = _resolveCdnUrl(url);
-        try {
-          await newPlayer.setUrl(primaryUrl);
-          await newPlayer.setLoopMode(LoopMode.one);
-        } catch (e) {
-          debugPrint('Primary CDN failed for $name, trying fallback: $e');
-          try {
-            await newPlayer.setUrl(url);
-            await newPlayer.setLoopMode(LoopMode.one);
-          } catch (e2) {
-            debugPrint('Secondary source failed for $name: $e2');
-          }
-        } finally {
-          _loadingTracks.remove(name);
-        }
-      }
+    final localAsset = localSoundAssets[name];
+    final url = soundStreamUrls[name];
+    if (localAsset == null && url == null) {
+      // Never substitute unrelated heavy rain for a missing catalog recording.
+      _targetVolumes.remove(name);
+      _ambientErrors[name] = 'No recording is configured for this sound. Choose a bundled replacement.';
+      notifyListeners();
+      return;
+    }
+    _ambientErrors.remove(name);
+    _targetVolumes[name] = effectiveVolume;
+    if (_isGuidedPlaying || _isGuidedLoading) await pauseGuidedSession();
+    if (_guidedDisposed || (_targetVolumes[name] ?? 0) <= 0) return;
+    final existing = _audioPlayers[name];
+    if (existing != null) {
+      _recalculateGainAndApply();
+      if (!_loadingTracks.contains(name)) _startAmbient(name, existing);
+      notifyListeners();
+      return;
     }
 
-    final player = _audioPlayers[name]!;
+    late final AudioPlayer player;
+    try {
+      player = _ambientPlayerFactory();
+    } catch (_) {
+      _targetVolumes.remove(name);
+      _ambientErrors[name] = 'This recording could not play. Try again or replace this sound.';
+      notifyListeners();
+      return;
+    }
+    _audioPlayers[name] = player;
+    _loadingTracks.add(name);
+    _ambientSubscriptions[player] = player.playbackEventStream.listen(
+      (_) {},
+      onError: (Object error, StackTrace stack) {
+        if (!_loadingTracks.contains(name)) unawaited(_failAmbient(name, player));
+      },
+    );
     _recalculateGainAndApply();
-
-    if (!player.playing) {
+    notifyListeners();
+    final sources = <String>[
+      if (localAsset != null) localAsset,
+      if (url != null) _resolveCdnUrl(url),
+      if (url != null && _resolveCdnUrl(url) != url) url,
+    ];
+    var loaded = false;
+    for (final source in sources) {
+      if (!_wantsAmbient(name, player)) break;
       try {
-        await player.play();
-      } catch (e) {
-        debugPrint('Error playing track $name: $e');
+        if (source.startsWith('assets/')) {
+          await player.setAsset(source).timeout(const Duration(seconds: 12));
+        } else {
+          await player.setUrl(source).timeout(const Duration(seconds: 12));
+        }
+        if (!_wantsAmbient(name, player)) break;
+        await player.setLoopMode(LoopMode.one);
+        loaded = true;
+        break;
+      } catch (_) {
+        // Local/CDN/raw attempts represent the same named source, not a
+        // different substitute recording. Platform payloads stay private.
       }
     }
+    if (!_ownsAmbient(name, player)) return;
+    _loadingTracks.remove(name);
+    if (!_wantsAmbient(name, player)) {
+      _audioPlayers.remove(name);
+      await _releaseAmbient(player);
+      if (!_guidedDisposed) notifyListeners();
+      return;
+    }
+    if (!loaded) {
+      await _failAmbient(name, player);
+      return;
+    }
+    _recalculateGainAndApply();
+    _startAmbient(name, player);
     notifyListeners();
   }
 
   Future<void> stopAllAudio() async {
     _targetVolumes.clear();
     await stopGuidedSession(completed: false);
-    for (final entry in _audioPlayers.entries) {
+    for (final entry in _audioPlayers.entries.toList()) {
       try {
         await entry.value.setVolume(0);
         await entry.value.pause();
@@ -1139,6 +1210,7 @@ class AppState extends ChangeNotifier {
         debugPrint('Error stopping track ${entry.key}: $e');
       }
     }
+    if (_guidedDisposed) return;
     _recalculateGainAndApply();
     notifyListeners();
   }
@@ -1614,9 +1686,15 @@ class AppState extends ChangeNotifier {
     _guidedStateSubscription?.cancel();
     _guidedPlaybackSubscription?.cancel();
     _guidedPlayer.dispose();
-    for (final player in _audioPlayers.values) {
-      player.dispose();
+    for (final subscription in _ambientSubscriptions.values) {
+      unawaited(subscription.cancel());
     }
+    _ambientSubscriptions.clear();
+    for (final player in _audioPlayers.values) {
+      unawaited(_releaseAmbient(player));
+    }
+    _audioPlayers.clear();
+    _loadingTracks.clear();
     super.dispose();
   }
 }

@@ -12,7 +12,52 @@ class MixerTrack {
   final String emoji, name, description;
   final Color color;
   final String? artwork;
+
+  /// Decorative cover art, not a photograph of the recording's location.
+  /// Related sounds may share a cover; every card has a local image.
+  String get coverAsset {
+    if (artwork != null) return artwork!;
+    final specific = mixerTrackCovers[name];
+    if (specific != null) return specific;
+    for (final category in mixerCategories) {
+      if (category.tracks.any((track) => track.name == name)) {
+        return mixerCategoryCovers[category.id]!;
+      }
+    }
+    return 'assets/images/mixer/noise_cover.webp';
+  }
 }
+
+const mixerCategoryCovers = <String, String>{
+  'rain': 'assets/images/mixer/soft_rain.webp',
+  'nature': 'assets/images/mixer/rain_leaves.webp',
+  'places': 'assets/images/mixer/rain_window.webp',
+  'transport': 'assets/images/mixer/urban_rain.webp',
+  'things': 'assets/images/mixer/rain_roof.webp',
+  'noise': 'assets/images/mixer/noise_cover.webp',
+  'solfeggio': 'assets/images/mixer/tones_cover.webp',
+};
+
+const mixerTrackCovers = <String, String>{
+  'Rain on Leaves': 'assets/images/mixer/rain_leaves.webp',
+  'Urban Rain': 'assets/images/mixer/urban_rain.webp',
+  'Heavy Rain': 'assets/images/mixer/heavy_rain.webp',
+  'Light Drizzle': 'assets/images/mixer/light_drizzle.webp',
+  'Rain Cave': 'assets/images/mixer/soft_rain.webp',
+  'Tropical Storm': 'assets/images/mixer/heavy_rain.webp',
+  'Ocean Waves': 'assets/images/sleep/moonlit_shore.webp',
+  'Waves on Pebbles': 'assets/images/sleep/moonlit_shore.webp',
+  'Underwater': 'assets/images/mixer/noise_cover.webp',
+  'Mountain Stream': 'assets/images/mixer/soft_rain.webp',
+  'Waterfall': 'assets/images/mixer/heavy_rain.webp',
+  'Campfire': 'assets/images/sleep/campfire.webp',
+  'Desert Wind': 'assets/images/player/lake_dawn.webp',
+  'Meadow Breeze': 'assets/images/mixer/light_drizzle.webp',
+  'Quiet Park': 'assets/images/mixer/rain_leaves.webp',
+  'Harbor': 'assets/images/sleep/moonlit_shore.webp',
+  'Temple Bowl': 'assets/images/mixer/tones_cover.webp',
+  'Bamboo Chimes': 'assets/images/mixer/rain_leaves.webp',
+};
 
 class MixerCategory {
   const MixerCategory(this.id, this.emoji, this.label, this.tracks);
@@ -46,7 +91,7 @@ const mixerCategories = <MixerCategory>[
     MixerTrack(
       '🏠',
       'Rain on Roof',
-      'Cozy Attic Downpour',
+      'Raindrops on a Car Roof',
       Color(0xFF0288D1),
       artwork: 'assets/images/mixer/rain_roof.webp',
     ),

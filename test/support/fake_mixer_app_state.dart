@@ -4,6 +4,19 @@ import 'package:relax_mindfulness/providers/app_state.dart';
 /// No platform channels, network or looping audio futures in presentation tests.
 class FakeMixerAppState extends ChangeNotifier implements AppState {
   final Map<String, double> active = {};
+  final Map<String, String> ambientErrors = {};
+  final Set<String> ambientLoading = {};
+  bool previewDucked = false;
+
+  @override
+  String? ambientTrackError(String name) => ambientErrors[name];
+  @override
+  bool isAmbientTrackLoading(String name) => ambientLoading.contains(name);
+  @override
+  void setAmbientPreviewDucking(bool previewing) {
+    previewDucked = previewing;
+  }
+
   Map<String, double> cached = {};
   final Set<String> starred = {'Soft Rain', 'Ocean Waves', 'Campfire'};
   final List<SoundPreset> saved = [];

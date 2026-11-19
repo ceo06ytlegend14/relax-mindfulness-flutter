@@ -73,6 +73,13 @@ jobs:
           test/subscription_controller_test.dart test/premium_screen_test.dart
           test/support/billing_fixtures.dart
           lib/screens/sounds_screen.dart test/mixer_screen_test.dart
+          lib/models/bundled_recordings.dart lib/models/mixer_catalog.dart
+          lib/components/mixer_artwork.dart lib/components/sound_replacement_sheet.dart
+          lib/services/sound_preview_controller.dart lib/providers/mixer_controller.dart
+          test/ambient_audio_state_test.dart test/sound_preview_controller_test.dart
+          test/mixer_controller_test.dart test/mixer_catalog_test.dart
+          test/support/fake_mixer_app_state.dart test/support/fake_ambient_audio_player.dart
+          test/support/fake_sound_preview_player.dart
           lib/main.dart test/sanctuary_screen_test.dart
       - name: Run Flutter regressions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}

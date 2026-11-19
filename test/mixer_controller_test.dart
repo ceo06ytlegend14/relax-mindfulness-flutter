@@ -127,4 +127,75 @@ void main() {
       expect(mixer.category, 'favorites');
     },
   );
+  test(
+    'replacing one playing layer preserves its level and every other layer',
+    () {
+      mixer.applyMix({'Soft Rain': .63, 'Forest Birds': .21}, name: 'Original');
+      expect(mixer.replaceTrack('Soft Rain', 'Ocean Waves'), isTrue);
+      expect(mixer.levels, {'Ocean Waves': .63, 'Forest Birds': .21});
+      expect(app.active, {'Ocean Waves': .63, 'Forest Birds': .21});
+      expect(mixer.preset, isNull);
+      expect(mixer.category, 'nature');
+      expect(app.cached, mixer.levels);
+    },
+  );
+
+  test(
+    'a paused replacement stays paused, persists and can return to the original',
+    () {
+      expect(mixer.replaceTrack('Soft Rain', 'Ocean Waves'), isTrue);
+      expect(app.active, isEmpty);
+      expect(mixer.levels, {'Ocean Waves': .3});
+      final restored = MixerController(app);
+      expect(restored.levels, {'Ocean Waves': .3});
+      expect(restored.isPlaying, isFalse);
+      restored.dispose();
+      expect(mixer.replaceTrack('Ocean Waves', 'Soft Rain'), isTrue);
+      expect(mixer.levels, {'Soft Rain': .3});
+      expect(app.active, isEmpty);
+    },
+  );
+
+  test(
+    'saving and sharing remember the replacement, not an invisible override',
+    () {
+      mixer.replaceTrack('Soft Rain', 'Ocean Waves');
+      mixer.saveMix('New shoreline');
+      expect(app.saved.single.volumes, {'Ocean Waves': .3});
+      expect(mixer.shareUri().queryParameters['mix'], 'Ocean Waves:30');
+      expect(mixer.isPlaying, isFalse);
+    },
+  );
+
+  test(
+    'an existing target or legacy alias cannot become a duplicate recording',
+    () {
+      mixer.applyMix({'Soft Rain': .4, 'Cozy Hearth': .2, 'Ocean Waves': .1});
+      final before = mixer.levels;
+      expect(mixer.replacementConflict('Soft Rain', 'Campfire'), 'Cozy Hearth');
+      expect(mixer.replaceTrack('Soft Rain', 'Campfire'), isFalse);
+      expect(mixer.replaceTrack('Soft Rain', 'Ocean Waves'), isFalse);
+      expect(mixer.levels, before);
+      expect(mixer.replaceTrack('Soft Rain', 'Temple Bowl'), isTrue);
+    },
+  );
+
+  test('no-op, unknown and unbundled replacements leave the mix untouched', () {
+    final before = mixer.levels;
+    expect(mixer.replaceTrack('Soft Rain', 'Soft Rain'), isFalse);
+    expect(mixer.replaceTrack('not a sound', 'Ocean Waves'), isFalse);
+    expect(mixer.replaceTrack('Soft Rain', 'Rain on Leaves'), isFalse);
+    expect(mixer.replaceTrack('Soft Rain', 'new.mp3'), isFalse);
+    expect(mixer.levels, before);
+    expect(app.active, isEmpty);
+  });
+
+  test(
+    'replacing an off card selects the bundled layer at 30 percent without autoplay',
+    () {
+      expect(mixer.replaceTrack('Rain Cave', 'Ocean Waves'), isTrue);
+      expect(mixer.levels, {'Soft Rain': .3, 'Ocean Waves': .3});
+      expect(mixer.isPlaying, isFalse);
+    },
+  );
 }

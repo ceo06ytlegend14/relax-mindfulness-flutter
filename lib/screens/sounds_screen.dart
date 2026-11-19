@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/mixer_waveform.dart';
+import 'package:relax_mindfulness/components/mixer_artwork.dart';
+import 'package:relax_mindfulness/components/sound_replacement_sheet.dart';
+import 'package:relax_mindfulness/services/sound_preview_controller.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
@@ -14,7 +17,25 @@ import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
 /// The dedicated reference-inspired mixer. Home has its own daily dashboard.
 class SoundsScreen extends StatelessWidget {
-  const SoundsScreen({super.key});
+  const SoundsScreen({this.previewPlayerFactory, super.key});
+  final SoundPreviewPlayer Function()? previewPlayerFactory;
+
+  void _replaceSound(
+    BuildContext context,
+    MixerTrack track,
+    AppState state,
+    MixerController mixer,
+  ) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => SoundReplacementSheet(
+        track: track,
+        mixer: mixer,
+        onPreviewActivity: state.setAmbientPreviewDucking,
+        previewPlayerFactory: previewPlayerFactory,
+      ),
+    );
+  }
 
   Future<void> _notice(BuildContext context, String title, String message) =>
       showCupertinoDialog<void>(
@@ -215,6 +236,23 @@ class SoundsScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 24 * s),
                             _masterControls(context, state, mixer, metrics),
+                            if (mixer.levels.keys.any(
+                              (name) => state.ambientTrackError(name) != null,
+                            ))
+                              Padding(
+                                padding: EdgeInsets.only(top: 12 * s),
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    'Not playing: ${mixer.levels.keys.where((name) => state.ambientTrackError(name) != null).join(', ')}. Choose a configured sound; your other layers are unchanged.',
+                                    key: const ValueKey('mixer-source-notice'),
+                                    style: metrics.text(
+                                      20,
+                                      color: const Color(0xFFFFC9A0),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             SizedBox(
                               height: 44 * s,
                               width: double.infinity,
@@ -334,6 +372,12 @@ class SoundsScreen extends StatelessWidget {
                                     state: state,
                                     mixer: mixer,
                                     metrics: metrics,
+                                    onReplace: () => _replaceSound(
+                                      context,
+                                      tracks[index],
+                                      state,
+                                      mixer,
+                                    ),
                                   ),
                                 ),
                                 childCount: tracks.length,
@@ -458,7 +502,7 @@ class SoundsScreen extends StatelessWidget {
                 SizedBox(height: 3 * s),
                 Text(
                   mixer.isPlaying
-                      ? '${mixer.selectedCount} active layers'
+                      ? '${state.activeAmbientTracks.length} active layers'
                       : 'Tap play to start audio',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -802,8 +846,10 @@ class _TrackCard extends StatelessWidget {
     required this.state,
     required this.mixer,
     required this.metrics,
+    required this.onReplace,
     super.key,
   });
+  final VoidCallback onReplace;
   final MixerTrack track;
   final AppState state;
   final MixerController mixer;
@@ -857,18 +903,7 @@ class _TrackCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        child: track.artwork != null
-                            ? Image.asset(
-                                track.artwork!,
-                                fit: BoxFit.cover,
-                                excludeFromSemantics: true,
-                              )
-                            : Center(
-                                child: Text(
-                                  track.emoji,
-                                  style: TextStyle(fontSize: 38 * s),
-                                ),
-                              ),
+                        child: MixerArtwork(track: track),
                       ),
                     ),
                     SizedBox(width: 24 * s),
@@ -888,10 +923,20 @@ class _TrackCard extends StatelessWidget {
                           ),
                           SizedBox(height: 3 * s),
                           Text(
-                            track.description,
-                            maxLines: 1,
+                            state.ambientTrackError(track.name) ??
+                                (!AppState.hasAmbientSource(track.name)
+                                    ? 'Needs a recording · tap ⋯ to replace'
+                                    : state.isAmbientTrackLoading(track.name)
+                                    ? 'Loading recording…'
+                                    : track.description),
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: metrics.text(20, color: MixerTheme.muted),
+                            style: metrics.text(
+                              20,
+                              color: state.ambientTrackError(track.name) != null
+                                  ? const Color(0xFFFFC9A0)
+                                  : MixerTheme.muted,
+                            ),
                           ),
                         ],
                       ),
@@ -918,7 +963,39 @@ class _TrackCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 24 * s),
+                    SizedBox(width: 6 * s),
+                    CupertinoButton(
+                      key: ValueKey('options-${track.name}'),
+                      padding: EdgeInsets.zero,
+                      minSize: 44,
+                      onPressed: onReplace,
+                      child: Semantics(
+                        label: 'Replace ${track.name}',
+                        button: true,
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              3,
+                              (_) => Container(
+                                width: 3,
+                                height: 3,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 1.5,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFB0D3D4),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 6 * s),
                     Semantics(
                       label: 'Enable ${track.name}',
                       child: SizedBox(

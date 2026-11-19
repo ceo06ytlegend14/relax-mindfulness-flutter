@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/inert_audio_player.dart';
@@ -178,6 +179,30 @@ void main() {
       expect(early.importUserDataFromJson(jsonEncode(validBackup())), isFalse);
       expect(early.favorites, isEmpty);
       expect(early.sessions, isEmpty);
+    },
+  );
+  test(
+    'a replacement round-trips as ordinary saved sound names and levels',
+    () {
+      final mixer = MixerController(app);
+      addTearDown(mixer.dispose);
+      expect(mixer.replaceTrack('Soft Rain', 'Ocean Waves'), isTrue);
+      expect(mixer.saveMix('Replacement shoreline'), isTrue);
+      final backup = app.exportUserDataToJson();
+      final restored = AppState(
+        guidedPlayer: InertAudioPlayer(),
+        preferences: preferences,
+      );
+      addTearDown(restored.dispose);
+      expect(restored.importUserDataFromJson(backup), isTrue);
+      expect(restored.presets.first.name, 'Replacement shoreline');
+      expect(restored.presets.first.volumes, {'Ocean Waves': .3});
+      expect(restored.activeAmbientTracks, isEmpty);
+      final validated = restored.validateUserBackupFromJson(backup);
+      expect((validated.values['presets'] as List).first, {
+        'name': 'Replacement shoreline',
+        'volumes': {'Ocean Waves': .3},
+      });
     },
   );
 }

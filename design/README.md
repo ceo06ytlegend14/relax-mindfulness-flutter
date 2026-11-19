@@ -12,6 +12,17 @@ These screenshots are from an **independent interactive browser design preview**
 
 The player and Sleep captures were refreshed for the sunrise-lake / moonlit-blue update. They show real bundled audio playing in the independent preview, not a fabricated playback state. Home, Sounds and Meditate captures illustrate the preceding redesigns.
 
+## Sound covers and one-layer replacement
+
+The Sounds captures above are refreshed for the new covers and ⋯ controls. Two additional **independent HTML captures**, not compiled Flutter/device screenshots:
+
+- [Rain on Leaves / Urban Rain and neighboring covers](mixer-covers-mobile-preview.png) — scrolled phone view.
+- [Replace sound chooser](sound-replacement-mobile-preview.png) — a row is selected, but no preview audio has started.
+
+All 75 cards have local decorative covers. The chooser uses only **six existing bundled recordings**, with explicit eight-second Preview and separate Use sound. It is a one-layer sound swap, **not newly licensed alternate takes of each sound**. It preserves the layer’s level, other layers, paused state, saved mixes and the four-tab footer; aliases cannot be added as purported unique recordings. New packs/imports/same-sound variants are deferred. Missing sources are now labeled rather than substituted with unrelated rain: 35 configured card names, 40 needing a recording. See the [source/rights audit](../docs/SOUND_LIBRARY.md).
+
+Local verification after this update: **115/115 browser tests** (including 19 new cover/replacement/actual-audio checks) and **15/15 Python fixtures** passed. The Flutter/native results later in this document describe the earlier exact `332a3fd` baseline; new code needs its own hosted verification.
+
 ## Open the interactive design preview
 
 The optional HTML/CSS/JavaScript preview is saved in `design/preview/`; its `assets` link points to the real bundled assets. It is separate from the Flutter runtime and does not replace native testing.

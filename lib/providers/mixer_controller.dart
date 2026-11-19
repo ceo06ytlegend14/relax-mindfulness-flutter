@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 
@@ -126,6 +127,47 @@ class MixerController extends ChangeNotifier {
     _remember();
     _playSelection();
     notifyListeners();
+  }
+
+  /// A legacy name can already use this exact bundled clip. Never add that
+  /// clip again just because another card has a different display name.
+  String? replacementConflict(String from, String to) {
+    final asset = bundledSoundAssets[to];
+    for (final entry in _levels.entries) {
+      if (entry.key == from || entry.value <= 0) continue;
+      if (entry.key == to ||
+          (asset != null && bundledSoundAssets[entry.key] == asset)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  /// Swap one layer, not its underlying recording. Existing names/backup/share
+  /// formats remain stable, and a paused selection must stay paused.
+  bool replaceTrack(String from, String to) {
+    if (_disposed ||
+        from == to ||
+        replacementConflict(from, to) != null ||
+        !allMixerTracks.any((track) => track.name == from) ||
+        !bundledRecordings.any((recording) => recording.name == to)) {
+      return false;
+    }
+    final wasPlaying = isPlaying;
+    final level = volume(from) > 0 ? volume(from) : 0.3;
+    _levels = Map.of(_levels)
+      ..remove(from)
+      ..[to] = level;
+    _category = mixerCategories
+        .firstWhere(
+          (category) => category.tracks.any((track) => track.name == to),
+        )
+        .id;
+    _preset = null;
+    _remember();
+    if (wasPlaying) _playSelection();
+    notifyListeners();
+    return true;
   }
 
   void shuffle() {

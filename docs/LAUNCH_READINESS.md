@@ -6,6 +6,10 @@ Updated: 2026-11-19. Product ownership, branding, accounts, spending authority a
 
 A proposed $100,000 traffic budget is not evidence of readiness or authorization to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. No ads, production billing changes, store submission or public release have been made. Existing **Home / Sounds / Meditate / Sleep** navigation and shared playback are retained.
 
+## Sound-library follow-up (new code requires fresh verification)
+
+The [sound-library audit](SOUND_LIBRARY.md) records consistent covers, a six-bundled-sound one-layer replacement chooser and removal of unrelated generic-rain fallback. **35/75 cards have a configured source; 40 remain visible and explicitly need recordings.** No new audio licensing or same-sound takes are claimed. Local browser checks are now **115/115**; Python fixtures **15/15**. The green engineering baseline below is for `332a3fd`, not automatic verification of this follow-up. Owner-controlled media rights and signed-device audio gates remain open.
+
 ## Engineering gate passed — distribution gates remain open
 
 Verified code revision: **`332a3fdc460ae81d580c7203216a9c78e54dbc29`**. [Run 44476084854](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44476084854) completed **successfully in all four jobs** on 2026-11-19. This is evidence for that exact revision, not automatic approval of future code or a store release.

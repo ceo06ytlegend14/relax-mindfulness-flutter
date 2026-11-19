@@ -8,9 +8,17 @@ import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/screens/sounds_screen.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/fake_sound_preview_player.dart';
+import 'package:relax_mindfulness/services/sound_preview_controller.dart';
 
-Future<FakeMixerAppState> mountMixer(WidgetTester tester, double width) async {
-  await tester.binding.setSurfaceSize(Size(width, 1400));
+Future<FakeMixerAppState> mountMixer(
+  WidgetTester tester,
+  double width, {
+  double height = 1400,
+  double textScale = 1,
+  SoundPreviewPlayer Function()? previewPlayerFactory,
+}) async {
+  await tester.binding.setSurfaceSize(Size(width, height));
   final app = FakeMixerAppState();
   final mixer = MixerController(app);
   addTearDown(() async {
@@ -28,10 +36,13 @@ Future<FakeMixerAppState> mountMixer(WidgetTester tester, double width) async {
       child: CupertinoApp(
         localizationsDelegates: const [DefaultMaterialLocalizations.delegate],
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          data: MediaQuery.of(context).copyWith(
+            disableAnimations: true,
+            textScaler: TextScaler.linear(textScale),
+          ),
           child: child!,
         ),
-        home: const SoundsScreen(),
+        home: SoundsScreen(previewPlayerFactory: previewPlayerFactory),
       ),
     ),
   );
@@ -142,4 +153,234 @@ void main() {
     expect(find.byType(CupertinoAlertDialog), findsNothing);
     expect(find.text('Quiet cabin'), findsOneWidget);
   });
+  testWidgets(
+    'opening and canceling the chooser never autoplays or changes the mix',
+    (tester) async {
+      final previews = <FakeSoundPreviewPlayer>[];
+      final app = await mountMixer(
+        tester,
+        390,
+        height: 844,
+        previewPlayerFactory: () {
+          final player = FakeSoundPreviewPlayer();
+          previews.add(player);
+          return player;
+        },
+      );
+      final options = find.byKey(const ValueKey('options-Soft Rain'));
+      await tester.ensureVisible(options);
+      await tester.tap(options);
+      await tester.pumpAndSettle();
+      expect(find.text('Replace Soft Rain'), findsOneWidget);
+      expect(previews, isEmpty);
+      expect(app.active, isEmpty);
+      expect(app.cached, isEmpty);
+      expect(
+        tester
+            .widget<CupertinoButton>(
+              find.byKey(const ValueKey('use-replacement-sound')),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.byKey(const ValueKey('close-sound-replacement')));
+      await tester.pumpAndSettle();
+      expect(app.active, isEmpty);
+      expect(app.cached, isEmpty);
+      expect(app.previewDucked, isFalse);
+    },
+  );
+
+  testWidgets(
+    'preview is explicit, short, cancelable and leaves selected levels untouched',
+    (tester) async {
+      final player = FakeSoundPreviewPlayer();
+      final app = await mountMixer(
+        tester,
+        390,
+        height: 844,
+        previewPlayerFactory: () => player,
+      );
+      final options = find.byKey(const ValueKey('options-Soft Rain'));
+      await tester.ensureVisible(options);
+      await tester.tap(options);
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const ValueKey('preview-Ocean Waves'));
+      await tester.ensureVisible(preview);
+      await tester.tap(preview);
+      await tester.pump();
+      expect(player.playCalls, 1);
+      expect(app.previewDucked, isTrue);
+      expect(app.cached, isEmpty);
+      expect(app.active, isEmpty);
+      await tester.pump(const Duration(seconds: 8));
+      expect(player.disposed, isTrue);
+      expect(app.previewDucked, isFalse);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('close-sound-replacement')),
+      );
+      await tester.tap(find.byKey(const ValueKey('close-sound-replacement')));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'Use sound keeps a paused selection paused and normal taps/favorites still work',
+    (tester) async {
+      final app = await mountMixer(tester, 390, height: 844);
+      final options = find.byKey(const ValueKey('options-Soft Rain'));
+      await tester.ensureVisible(options);
+      await tester.tap(options);
+      await tester.pumpAndSettle();
+      final select = find.byKey(
+        const ValueKey('select-replacement-Ocean Waves'),
+      );
+      await tester.ensureVisible(select);
+      await tester.tap(select);
+      await tester.pump();
+      expect(app.cached, isEmpty);
+      await tester.tap(find.byKey(const ValueKey('use-replacement-sound')));
+      await tester.pumpAndSettle();
+      expect(app.cached, {'Ocean Waves': .3});
+      expect(app.active, isEmpty);
+      final card = find.byKey(const ValueKey('track-Ocean Waves'));
+      await tester.ensureVisible(card);
+      await tester.longPress(find.text('Ocean Waves'));
+      await tester.pump();
+      expect(app.starred.contains('Ocean Waves'), isFalse);
+      await tester.tap(find.byKey(const ValueKey('toggle-Ocean Waves')));
+      await tester.pump();
+      expect(app.cached['Ocean Waves'], 0);
+      await tester.tap(find.text('Ocean Waves'));
+      await tester.pump();
+      expect(app.active['Ocean Waves'], .3);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'preview failure is visible and closing stops and restores playback gain',
+    (tester) async {
+      final player = FakeSoundPreviewPlayer()..failLoad = true;
+      final app = await mountMixer(
+        tester,
+        390,
+        height: 844,
+        previewPlayerFactory: () => player,
+      );
+      final options = find.byKey(const ValueKey('options-Soft Rain'));
+      await tester.ensureVisible(options);
+      await tester.tap(options);
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const ValueKey('preview-Ocean Waves'));
+      await tester.ensureVisible(preview);
+      await tester.tap(preview);
+      await tester.pump();
+      expect(
+        find.text('Preview could not play. Your mix was not changed.'),
+        findsOneWidget,
+      );
+      expect(app.previewDucked, isFalse);
+      expect(app.active, isEmpty);
+      expect(app.cached, isEmpty);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('close-sound-replacement')),
+      );
+      await tester.tap(find.byKey(const ValueKey('close-sound-replacement')));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  for (final size in const [Size(320, 640), Size(390, 844), Size(844, 390)]) {
+    testWidgets(
+      'replacement controls stay scrollable with large text at $size',
+      (tester) async {
+        await mountMixer(
+          tester,
+          size.width,
+          height: size.height,
+          textScale: 1.6,
+        );
+        final options = find.byKey(const ValueKey('options-Soft Rain'));
+        await tester.ensureVisible(options);
+        await tester.tap(options);
+        await tester.pumpAndSettle();
+        final select = find.byKey(
+          const ValueKey('select-replacement-Temple Bowl'),
+        );
+        await tester.ensureVisible(select);
+        await tester.tap(select);
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('use-replacement-sound')).hitTestable(),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(const ValueKey('use-replacement-sound')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+  testWidgets(
+    'a preview stops on backgrounding and does not resume on return',
+    (tester) async {
+      final player = FakeSoundPreviewPlayer();
+      final app = await mountMixer(
+        tester,
+        390,
+        height: 844,
+        previewPlayerFactory: () => player,
+      );
+      final options = find.byKey(const ValueKey('options-Soft Rain'));
+      await tester.ensureVisible(options);
+      await tester.tap(options);
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const ValueKey('preview-Ocean Waves'));
+      await tester.ensureVisible(preview);
+      await tester.tap(preview);
+      await tester.pump();
+      expect(app.previewDucked, isTrue);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      expect(player.disposed, isTrue);
+      expect(app.previewDucked, isFalse);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(player.playCalls, 1);
+      expect(app.active, isEmpty);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('close-sound-replacement')),
+      );
+      await tester.tap(find.byKey(const ValueKey('close-sound-replacement')));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'missing and failed source state is readable instead of hidden fallback audio',
+    (tester) async {
+      final app = await mountMixer(tester, 823);
+      app.ambientErrors['Soft Rain'] =
+          'This recording could not play. Try again or replace this sound.';
+      app.notifyListeners();
+      await tester.pump();
+      expect(find.byKey(const ValueKey('mixer-source-notice')), findsOneWidget);
+      expect(
+        find.text(
+          'This recording could not play. Try again or replace this sound.',
+        ),
+        findsOneWidget,
+      );
+      final cave = find.byKey(const ValueKey('track-Rain Cave'));
+      await tester.scrollUntilVisible(
+        cave,
+        450,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Needs a recording · tap ⋯ to replace'), findsWidgets);
+      expect(find.byKey(const ValueKey('cover-Rain Cave')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

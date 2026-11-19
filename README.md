@@ -4,6 +4,12 @@ A Flutter app for ambient sound mixing, timed calming sessions, breathing and sl
 
 **Status: pre-release.** The visual redesign and independent browser preview are implemented, but the app is not yet cleared for a paid acquisition launch. See the [prioritized release plan](docs/LAUNCH_READINESS.md), especially billing, credential handling, real-device audio and content rights.
 
+## Sound library update
+
+All **75 sound cards have local cover art**, including Rain on Leaves and Urban Rain. Use **a card’s ⋯ → Replace sound → Preview → Use sound** to swap only that layer from six existing bundled clips. Opening the chooser never autoplays; other layers and the current level are preserved, paused selections stay paused, and saved mixes remember the real chosen name. Packs, personal imports and new same-sound recording variants are deferred—not invented from duplicate audio.
+
+The source audit found **35 cards with configured audio and 40 without**. Unconfigured cards remain visible but are labeled; they no longer silently play generic rain. Existing media rights and device playback still need review. See the [sound-library inventory and scope](docs/SOUND_LIBRARY.md). Local browser checks for this update are **115/115**, including playback of all six bundled clips; the older hosted results below are baseline evidence, not verification of this new code.
+
 ## Run the Flutter app
 
 - Minimum **Flutter 3.32 / Dart 3.8**, matching `pubspec.lock`.
