@@ -117,6 +117,17 @@ void main() {
       expect(controller.hasFullAccess, isFalse);
       expect(controller.trialActive, isFalse);
       expect(controller.notice, contains('Do not pay again'));
+      expect(controller.canPurchase, isFalse);
+      expect(
+        await controller.purchase(controller.plans.single),
+        BillingResult.unavailable,
+      );
+      expect(gateway.purchasedPackages, hasLength(1));
+      await controller.refresh();
+      expect(
+        controller.canPurchase,
+        isFalse,
+      ); // A cached empty fetch is not proof of failed payment.
     },
   );
 
@@ -150,9 +161,36 @@ void main() {
         expect(controller.hasFullAccess, isFalse);
         expect(controller.notice, isNot(contains('PRIVATE_STORE_DETAILS')));
         expect(controller.isBusy, isFalse);
+        expect(controller.canPurchase, entry.value == BillingResult.cancelled);
+        gateway.emit(billingCustomer(active: true));
+        expect(controller.hasFullAccess, isTrue);
+        gateway.emit(billingCustomer(active: false));
+        expect(controller.canPurchase, isTrue);
       },
     );
   }
+
+  test(
+    'an uncertain checkout failure blocks another charge attempt while restore stays available',
+    () async {
+      await controller.initialize();
+      gateway.purchaseError = StateError('PRIVATE_CHECKOUT_DETAILS');
+      expect(
+        await controller.purchase(controller.plans.single),
+        BillingResult.failed,
+      );
+      expect(controller.canPurchase, isFalse);
+      expect(controller.canRestore, isTrue);
+      expect(controller.notice, isNot(contains('PRIVATE_CHECKOUT_DETAILS')));
+      await controller.restore();
+      expect(controller.canPurchase, isFalse);
+      expect(
+        await controller.purchase(controller.plans.single),
+        BillingResult.unavailable,
+      );
+      expect(gateway.purchasedPackages, hasLength(1));
+    },
+  );
 
   test(
     'restore can both grant and revoke access; errors are not reported as an empty purchase history',

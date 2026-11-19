@@ -159,6 +159,7 @@ class SubscriptionController extends ChangeNotifier {
   bool _busy = false;
   bool _disposed = false;
   bool _customerChecked = false;
+  bool _checkoutNeedsReview = false;
   int _revision = 0;
   String? _notice;
 
@@ -172,7 +173,8 @@ class SubscriptionController extends ChangeNotifier {
       _customerChecked &&
       _plans.isNotEmpty &&
       !hasFullAccess &&
-      !_accessIsUncertain;
+      !_accessIsUncertain &&
+      !_checkoutNeedsReview;
 
   bool get _accessIsUncertain =>
       _customer?.entitlements.verification == VerificationResult.failed ||
@@ -235,7 +237,7 @@ class SubscriptionController extends ChangeNotifier {
     if (_loading) return 'Checking the store…';
     if (!_configured || !_customerChecked)
       return 'Store access could not be checked. Try refreshing or restoring before making a purchase.';
-    if (!hasFullAccess && _accessIsUncertain)
+    if (!hasFullAccess && (_accessIsUncertain || _checkoutNeedsReview))
       return 'Store access needs to be verified. Restore purchases or contact support; do not purchase again.';
     if (_plans.isEmpty)
       return 'No supported subscription plans are available from the store right now.';
@@ -250,6 +252,10 @@ class SubscriptionController extends ChangeNotifier {
     if (_disposed) return;
     _customer = customer;
     _customerChecked = true;
+    if (hasFullAccess && _checkoutNeedsReview) {
+      _checkoutNeedsReview = false;
+      _notice = null;
+    }
     _scheduleExpiry();
     _notify();
   }
@@ -394,6 +400,10 @@ class SubscriptionController extends ChangeNotifier {
             : 'Store access is active.';
         return BillingResult.active;
       }
+      // A checkout callback without access is not proof that no charge occurred.
+      // Keep another checkout disabled for this session, even after an empty
+      // cached refresh/restore. Only confirmed access resolves that uncertainty.
+      if (!restoring) _checkoutNeedsReview = true;
       _notice = restoring
           ? 'No active premium entitlement was returned by the store.'
           : 'The store returned no active premium entitlement yet. Do not pay again; try Restore purchases or contact support.';
@@ -406,16 +416,19 @@ class SubscriptionController extends ChangeNotifier {
         return BillingResult.cancelled;
       }
       if (code == PurchasesErrorCode.paymentPendingError) {
+        if (!restoring) _checkoutNeedsReview = true;
         _notice =
             'Payment is pending. Access will update only when the store reports an active entitlement.';
         return BillingResult.pending;
       }
+      if (!restoring) _checkoutNeedsReview = true;
       _notice = restoring
           ? 'Purchases could not be restored. Check your store connection and try again.'
           : 'Purchase could not be completed. Check the store before trying again.';
       return BillingResult.failed;
     } catch (_) {
       if (_disposed) return BillingResult.unavailable;
+      if (!restoring) _checkoutNeedsReview = true;
       _notice = restoring
           ? 'Purchases could not be restored. Try again later.'
           : 'Purchase could not be completed. Check the store before trying again.';

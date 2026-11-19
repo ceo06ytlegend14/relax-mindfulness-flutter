@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/screens/premium_screen.dart';
 import 'package:relax_mindfulness/services/subscription_controller.dart';
 
@@ -22,18 +23,23 @@ Future<SubscriptionController> mountPremium(
   );
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
-    billing.dispose();
     await tester.binding.setSurfaceSize(null);
   });
   await tester.pumpWidget(
-    CupertinoApp(
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(scale)),
-        child: child!,
+    // This fixture owns the controller. Disposal during tree teardown cancels
+    // expiry timers before Flutter's end-of-test invariant verification.
+    ChangeNotifierProvider<SubscriptionController>(
+      create: (_) => billing,
+      lazy: false,
+      child: CupertinoApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
+        home: PremiumScreen(controller: billing, openExternalLink: openLink),
       ),
-      home: PremiumScreen(controller: billing, openExternalLink: openLink),
     ),
   );
   await tester.pump();
@@ -116,6 +122,14 @@ void main() {
       expect(find.byKey(const ValueKey('premium-active-status')), findsNothing);
       expect(find.textContaining('Do not pay again'), findsOneWidget);
       expect(find.text('Store trial active'), findsNothing);
+      expect(
+        tester
+            .widget<CupertinoButton>(
+              find.byKey(const ValueKey('purchase-store-plan')),
+            )
+            .onPressed,
+        isNull,
+      );
     },
   );
 

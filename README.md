@@ -7,14 +7,16 @@ A Flutter app for ambient sound mixing, timed calming sessions, breathing and sl
 ## Run the Flutter app
 
 - Minimum **Flutter 3.32 / Dart 3.8**, matching `pubspec.lock`.
-- Quality automation is migrating to **Flutter 3.38.10**, shared across web/Android/iOS, with **Android API 36 / minimum API 24** and **Xcode 26.3**. The migration and dependency-lock update are pending hosted verification; see the [native release runbook](docs/NATIVE_RELEASE.md).
+- Use the quality automation pin **Flutter 3.38.10** to reproduce web/Android/iOS results, with **Android API 36 / minimum API 24** and **Xcode 26.3**. Native compilation steps now pass, but the latest complete run still fails its lock/test gates; the reconciled lock and test-cleanup follow-up await a fresh hosted pass. See the [native release runbook](docs/NATIVE_RELEASE.md).
 
 ```sh
 flutter pub get --enforce-lockfile
 flutter run
 ```
 
-No private API key is required for the core screens and bundled audio. `.env.example` is guidance only: Flutter does not automatically load it. Do not compile private service credentials into a client via `--dart-define`; those values are recoverable from the application. A RevenueCat integration must use its **public platform SDK key**, never a secret REST key. AI service credentials need a server-side boundary before production use.
+No private API key is required for core screens and bundled audio. Reflection studio is an explicitly **local writing template**, not an AI/music-generation service. Current source no longer uses a provider key; the owner still needs to revoke/rotate a historically exposed credential.
+
+**New subscription purchases are disabled by default.** Access/restore use SDK entitlements, never a local premium/trial flag. The paywall uses real localized store offerings; see [billing configuration and sandbox gates](docs/BILLING.md). `.env.example` is guidance only—Flutter does not automatically load it. The owner must supply approved platform-specific **public SDK keys**, legal URLs and explicit opt-in before new sales. Never compile a secret REST key, signing password or AI provider credential via Dart defines; client values are recoverable. No live billing configuration or payment was made.
 
 ## Quality checks
 
@@ -36,7 +38,7 @@ npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Baseline verification on 2026-11-19: **90 browser/PWA/configuration checks passed**. [The first hosted run](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44468832125) also passed Flutter analysis, formatting and release web compilation, but **Flutter tests failed**. A green preview suite is not native release approval. Flutter/Dart SDKs are unavailable locally; hosted CI is the real compilation/test gate.
+Verification on 2026-11-19: **96/96 browser/PWA/source-configuration checks** and **15/15 Python diagnostic/verifier fixture tests** pass locally. [Latest completed hosted baseline](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44472985367): Flutter analysis/format/web build and **Android debug, Android unsigned release and iOS unsigned release compilation steps passed**; the overall run failed dependency-lock drift and **2 Flutter test-cleanup failures (215 passed)**. The exact lock diff and lifecycle fixes are implemented; a fresh full hosted pass is pending. A green preview or individual build step is not native release approval. Flutter/Dart SDKs are unavailable in this sandbox, so hosted CI is the real Flutter compilation/test gate.
 
 For checks without a browser download: `npm run test:pwa` and `npm run test:platform`. `PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can point to existing tools; see [PWA checks](docs/PWA.md#checks).
 

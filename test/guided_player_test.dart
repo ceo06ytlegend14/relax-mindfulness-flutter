@@ -81,18 +81,23 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await mountSessionPlayer(tester);
-    final route = tester.widget<Semantics>(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics && widget.properties.label == 'Session player',
-      ),
-    );
-    expect(route.explicitChildNodes, isTrue);
-    expect(route.properties.scopesRoute, isTrue);
-    expect(find.bySemanticsLabel('Minimize session player'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+    try {
+      await mountSessionPlayer(tester);
+      final route = tester.widget<Semantics>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'Session player',
+        ),
+      );
+      expect(route.explicitChildNodes, isTrue);
+      expect(route.properties.scopesRoute, isTrue);
+      expect(find.bySemanticsLabel('Minimize session player'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    } finally {
+      // The binding verifies handles before package:test addTearDown callbacks.
+      semantics.dispose();
+    }
   });
 
   for (final size in const [

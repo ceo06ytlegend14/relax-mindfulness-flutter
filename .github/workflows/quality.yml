@@ -59,7 +59,7 @@ jobs:
       # Legacy stylistic infos are advisory; errors and warnings still fail.
       - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: flutter analyze --no-fatal-infos
-      - name: Format-check the new profile safety implementation and tests
+      - name: Format-check safety, player and billing implementation/tests
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: >-
           dart format --output=none --set-exit-if-changed
@@ -73,7 +73,7 @@ jobs:
           test/subscription_controller_test.dart test/premium_screen_test.dart
           test/support/billing_fixtures.dart
           lib/screens/sounds_screen.dart test/mixer_screen_test.dart
-          test/sanctuary_screen_test.dart
+          lib/main.dart test/sanctuary_screen_test.dart
       - name: Run Flutter regressions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         shell: bash
@@ -118,14 +118,22 @@ jobs:
         run: flutter pub get
       - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python3 tool/ci_check_lockfile.py
-      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - id: debug_apk
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: python3 tool/ci_build.py flutter build apk --debug --no-pub
+      - name: Reject a release without owner signing or explicit unsigned opt-in
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/verify_android_signing_guard.py
       # Explicitly UNSIGNED, for compilation only. No production key is present,
       # no APK/AAB is uploaded, and this cannot be submitted to Play as-is.
-      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - id: release_aab
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         env:
           ORG_GRADLE_PROJECT_allowUnsignedRelease: 'true'
         run: python3 tool/ci_build.py flutter build appbundle --release --no-pub
+      - name: Inspect compiled identity, API, billing and 16 KB native-library compatibility
+        if: ${{ !cancelled() && steps.debug_apk.outcome == 'success' && steps.release_aab.outcome == 'success' }}
+        run: python3 tool/verify_android_artifacts.py
 
   ios:
     name: iOS unsigned device compilation (Xcode 26)

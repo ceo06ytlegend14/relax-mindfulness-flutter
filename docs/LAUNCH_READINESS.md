@@ -2,52 +2,74 @@
 
 Updated: 2026-11-19. Product ownership, branding, accounts, spending authority and release approval remain with the repository owner. Development assistance does not transfer those responsibilities to an AI or make it a legal business partner.
 
-## Current decision: do not scale paid acquisition yet
+## Current decision: internal validation, not public launch or paid acquisition
 
-A proposed $100,000 traffic budget is not evidence of product readiness or a commitment to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. This repository does not authorize ad spending or guarantee users, revenue, retention or returns.
+A proposed $100,000 traffic budget is not evidence of readiness or authorization to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. No ads, production billing changes, store submission or public release have been made. Existing **Home / Sounds / Meditate / Sleep** navigation and shared playback are retained.
 
-The priority is release reliability and truthful capabilities, not adding screens to create an appearance of progress. Existing Home / Sounds / Meditate / Sleep navigation and shared playback are retained.
+## Engineering evidence and the next gate
 
-## Safety and native preparation — verification in progress
+Latest completed hosted baseline: [c64409d / run 44472985367](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44472985367). **The overall run failed; do not describe it as green.** It established:
 
-- [x] Correct Android MainActivity's package/path to match the existing `com.sanctuary.relax_mindfulness` namespace. The application ID is unchanged.
-- [x] Replace the nonexistent `ic_launcher_round` reference with the existing launcher resource. Structural tests cover both launcher references and the activity package/path; this is not an Android compilation result.
-- [x] Validate/stage all backup categories before changing memory or saving preferences. Add side-effect-free review, explicit replacement confirmation, readiness checks, payload/type/range limits, private error notices and persisted reminder fields. See [backup guarantees/limits](BACKUPS.md).
-- [x] Remove the unconnected feedback form that claimed a message had been received.
-- [x] Align the declared minimum SDKs with the existing lockfile: Flutter 3.32 / Dart 3.8.
-- [x] Define read-only quality automation with SHA-pinned actions, locked browser tooling and Flutter analysis/tests/web compilation. It neither deploys nor modifies billing or store accounts.
-- [x] Obtain the first hosted Flutter result: [run 44468832125 / 603976a](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44468832125) passed analysis, formatting, release web compilation and all 90 browser/config checks. **Flutter regressions failed**; the run is not green.
-- [x] Replace Android release's debug-signing fallback with explicit owner-controlled configuration and a fail-closed guard. Restrict iOS HTTP exceptions to local networking and remove unimplemented background fetch. Existing application IDs remain unchanged.
-- [x] Add automatic Android debug/unsigned release and unsigned iOS/Xcode 26 CI jobs, API 36 targeting and a shared Flutter 3.38.10 toolchain. See [native release runbook](NATIVE_RELEASE.md). **This migration, dependency lock update and native compilation are not verified yet.**
-- [ ] Resolve all real hosted test/build failures and pass the complete workflow. The sandbox has no local Flutter/Dart SDK; syntax parsing is not compilation.
+| Check | Observed result |
+| --- | --- |
+| Flutter 3.38.10 analysis and scoped formatting | Passed. Legacy analyzer infos remain advisory; warnings/errors fail. |
+| Flutter regressions | **215 passed, 2 failed, 0 skipped.** Remaining failures were test-owned semantics/timer cleanup, not permission to skip the tests. |
+| Flutter release web compilation | Passed. This does not validate browser audio or installation on every device. |
+| Android debug APK | Compilation passed. |
+| Android unsigned, R8-minified release AAB | Compilation passed; the unused Play SplitInstall shrinker failure is fixed. |
+| iOS unsigned release device build / Xcode 26.3 | Compilation passed. Not an IPA, signed archive or device installation. |
+| Browser/PWA/platform-configuration job | Passed. It includes the independent HTML preview, not native screenshots. |
+| Dependency-lock gate | **Failed:** the RevenueCat SDK upgrade resolved a different lockfile. The exact hosted diff is now reconciled locally; a fresh hosted pass is required. |
+
+The follow-up fixes keep semantics disposal inside the test body and let the paywall fixture dispose its controller with the widget tree. They also add static built-Android checks (identity, target API, Billing Library metadata, 16 KB native-library/APK alignment, unsigned AAB) and a negative release-signing test. **Execution of that follow-up, including a clean lockfile, is still pending.** No gate was disabled to obtain a pass.
+
+Local follow-up checks: **96/96 browser/PWA/source-configuration tests** and **15/15 Python diagnostic/artifact-verifier fixture tests** passed, with no skipped browser tests. The Python fixtures are not checks of a real APK/AAB. Flutter/Dart are unavailable in the sandbox; hosted Flutter/native CI remains the compilation/test authority.
+
+## Implemented safety boundaries
+
+- Android MainActivity/package/resources match the unchanged `com.sanctuary.relax_mindfulness` identity. Release signing fails closed without owner credentials or explicit compilation-only unsigned opt-in; no debug-signing fallback.
+- Backup import validates and stages bounded data before changing profile memory or persistence. Review and explicit replacement confirmation are required. Purchases, credentials and notification permissions never transfer; see [BACKUPS.md](BACKUPS.md). This is not crash-safe transactional or encrypted cloud storage.
+- Unconnected feedback no longer pretends a message was received. Default Flutter/platform error reporting is no longer globally swallowed.
+- Premium/trial access comes from the active SDK entitlement, not legacy preference flags or a successful checkout callback. Prices are localized store offerings, and cancellation/pending/missing-access/restore failures are distinct. New sales remain **off by default**. See [BILLING.md](BILLING.md).
+- Reflection studio is an explicitly local writing template with real copy/clear behavior, **not AI or music generation**. Client provider/key use and false saving claims have been removed. A historically exposed credential still requires **owner-controlled revocation/rotation**; removing it from current source does not revoke it or erase Git history.
+- CI has read-only repository permissions, bounded jobs, no production signing/billing/AI secrets, no app-binary upload and no deployment/submission step. All targets share Flutter 3.38.10; lock drift and failed test/build exit codes remain failures.
 
 ## Release blockers, highest value first
 
 | Priority | Boundary / source | Why it blocks launch | Required evidence |
 | --- | --- | --- | --- |
-| P0 | Real Flutter/runtime checks — `.github/workflows/quality.yml`, `test/` | The first hosted Flutter analysis/web build passed, but Flutter tests failed. The newer native toolchain/lock migration is pending. HTML preview success cannot prove native correctness. | Passing analysis/tests/web build on the shared pin; Android debug/release compilation and real-device checks; iOS build/device evidence. Fix failures rather than weakening checks. |
-| P0 | Billing — `lib/screens/premium_screen.dart`, premium methods in `lib/providers/app_state.dart` | The purchase path chooses local trial/premium state after a purchase call instead of deriving access from the returned active entitlement. Trial/conversion text and displayed pricing also need to match actual store offers. | Verified RevenueCat/store configuration, localized products/prices, active entitlement reconciliation, cancellation/refund/expiry/reinstall/restore tests and supported-platform behavior. No live billing settings were changed in this pass. |
-| P0 | AI credential/cost boundary — `lib/screens/ai_studio_screen.dart` | A `GEMINI_API_KEY` compiled into a client can be extracted. The procedural fallback and unavailable generation/save capabilities must not be sold as more than they are. | Server-side credentials, authenticated/rate-limited requests, user-visible data-handling rules and cost caps; accurate UI and a safe unavailable mode. No AI API request or account change was made in this pass. |
-| P0 | Android/iOS packaging and signing — `android/app/build.gradle.kts`, native projects | Debug-signing fallback is removed; production credentials are intentionally absent. API 36/Xcode 26 compilation and the iOS Zen Night/Sanctuary naming mismatch still need verification/owner confirmation. | Owner-controlled signing/configuration, confirmed stable IDs/branding, signed install/upgrade/device checks and store metadata. Follow [NATIVE_RELEASE.md](NATIVE_RELEASE.md). Never put signing keys or passwords in chat/Git. |
-| P0 | Audio behavior/catalog — `lib/providers/app_state.dart`, catalog models | Playback request guards need real platform validation. External source availability, category aliases and fallbacks need auditing so a selected sound is not silently represented by unrelated audio. | Device tests for concurrent loads, pause/seek/retry, interruptions, background/lock screen, route changes, long timers, volume limits and network failure; verified catalog/source mapping. |
-| P0 | Content and branding rights — `assets/images/*/README.md`, audio sources | Some inherited artwork is cropped from supplied references; availability online is not proof of redistribution rights. Individual story narration/downloads are not implemented. | Confirm or replace every unclear asset; retain licenses/provenance and truthful feature descriptions before public/store marketing. |
-| P0 | Privacy, storage and support — `docs/BACKUPS.md`, wellbeing/AI flows | Mood/session data can be personal. Local preferences/clipboard exports are not encrypted cloud backup or crash-safe storage. No verified feedback delivery endpoint exists. | Appropriate privacy/retention/deletion policy and support destination, least-data collection, reviewed storage strategy and backup failure/device tests. Do not claim submissions are sent until delivery is implemented and verified. |
-| P1 | Reminders/timezone — `lib/providers/app_state.dart`, notification services | Persisted preference is not proof that a local-time notification is scheduled with permission. | Correct device timezone/DST behavior, permission-denied/cancel/restart tests, platform schedule verification and honest UI. |
-| P1 | Navigation/demo cleanup — `lib/main.dart`, CMS/admin/demo screens | Legacy breathe/AI tab mapping and mock/demo surfaces need deliberate product decisions, not silent exposure or arbitrary removal. | Every public action leads to a supported destination; demo/admin functions removed or properly isolated; accessibility and small-screen checks on compiled builds. |
+| P0 | Clean hosted run — `.github/workflows/quality.yml`, `test/`, `pubspec.lock` | Individual build steps pass, but the latest complete run is still red. Preview success cannot prove native correctness. | Green lock/analysis/format/tests/web/native gates on one exact commit, then record and test the signed candidate. |
+| P0 | Credential incident — historical AI key / repository history | A removed client key may still be usable by others. | Owner revokes/rotates it in the provider account and reviews usage/cost exposure. Never paste a replacement here or compile it into the app. Remote AI is out of this release unless separately designed/approved with server-side authorization, consent and cost limits. |
+| P0 | Billing and real value — `lib/services/subscription_controller.dart`, `lib/screens/premium_screen.dart` | Code/fake-gateway tests cannot prove receipt mapping, real offers, store behavior or a worthwhile paid benefit. | Owner-approved products/entitlement mapping and real legal/support pages; both stores' sandbox matrix for cancellation/pending/restore/expiry/refund/reinstall and localization. Confirm Premium's actual benefits. Sales stay disabled until approved. See [BILLING.md](BILLING.md). |
+| P0 | Packaging/signing/identity — native projects | Credentials are intentionally absent. iOS still uses **Zen Night / com.sagozen.zennight**, unlike Sanctuary. Unsigned compilation is not distribution. | Confirm existing app/customer history before any rename; owner-controlled signing, signed install/upgrade/device tests and store validation. [NATIVE_RELEASE.md](NATIVE_RELEASE.md) gives the runbook. |
+| P0 | Audio behavior/catalog — `lib/providers/app_state.dart`, catalog models | Real platform interruptions, background behavior, source availability and fallbacks remain unverified. | Device tests for concurrent loads, pause/seek/retry, interruptions, background/lock screen, route changes, long timers, volume limits and network failure; verify that each selected track has an accurate source/fallback. |
+| P0 | Content and branding rights — asset provenance/readmes and audio sources | Some retained artwork is cropped from supplied references. Online availability is not proof of redistribution rights. Individual story narration/downloads are not implemented. | Confirm or replace every unclear asset, retain licenses/provenance and truthful marketing descriptions. |
+| P0 | Privacy, storage and support — backup/wellbeing/billing flows | Personal data and third-party SDK behavior need disclosure. Local preferences/clipboard are not an encrypted vault; support delivery is not configured. | Owner-approved support/privacy/terms destinations, SDK/data inventory, retention/deletion and store disclosures; backup failure/device tests. Do not claim submissions are sent. |
+| P1 | Reminders/timezone — notifications and AppState | A persisted preference is not proof of a permitted, correctly timed notification. | Device timezone/DST, permission-denied/cancel/restart and actual schedule tests with honest UI. |
+| P1 | Navigation/demo/accessibility — `lib/main.dart`, legacy/demo surfaces | Legacy routes/admin/demo surfaces need deliberate product review. A clean build does not prove usable assistive navigation. | Every public action leads to a supported destination; isolate demo/admin features; test small screens, larger text, VoiceOver and TalkBack on the compiled candidate. |
 
 ## Staged rollout proposal — not an authorized spend plan
 
-1. **Internal release candidate:** pass the checks above, validate upgrades/backups, inspect crash/audio behavior on target devices, verify privacy/billing/support, and record which build was tested.
-2. **Small invited beta:** observe real task completion and return usage, with appropriate consent and minimal collection. No fabricated listening history, testimonials, app ratings or engagement numbers. Choose success criteria from the actual audience and pricing; no metrics have been measured by this repository pass.
-3. **Small capped acquisition experiment:** only after the owner approves the budget, platform, audience, destination, creatives and stop conditions. Measure reliable activation/retention and costs before increasing spend. More traffic does not fix churn, broken purchases or audio failures.
-4. **Scale cautiously:** require evidence of sustainable value, functioning support, billing accuracy and crash-free operation. Keep a rollback path. Budget changes, ads, public releases and destructive account/data actions require explicit owner approval.
+1. **Internal release candidate:** green engineering gates, verified rights/privacy/support, signed upgrade/backup/device/audio checks and sandbox billing if enabled. Record exact build, OS and device.
+2. **Small invited beta:** after owner approval, observe real task completion and return usage with appropriate consent and minimal collection. No fabricated history, testimonials, ratings or engagement metrics.
+3. **Small capped acquisition experiment:** only after explicit approval of budget, platform, audience, destination, creatives and stop conditions. Measure activation/retention/costs before scaling; traffic does not repair broken purchases or churn.
+4. **Scale cautiously:** require sustainable value, support, billing accuracy and crash evidence plus a rollback path. Budget changes, public releases and account/data operations require approval.
 
-## Checking this pass
+## Reproduce checks
 
-**Local results (2026-11-19):** `npm ci --ignore-scripts` succeeded and **all 90 repository browser/PWA/platform-configuration tests passed**, with no failures/skips. All **48 Dart source/test trees** passed syntax parsing; the seven new Dart implementation/test files were formatted. Manifest XML, quality-workflow YAML, documentation links and `git diff --check` also passed. None of these substitute for Dart type analysis, Flutter widget tests, compiled builds or a hosted workflow result. The new Flutter backup suites remain unexecuted.
+```sh
+# Pinned Flutter 3.38.10, with native build tools where applicable:
+flutter pub get --enforce-lockfile
+flutter analyze --no-fatal-infos
+flutter test
+flutter build web --release
+flutter build apk --debug
 
-- Development browser tooling is reproducible with `npm ci --ignore-scripts` and `npx playwright install --with-deps chromium`; run `npm run test:web`.
-- Framework-free Android checks: `npm run test:platform`. They inspect source/resource consistency only.
-- Real Flutter checks: `flutter pub get --enforce-lockfile`, `flutter analyze --no-fatal-infos`, `flutter test`, `flutter build web --release`, and `flutter build apk --debug` as applicable.
-- The quality workflow has read-only repository permissions, no deployment step, no billing/AI credentials and bounded job timeouts. Native compilation now runs on pushes/PRs too; unsigned compilation is deliberately separate from signing or store submission. Build and test diagnostics preserve failing exit codes.
-- No ads, analytics SDK, accounts, backend services, live billing configuration or release publication were introduced by this safety pass.
+# Development-only browser and diagnostic tests:
+npm ci --ignore-scripts
+npx playwright install --with-deps chromium
+npm run test:web
+python3 -m unittest discover -s tool -p 'test_*.py' -v
+```
+
+Native release compilation and signing boundaries are documented separately in [NATIVE_RELEASE.md](NATIVE_RELEASE.md). Passing these commands is not approval to publish or spend.
