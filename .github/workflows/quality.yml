@@ -5,11 +5,6 @@ on:
     branches: [main, 'arena/**']
   pull_request:
   workflow_dispatch:
-    inputs:
-      android_smoke:
-        description: Also compile a debug Android APK (does not publish)
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -17,6 +12,11 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# One pinned, Xcode-26-capable Flutter toolchain across all targets. Dependency
+# drift remains a failing check; later steps collect diagnostics, not a green job.
+env:
+  FLUTTER_VERSION: '3.38.10'
 
 jobs:
   browser:
@@ -34,6 +34,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run test:web
+      - run: python3 -m unittest discover -s tool -p 'test_*.py' -v
 
   flutter:
     name: Flutter analysis, tests and web compilation
@@ -45,13 +46,15 @@ jobs:
           persist-credentials: false
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: '3.32.8'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - run: flutter --version
       - id: dependencies
-        run: flutter pub get --enforce-lockfile
-      # Still collect test/build results after an analyzer failure, without
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      # Still collect test/build results after a lint/lockfile failure, without
       # suppressing that failure or turning a failed job green.
       # Legacy stylistic infos are advisory; errors and warnings still fail.
       - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
@@ -64,16 +67,29 @@ jobs:
           test/user_backup_test.dart test/user_backup_state_test.dart
           test/data_backup_screen_test.dart test/support/inert_audio_player.dart
           test/support/user_backup_fixture.dart
+      - name: Run Flutter regressions
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          flutter test --reporter json | tee test-results/flutter-tests.jsonl
+      - name: Summarize Flutter failures without masking the test exit code
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_report_tests.py test-results/flutter-tests.jsonl
       - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: flutter test --reporter expanded
-      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
-        run: flutter build web --release
+        run: python3 tool/ci_build.py flutter build web --release --no-pub
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        with:
+          name: flutter-test-events
+          path: test-results/flutter-tests.jsonl
+          retention-days: 7
 
   android:
-    name: Optional Android debug compilation
-    if: github.event_name == 'workflow_dispatch' && inputs.android_smoke
+    name: Android debug and unsigned release compilation
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -84,9 +100,44 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: '3.32.8'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - run: sdkmanager 'platforms;android-35' 'build-tools;36.0.0'
-      - run: flutter pub get --enforce-lockfile
-      - run: flutter build apk --debug
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - id: dependencies
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_build.py flutter build apk --debug --no-pub
+      # Explicitly UNSIGNED, for compilation only. No production key is present,
+      # no APK/AAB is uploaded, and this cannot be submitted to Play as-is.
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        env:
+          ORG_GRADLE_PROJECT_allowUnsignedRelease: 'true'
+        run: python3 tool/ci_build.py flutter build appbundle --release --no-pub
+
+  ios:
+    name: iOS unsigned device compilation (Xcode 26)
+    runs-on: macos-15
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - id: dependencies
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      # Verifies device architecture/plugin linking, not signing, installation,
+      # background audio behavior, an archive, TestFlight or App Store approval.
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_build.py flutter build ios --release --no-codesign --no-pub

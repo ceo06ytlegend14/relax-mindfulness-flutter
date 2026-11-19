@@ -63,9 +63,14 @@ test('quality automation has no repository-write or deployment capability', asyn
   for (const action of workflow.matchAll(/uses:\s*([^\s]+)@([^\s]+)/g)) {
     assert.match(action[2], /^[a-f0-9]{40}$/, `${action[1]} is SHA-pinned`);
   }
-  assert.match(workflow, /flutter test --reporter expanded/);
+  assert.match(workflow, /flutter test --reporter json/);
+  assert.match(workflow, /ci_report_tests\.py/);
+  assert.match(workflow, /ci_check_lockfile\.py/);
   assert.match(workflow, /flutter build web --release/);
   assert.match(workflow, /flutter build apk --debug/);
+  assert.match(workflow, /flutter build appbundle --release/);
+  assert.match(workflow, /flutter build ios --release --no-codesign/);
+  assert.match(workflow, /DEVELOPER_DIR: \/Applications\/Xcode_26\.3\.app/);
   assert.match(workflow, /npm run test:web/);
 });
 
@@ -73,4 +78,40 @@ test('the unconnected feedback UI no longer claims a message was received', asyn
   const wellbeing = await readFile(path.join(root, 'lib/screens/wellbeing_screen.dart'), 'utf8');
   assert.doesNotMatch(wellbeing, /Your feedback has been received/);
   assert.match(wellbeing, /const DataBackupScreen\(\)/);
+});
+
+test('release signing has an explicit owner-controlled boundary and no debug fallback', async () => {
+  const ignore = await readFile(path.join(root, 'android/.gitignore'), 'utf8');
+  assert.match(ignore, /^key\.properties$/m);
+  assert.match(ignore, /\*\.jks/);
+  assert.match(gradle, /SANCTUARY_KEYSTORE_PATH/);
+  assert.match(gradle, /SANCTUARY_KEYSTORE_PASSWORD/);
+  assert.match(gradle, /SANCTUARY_KEY_ALIAS/);
+  assert.match(gradle, /SANCTUARY_KEY_PASSWORD/);
+  assert.match(gradle, /buildsRelease && !releaseSigningReady && !allowUnsignedRelease/);
+  assert.match(gradle, /throw GradleException/);
+  assert.match(gradle, /signingConfig = signingConfigs\.findByName\("release"\)/);
+  assert.doesNotMatch(gradle, /signingConfigs\.(?:getByName|findByName)\("debug"\)/);
+});
+
+test('Android toolchain explicitly targets the current Play API floor', async () => {
+  const settings = await readFile(path.join(root, 'android/settings.gradle.kts'), 'utf8');
+  assert.match(gradle, /compileSdk = 36/);
+  assert.match(gradle, /targetSdk = 36/);
+  assert.match(gradle, /minSdk = 24/);
+  assert.match(settings, /com\.android\.application"\) version "8\.9\.1"/);
+  assert.match(gradle, /isCoreLibraryDesugaringEnabled = true/);
+  assert.match(gradle, /desugar_jdk_libs:2\.1\.4/);
+});
+
+test('iOS keeps the existing identity, HTTPS policy and audio-only background mode', async () => {
+  const info = await readFile(path.join(root, 'ios/Runner/Info.plist'), 'utf8');
+  const project = await readFile(path.join(root, 'ios/Runner.xcodeproj/project.pbxproj'), 'utf8');
+  assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.sagozen\.zennight;/);
+  assert.match(info, /<key>CFBundleDisplayName<\/key>\s*<string>Zen Night<\/string>/);
+  assert.match(info, /<key>NSAllowsLocalNetworking<\/key>\s*<true\/>/);
+  assert.doesNotMatch(info, /NSAllowsArbitraryLoads|NSExceptionAllowsInsecureHTTPLoads/);
+  const modes = info.match(/<key>UIBackgroundModes<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1];
+  assert(modes);
+  assert.deepEqual([...modes.matchAll(/<string>([^<]+)<\/string>/g)].map(match => match[1]), ['audio']);
 });

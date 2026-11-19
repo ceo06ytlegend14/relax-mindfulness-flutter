@@ -7,7 +7,7 @@ A Flutter app for ambient sound mixing, timed calming sessions, breathing and sl
 ## Run the Flutter app
 
 - Minimum **Flutter 3.32 / Dart 3.8**, matching `pubspec.lock`.
-- Quality automation is pinned to **Flutter 3.32.8** as a reproducible starting point, not a claim that native builds are already passing.
+- Quality automation is migrating to **Flutter 3.38.10**, shared across web/Android/iOS, with **Android API 36 / minimum API 24** and **Xcode 26.3**. The migration and dependency-lock update are pending hosted verification; see the [native release runbook](docs/NATIVE_RELEASE.md).
 
 ```sh
 flutter pub get --enforce-lockfile
@@ -36,11 +36,11 @@ npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Local verification on 2026-11-19: **90 browser/PWA/configuration checks passed**. Flutter/Dart SDKs are unavailable in this workspace; the new native backup tests and compiled builds remain unverified.
+Baseline verification on 2026-11-19: **90 browser/PWA/configuration checks passed**. [The first hosted run](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44468832125) also passed Flutter analysis, formatting and release web compilation, but **Flutter tests failed**. A green preview suite is not native release approval. Flutter/Dart SDKs are unavailable locally; hosted CI is the real compilation/test gate.
 
 For checks without a browser download: `npm run test:pwa` and `npm run test:platform`. `PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can point to existing tools; see [PWA checks](docs/PWA.md#checks).
 
-`.github/workflows/quality.yml` defines read-only, SHA-pinned browser and Flutter jobs on pushes/PRs. Flutter errors/warnings and failed tests/builds fail the job; stylistic analyzer infos remain advisory. A manual Android debug job is also defined. No workflow deploys the app, publishes a store binary, accesses billing secrets or launches ads. The workflow itself has not yet run for this local improvement pass; a green preview suite is not a substitute for it.
+`.github/workflows/quality.yml` defines read-only, SHA-pinned browser, Flutter, Android debug/unsigned release and unsigned iOS device jobs on pushes/PRs. Dependency drift, Flutter errors/warnings and failed tests/builds fail the job; stylistic analyzer infos remain advisory. No workflow deploys the app, uploads an app binary, accesses production signing/billing secrets or launches ads. Android production release signing now requires explicit owner-controlled credentials; debug signing is never a release fallback.
 
 ## Preview the design
 
