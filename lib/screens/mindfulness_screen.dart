@@ -1,467 +1,163 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:relax_mindfulness/providers/app_state.dart';
-import 'package:relax_mindfulness/theme/app_theme.dart';
-import 'package:relax_mindfulness/components/glass_components.dart';
-import 'package:relax_mindfulness/components/review_prompt_dialog.dart';
-import 'package:relax_mindfulness/services/notification_service.dart';
+import 'dart:math' as math;
 
-class MindfulnessScreen extends StatelessWidget {
+import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
+import 'package:relax_mindfulness/components/wellbeing_components.dart';
+import 'package:relax_mindfulness/providers/app_state.dart';
+import 'package:relax_mindfulness/screens/breathe_screen.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
+
+/// The legacy route name is kept; its contents are the user's actual activity.
+class MindfulnessScreen extends StatefulWidget {
   const MindfulnessScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        return CupertinoPageScaffold(
-          navigationBar: CupertinoNavigationBar(
-            middle: const Text('Mindfulness', style: TextStyle(color: Colors.white)),
-            backgroundColor: const Color(0xE6050D15),
-            border: Border.all(color: Colors.transparent),
-          ),
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [bgDark, Color(0xFF132932), bgDark],
-              ),
-            ),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    const Text('MINDFULNESS & STATS',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: mintAccent,
-                            letterSpacing: 2)),
-                    const Text('Your Mindful Journey',
-                        style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    const SizedBox(height: 4),
-                    const Text('Track session history, mood trends & practice consistency',
-                        style: TextStyle(fontSize: 14, color: Colors.white54)),
-                    const SizedBox(height: 20),
-
-                    // Daily Banner
-                    GlassCard(
-                      cornerRadius: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('DAILY MINDFUL MINUTE',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: tealPrimary,
-                                  letterSpacing: 1.5)),
-                          const SizedBox(height: 6),
-                          const Text('Cultivate Calm Presence',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                          const SizedBox(height: 4),
-                          const Text('Take 5 minutes to pause, observe your breath, and reset your nervous system.',
-                              style: TextStyle(fontSize: 13, color: Colors.white70)),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoButton.filled(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => state.setTab(AppTab.breathe),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(CupertinoIcons.wind, size: 18, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Text('Quick Start', style: TextStyle(color: Colors.white)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  color: Colors.white.withOpacity(0.15),
-                                  onPressed: () => state.setTab(AppTab.meditate),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(CupertinoIcons.person_crop_circle, size: 18, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Text('Guided Session', style: TextStyle(color: Colors.white)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Stats grid 1
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GlassCard(
-                            cornerRadius: 18,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('⏱️', style: TextStyle(fontSize: 24)),
-                                const SizedBox(height: 6),
-                                Text('${state.totalMinutes}',
-                                    style: const TextStyle(
-                                        fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                                const Text('Total Relaxed Min',
-                                    style: TextStyle(fontSize: 12, color: Colors.white54)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: GlassCard(
-                            cornerRadius: 18,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('🏆', style: TextStyle(fontSize: 24)),
-                                const SizedBox(height: 6),
-                                Text('${state.sessions.length}',
-                                    style: const TextStyle(
-                                        fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                                const Text('Sessions Done',
-                                    style: TextStyle(fontSize: 12, color: Colors.white54)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Stats grid 2
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GlassCard(
-                            cornerRadius: 18,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('🔥', style: TextStyle(fontSize: 24)),
-                                const SizedBox(height: 6),
-                                Text('${state.streak}',
-                                    style: const TextStyle(
-                                        fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                                const Text('Current Streak (Days)',
-                                    style: TextStyle(fontSize: 12, color: Colors.white54)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: GlassCard(
-                            cornerRadius: 18,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('⭐', style: TextStyle(fontSize: 24)),
-                                const SizedBox(height: 6),
-                                Text(state.avgMood > 0 ? state.avgMood.toStringAsFixed(1) : '--',
-                                    style: const TextStyle(
-                                        fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                                const Text('Average Mood Rating',
-                                    style: TextStyle(fontSize: 12, color: Colors.white54)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Weekly Chart Card
-                    GlassCard(
-                      cornerRadius: 20,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('PRACTICE TIME THIS WEEK',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: tealPrimary,
-                                  letterSpacing: 1.2)),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 140,
-                            child: _BarChartWidget(weeklyData: state.weeklyMinutes),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Category Breakdown
-                    if (state.categoryBreakdown.isNotEmpty) ...[
-                      const Text('CATEGORY BREAKDOWN',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: tealPrimary,
-                              letterSpacing: 1.2)),
-                      const SizedBox(height: 10),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: state.categoryBreakdown.entries.map((e) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: GlassChip(
-                                label: '${e.key}: ${e.value}m',
-                                isSelected: true,
-                                selectedColor: tealPrimary,
-                                onTap: () {},
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Session History
-                    const Text('RECENT SESSIONS',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: tealPrimary,
-                            letterSpacing: 1.2)),
-                    const SizedBox(height: 12),
-
-                    if (state.sessions.isEmpty)
-                      const GlassCard(
-                        cornerRadius: 18,
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                Text('🍃', style: TextStyle(fontSize: 40)),
-                                SizedBox(height: 8),
-                                Text('No sessions recorded yet',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                SizedBox(height: 4),
-                                Text('Complete your first session to see history here',
-                                    style: TextStyle(color: Colors.white54, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ...state.sessions.take(10).map((s) {
-                        final moodEmojis = ['', '😔', '😕', '😐', '🙂', '😊'];
-                        final moodEmoji = (s.moodRating >= 1 && s.moodRating <= 5) ? moodEmojis[s.moodRating] : null;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: GlassCard(
-                            cornerRadius: 16,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: tealPrimary.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    s.type == 'Meditation'
-                                        ? '🧘'
-                                        : s.type == 'Breathing'
-                                            ? '💨'
-                                            : s.type == 'Sleep'
-                                                ? '🌙'
-                                                : '🎵',
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(s.title,
-                                          style: const TextStyle(
-                                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                      const SizedBox(height: 2),
-                                      Text('${s.type} • ${s.durationMinutes} minutes',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                                if (moodEmoji != null) Text(moodEmoji, style: const TextStyle(fontSize: 22)),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-
-                    const SizedBox(height: 24),
-                    const _DailyRemindersCard(),
-                    const SizedBox(height: 16),
-                    const _RateAppCard(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  State<MindfulnessScreen> createState() => _MindfulnessScreenState();
 }
 
-class _DailyRemindersCard extends StatefulWidget {
-  const _DailyRemindersCard();
-
-  @override
-  State<_DailyRemindersCard> createState() => _DailyRemindersCardState();
-}
-
-class _DailyRemindersCardState extends State<_DailyRemindersCard> {
-  final _service = NotificationService();
-
-  @override
-  void initState() {
-    super.initState();
-    _service.init();
-  }
+class _MindfulnessScreenState extends State<MindfulnessScreen> {
+  int _visibleSessions = 12;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      cornerRadius: 24,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final app = context.watch<AppState>();
+    final sessions = app.sessions.toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final week = app.weeklyMinutes;
+    final weeklyTotal = week.fold<int>(0, (sum, day) => sum + day.value);
+    return WellbeingPage(
+      title: 'Your progress',
+      scrollKey: const PageStorageKey('progress-scroll'),
+      builder: (context, m) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Row(
-            children: [
-              Text('🔔', style: TextStyle(fontSize: 22)),
-              SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('DAILY HABIT REMINDERS',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: mintAccent, letterSpacing: 1.5)),
-                  Text('Stay Consistent',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                ],
-              ),
-            ],
+          const WellbeingEyebrow('SMALL MOMENTS ADD UP'),
+          const SizedBox(height: 10),
+          Text(
+            'Your own pace.\nYour own progress.',
+            key: const ValueKey('progress-title'),
+            style: m.serif(60, min: 34),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Only recorded practices appear here. Pausing, browsing, and saving a practice do not count as completing one.',
+            style: m.sans(21, min: 13, color: MixerTheme.muted, height: 1.5),
+          ),
+          const SizedBox(height: 26),
+          WellbeingSurface(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const WellbeingEyebrow('THIS WEEK · MONDAY TO SUNDAY'),
+                const SizedBox(height: 12),
+                Text(
+                  '$weeklyTotal min',
+                  key: const ValueKey('progress-weekly-minutes'),
+                  style: m.serif(52, min: 36),
+                ),
+                const SizedBox(height: 24),
+                _WeeklyChart(minutes: week),
+                const SizedBox(height: 18),
+                Text(
+                  weeklyTotal == 0
+                      ? 'Nothing recorded this week yet. Start whenever you are ready.'
+                      : 'A little space you made for yourself this week.',
+                  style: m.sans(
+                    19,
+                    min: 12,
+                    color: MixerTheme.muted,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          WellbeingSurface(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Morning Meditation (8:00 AM)',
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 4),
-                      Text('Start your day with gentle clarity & breath',
-                          style: TextStyle(color: Colors.white54, fontSize: 12)),
-                    ],
+                Expanded(
+                  child: WellbeingStat(
+                    value: '${app.totalMinutes}',
+                    label: 'minutes in saved history',
                   ),
                 ),
-                CupertinoSwitch(
-                  value: _service.morningReminderEnabled,
-                  activeColor: tealPrimary,
-                  onChanged: (val) async {
-                    await _service.setMorningReminder(val);
-                    setState(() {});
-                  },
+                const SizedBox(width: 18),
+                Expanded(
+                  child: WellbeingStat(
+                    value: '${sessions.length}',
+                    label: 'recorded sessions',
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(color: Colors.white10),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Bedtime Wind-down (9:30 PM)',
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 4),
-                      Text('Sleep story & ocean waves for deep slumber',
-                          style: TextStyle(color: Colors.white54, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                CupertinoSwitch(
-                  value: _service.eveningReminderEnabled,
-                  activeColor: purpleAccent,
-                  onChanged: (val) async {
-                    await _service.setEveningReminder(val);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () async {
-                await _service.sendInstantTestNotification();
-                if (!context.mounted) return;
-                showCupertinoDialog(
-                  context: context,
-                  builder: (context) => CupertinoAlertDialog(
-                    title: const Text('Test Notification Sent'),
-                    content: const Text('🔔 Check your notification tray.'),
-                    actions: [
-                      CupertinoDialogAction(
-                        child: const Text('OK'),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
+          const SizedBox(height: 28),
+          Text('Your recent moments', style: m.serif(39, min: 26)),
+          const SizedBox(height: 14),
+          if (sessions.isEmpty)
+            WellbeingSurface(
+              key: const ValueKey('progress-empty'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(CupertinoIcons.bell, color: tealPrimary, size: 18),
-                  SizedBox(width: 6),
-                  Text('Test Notification Now', style: TextStyle(color: tealPrimary, fontSize: 13)),
+                  const SanctuaryIcon(
+                    SanctuarySymbol.leaf,
+                    color: MixerTheme.mint,
+                    size: 34,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('A fresh beginning', style: m.serif(32, min: 24)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Complete a breathing or timed audio practice to begin your history. No sample sessions, no made-up streaks.',
+                    style: m.sans(
+                      20,
+                      min: 13,
+                      color: MixerTheme.muted,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CupertinoButton.filled(
+                    key: const ValueKey('progress-open-breathe'),
+                    onPressed: () => Navigator.of(context).push(
+                      CupertinoPageRoute<void>(
+                        builder: (_) => const BreatheScreen(),
+                      ),
+                    ),
+                    child: const Text(
+                      'Try a breathing practice',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ],
               ),
-            ),
+            )
+          else ...[
+            for (final session in sessions.take(_visibleSessions))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _SessionTile(session: session, metrics: m),
+              ),
+            if (sessions.length > _visibleSessions)
+              CupertinoButton(
+                key: const ValueKey('progress-show-more'),
+                onPressed: () => setState(() => _visibleSessions += 12),
+                child: Text(
+                  'Show more (${sessions.length - _visibleSessions} remaining)',
+                ),
+              ),
+          ],
+          const SizedBox(height: 22),
+          Text(
+            'Saved on this device, not a health score. Back up your data from Your wellbeing if you want to keep a copy.',
+            textAlign: TextAlign.center,
+            style: m.sans(18, min: 12, color: MixerTheme.muted, height: 1.5),
           ),
         ],
       ),
@@ -469,113 +165,122 @@ class _DailyRemindersCardState extends State<_DailyRemindersCard> {
   }
 }
 
-class _RateAppCard extends StatelessWidget {
-  const _RateAppCard();
+class _WeeklyChart extends StatelessWidget {
+  const _WeeklyChart({required this.minutes});
+  final List<MapEntry<String, int>> minutes;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      cornerRadius: 24,
+    final maximum = minutes.fold<int>(
+      1,
+      (max, day) => math.max(max, day.value),
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final day in minutes)
+          Expanded(
+            child: Semantics(
+              label: '${day.key}, ${day.value} minutes',
+              excludeSemantics: true,
+              child: Column(
+                children: [
+                  Text(
+                    '${day.value}',
+                    style: const TextStyle(
+                      color: MixerTheme.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  SizedBox(
+                    height: 92,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        key: ValueKey('progress-bar-${day.key}'),
+                        width: 18,
+                        height: day.value / maximum * 92,
+                        decoration: BoxDecoration(
+                          color: MixerTheme.mint,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    day.key.substring(0, 1),
+                    style: const TextStyle(
+                      color: MixerTheme.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SessionTile extends StatelessWidget {
+  const _SessionTile({required this.session, required this.metrics});
+  final SessionRecord session;
+  final SanctuaryMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = switch (session.type) {
+      'Breathing' => SanctuarySymbol.wind,
+      'Sleep' => SanctuarySymbol.moon,
+      'Meditation' => SanctuarySymbol.meditate,
+      _ => SanctuarySymbol.sounds,
+    };
+    return WellbeingSurface(
+      key: ValueKey('progress-session-${session.id}'),
+      padding: const EdgeInsets.all(17),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('⭐', style: TextStyle(fontSize: 32)),
+          SanctuaryIcon(symbol, color: MixerTheme.mint, size: 25),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Enjoying Sanctuary?',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('Support us with a 5-star rating on the App Store',
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(
+                  session.title,
+                  style: metrics.sans(23, min: 15, weight: FontWeight.w600),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '${session.type} · ${session.durationMinutes} min',
+                  style: metrics.sans(19, min: 12, color: MixerTheme.muted),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  DateFormat(
+                    'EEE, MMM d · HH:mm',
+                  ).format(session.timestamp.toLocal()),
+                  style: metrics.sans(17, min: 11, color: MixerTheme.muted),
+                ),
+                if (session.moodRating > 0) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    'Mood check-in: ${session.moodRating} / 5',
+                    style: metrics.sans(
+                      18,
+                      min: 12,
+                      color: SanctuaryPalette.mint,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              showCupertinoDialog(
-                context: context,
-                builder: (_) => const ReviewPromptDialog(),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF8C00)]),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.amber.withOpacity(0.4), blurRadius: 10)],
-              ),
-              child: const Text('Rate 5★',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 12)),
-            ),
-          ),
         ],
-      ),
-    );
-  }
-}
-
-class _BarChartWidget extends StatelessWidget {
-  final List<MapEntry<String, int>> weeklyData;
-  const _BarChartWidget({required this.weeklyData});
-
-  @override
-  Widget build(BuildContext context) {
-    final maxY = weeklyData.map((e) => e.value).fold(0, (a, b) => a > b ? a : b).toDouble();
-    final today = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][DateTime.now().weekday - 1];
-
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY < 10 ? 30 : maxY * 1.25,
-        barTouchData: BarTouchData(enabled: false),
-        titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (val, _) {
-                final idx = val.toInt();
-                if (idx < 0 || idx >= weeklyData.length) return const SizedBox();
-                final isToday = weeklyData[idx].key == today;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    weeklyData[idx].key,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                      color: isToday ? coralAccent : Colors.white.withOpacity(0.5),
-                    ),
-                  ),
-                );
-              },
-              reservedSize: 24,
-            ),
-          ),
-        ),
-        gridData: FlGridData(
-          show: true,
-          horizontalInterval: 10,
-          getDrawingHorizontalLine: (_) => FlLine(color: Colors.white.withOpacity(0.05), strokeWidth: 1),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: weeklyData.asMap().entries.map((e) {
-          final isToday = e.value.key == today;
-          return BarChartGroupData(
-            x: e.key,
-            barRods: [
-              BarChartRodData(
-                toY: e.value.value.toDouble(),
-                width: 16,
-                color: isToday ? coralAccent : tealPrimary.withOpacity(0.7),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-              ),
-            ],
-          );
-        }).toList(),
       ),
     );
   }

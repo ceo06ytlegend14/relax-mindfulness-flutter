@@ -1,0 +1,175 @@
+// Framework-free structural guards. These do not compile or launch Android.
+import assert from 'node:assert/strict';
+import { readFile, readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { test } from 'node:test';
+
+const root = fileURLToPath(new URL('../../', import.meta.url));
+const android = path.join(root, 'android/app/src/main');
+const manifest = await readFile(path.join(android, 'AndroidManifest.xml'), 'utf8');
+const gradle = await readFile(path.join(root, 'android/app/build.gradle.kts'), 'utf8');
+async function files(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  return (await Promise.all(entries.map(entry => entry.isDirectory()
+    ? files(path.join(directory, entry.name)) : path.join(directory, entry.name)))).flat();
+}
+
+test('Android launcher activity exists in the application namespace', async () => {
+  const namespace = gradle.match(/namespace\s*=\s*"([^"]+)"/)?.[1];
+  assert(namespace);
+  const activity = manifest.match(/<activity\b[^>]*android:name="([^"]+)"/)?.[1];
+  assert(activity);
+  const qualified = activity.startsWith('.') ? `${namespace}${activity}` : activity;
+  const source = await readFile(path.join(android, 'kotlin', `${qualified.replaceAll('.', '/')}.kt`), 'utf8');
+  assert.match(source, new RegExp(`^package ${namespace.replaceAll('.', '\\.')}\\s*$`, 'm'));
+  assert.match(source, /class MainActivity\s*:\s*FlutterActivity\(\)/);
+});
+
+test('both launcher icon references resolve to actual Android resources', async () => {
+  const resources = await files(path.join(android, 'res'));
+  for (const attribute of ['icon', 'roundIcon']) {
+    const reference = manifest.match(new RegExp(`android:${attribute}="@(mipmap|drawable)/([^"/]+)"`));
+    assert(reference, `${attribute} has a valid resource reference`);
+    assert(resources.some(file => path.basename(file).replace(/\.[^.]+$/, '') === reference[2]
+      && path.basename(path.dirname(file)).split('-')[0] === reference[1]), `${attribute} exists`);
+  }
+});
+
+test('launcher identity does not change the existing application ID', () => {
+  assert.match(gradle, /applicationId\s*=\s*"com\.sanctuary\.relax_mindfulness"/);
+  assert.match(manifest, /android:label="Sanctuary"/);
+});
+
+test('native platform safety defaults remain in place', () => {
+  assert.match(manifest, /android:allowBackup="false"/);
+  assert.match(manifest, /android:networkSecurityConfig="@xml\/network_security_config"/);
+  assert.match(manifest, /android:exported="true"/);
+});
+
+test('declared SDK minimums match the existing lockfile requirements', async () => {
+  const pubspec = await readFile(path.join(root, 'pubspec.yaml'), 'utf8');
+  const lock = await readFile(path.join(root, 'pubspec.lock'), 'utf8');
+  assert.match(pubspec, /sdk:\s*'>=3\.8\.0 <4\.0\.0'/);
+  assert.match(pubspec, /flutter:\s*'>=3\.32\.0'/);
+  assert.match(lock, /dart:\s*">=3\.8\.0 <4\.0\.0"/);
+  assert.match(lock, /flutter:\s*">=3\.32\.0"/);
+});
+
+test('quality automation has no repository-write or deployment capability', async () => {
+  const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
+  assert.match(workflow, /permissions:\s*\n  contents: read/);
+  assert.doesNotMatch(workflow, /pull_request_target|secrets\.|contents: write|npm publish|gh release|firebase deploy/);
+  for (const action of workflow.matchAll(/uses:\s*([^\s]+)@([^\s]+)/g)) {
+    assert.match(action[2], /^[a-f0-9]{40}$/, `${action[1]} is SHA-pinned`);
+  }
+  assert.match(workflow, /flutter test --reporter json/);
+  assert.match(workflow, /ci_report_tests\.py/);
+  assert.match(workflow, /ci_check_lockfile\.py/);
+  assert.match(workflow, /flutter build web --release/);
+  assert.match(workflow, /flutter build apk --debug/);
+  assert.match(workflow, /flutter build appbundle --release/);
+  assert.match(workflow, /flutter build ios --release --no-codesign/);
+  assert.match(workflow, /DEVELOPER_DIR: \/Applications\/Xcode_26\.3\.app/);
+  assert.match(workflow, /npm run test:web/);
+});
+
+test('a hung Flutter regression fails before the job loses its diagnostics', async () => {
+  const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
+  const testStep = workflow.match(/- name: Run Flutter regressions\n([\s\S]*?)(?=\n      -)/)?.[1];
+  assert(testStep, 'The test process has its own step');
+  assert.match(testStep, /timeout-minutes: 8\b/);
+  assert.match(testStep, /set -o pipefail/);
+  assert.doesNotMatch(testStep, /continue-on-error/);
+  for (const label of ['Summarize Flutter failures without masking the test exit code', 'actions/upload-artifact@']) {
+    const step = workflow.split(label)[1]?.split(/\n      -/)[0];
+    assert.match(step ?? '', /if: \$\{\{ !cancelled\(\) && steps\.dependencies\.outcome == 'success' \}\}/);
+  }
+});
+
+test('the native ambient player and its regressions are included in the pinned format gate', async () => {
+  const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
+  const formatStep = workflow.match(/dart format --output=none --set-exit-if-changed([\s\S]*?)(?=\n      -)/)?.[1];
+  assert(formatStep, 'The actual format command is present');
+  const files = new Set(formatStep.trim().split(/\s+/));
+  for (const file of ['lib/components/guided_player.dart', 'lib/components/ambient_player.dart', 'test/ambient_player_test.dart', 'lib/providers/mixer_controller.dart', 'test/mixer_controller_test.dart', 'test/ambient_audio_state_test.dart', 'test/support/fake_mixer_app_state.dart']) {
+    assert(files.has(file), `${file} must not silently bypass format checking`);
+  }
+});
+
+test('the unconnected feedback UI no longer claims a message was received', async () => {
+  const wellbeing = await readFile(path.join(root, 'lib/screens/wellbeing_screen.dart'), 'utf8');
+  assert.doesNotMatch(wellbeing, /Your feedback has been received/);
+  assert.match(wellbeing, /const DataBackupScreen\(\)/);
+});
+
+test('release signing has an explicit owner-controlled boundary and no debug fallback', async () => {
+  const ignore = await readFile(path.join(root, 'android/.gitignore'), 'utf8');
+  assert.match(ignore, /^key\.properties$/m);
+  assert.match(ignore, /\*\.jks/);
+  assert.match(gradle, /SANCTUARY_KEYSTORE_PATH/);
+  assert.match(gradle, /SANCTUARY_KEYSTORE_PASSWORD/);
+  assert.match(gradle, /SANCTUARY_KEY_ALIAS/);
+  assert.match(gradle, /SANCTUARY_KEY_PASSWORD/);
+  assert.match(gradle, /buildsRelease && !releaseSigningReady && !allowUnsignedRelease/);
+  assert.match(gradle, /throw GradleException/);
+  assert.match(gradle, /signingConfig = signingConfigs\.findByName\("release"\)/);
+  assert.doesNotMatch(gradle, /signingConfigs\.(?:getByName|findByName)\("debug"\)/);
+});
+
+test('Android toolchain explicitly targets the current Play API floor', async () => {
+  const settings = await readFile(path.join(root, 'android/settings.gradle.kts'), 'utf8');
+  assert.match(gradle, /compileSdk = 36/);
+  assert.match(gradle, /targetSdk = 36/);
+  assert.match(gradle, /minSdk = 24/);
+  assert.match(settings, /com\.android\.application"\) version "8\.13\.2"/);
+  assert.match(gradle, /isCoreLibraryDesugaringEnabled = true/);
+  assert.match(gradle, /desugar_jdk_libs:2\.1\.4/);
+});
+
+test('iOS keeps the existing identity, HTTPS policy and audio-only background mode', async () => {
+  const info = await readFile(path.join(root, 'ios/Runner/Info.plist'), 'utf8');
+  const project = await readFile(path.join(root, 'ios/Runner.xcodeproj/project.pbxproj'), 'utf8');
+  assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.sagozen\.zennight;/);
+  assert.match(info, /<key>CFBundleDisplayName<\/key>\s*<string>Zen Night<\/string>/);
+  assert.match(info, /<key>NSAllowsLocalNetworking<\/key>\s*<true\/>/);
+  assert.doesNotMatch(info, /NSAllowsArbitraryLoads|NSExceptionAllowsInsecureHTTPLoads/);
+  const modes = info.match(/<key>UIBackgroundModes<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1];
+  assert(modes);
+  assert.deepEqual([...modes.matchAll(/<string>([^<]+)<\/string>/g)].map(match => match[1]), ['audio']);
+});
+
+test('reflection studio has no provider credential, external AI call or false saving claim', async () => {
+  const studio = await readFile(path.join(root, 'lib/screens/ai_studio_screen.dart'), 'utf8');
+  const pubspec = await readFile(path.join(root, 'pubspec.yaml'), 'utf8');
+  assert.doesNotMatch(studio, /GEMINI_API_KEY|GenerativeModel|generateContent|Save & Close|Generate with Lyria/);
+  assert.doesNotMatch(pubspec, /google_generative_ai:/);
+  assert.match(studio, /This is not AI or music generation/);
+  assert.match(studio, /Clipboard\.setData/);
+  assert.match(studio, /Clipboard access failed\. Nothing was saved/);
+});
+
+test('store access cannot be granted by legacy local premium/trial preference methods', async () => {
+  const state = await readFile(path.join(root, 'lib/providers/app_state.dart'), 'utf8');
+  const billing = await readFile(path.join(root, 'lib/services/subscription_controller.dart'), 'utf8');
+  const paywall = await readFile(path.join(root, 'lib/screens/premium_screen.dart'), 'utf8');
+  const pubspec = await readFile(path.join(root, 'pubspec.yaml'), 'utf8');
+  assert.doesNotMatch(state, /Future<void> (?:purchasePremium|startFreeTrial)\(/);
+  assert.doesNotMatch(state, /(?:getBool|setBool)\(['"](?:is_premium|trial_active)['"]/);
+  assert.match(billing, /this\.purchasesEnabled = false/);
+  assert.match(billing, /entitlements\.active\[configuration\.entitlementId\]/);
+  assert.match(billing, /REVENUECAT_IOS_API_KEY/);
+  assert.match(billing, /REVENUECAT_ANDROID_API_KEY/);
+  assert.match(billing, /privacyUri != null &&\s*termsUri != null/);
+  assert.match(paywall, /product\.priceString/);
+  assert.match(paywall, /launchUrl/);
+  assert.doesNotMatch(paywall, /Start 7-Day|\$6\.99|\$39\.99|Save 60%|Narrated bedtime|Full 78/);
+  assert.match(pubspec, /purchases_flutter: 10\.19\.1/);
+});
+
+test('release shrinking does not keep unused Flutter split-install code or hide its missing dependency', async () => {
+  const rules = await readFile(path.join(root, 'android/app/proguard-rules.pro'), 'utf8');
+  assert.doesNotMatch(rules, /^-keep class io\.flutter\.\*\*/m);
+  assert.doesNotMatch(rules, /^-dontwarn com\.google\.android\.play\.core/m);
+  assert.match(rules, /^-keep class io\.flutter\.plugins\.\*\*/m);
+});

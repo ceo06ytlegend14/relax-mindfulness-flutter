@@ -1,1032 +1,1382 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/mixer_waveform.dart';
+import 'package:relax_mindfulness/components/mixer_artwork.dart';
+import 'package:relax_mindfulness/components/sound_replacement_sheet.dart';
+import 'package:relax_mindfulness/services/sound_preview_controller.dart';
+import 'package:relax_mindfulness/models/mixer_catalog.dart';
+import 'package:relax_mindfulness/models/vibe_sound_sets.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
-import 'package:relax_mindfulness/theme/app_theme.dart';
-import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/screens/wellbeing_screen.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
-class SoundsScreen extends StatefulWidget {
-  const SoundsScreen({super.key});
+/// The dedicated reference-inspired mixer. Home has its own daily dashboard.
+class SoundsScreen extends StatelessWidget {
+  const SoundsScreen({this.previewPlayerFactory, super.key});
+  final SoundPreviewPlayer Function()? previewPlayerFactory;
+
+  void _replaceSound(
+    BuildContext context,
+    MixerTrack track,
+    AppState state,
+    MixerController mixer, {
+    bool chooseRecording = false,
+  }) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => SoundReplacementSheet(
+        track: track,
+        mixer: mixer,
+        chooseRecording: chooseRecording,
+        onPreviewActivity: state.setAmbientPreviewDucking,
+        previewPlayerFactory: previewPlayerFactory,
+      ),
+    );
+  }
+
+  Future<void> _notice(BuildContext context, String title, String message) =>
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+
+  Future<void> _saveMix(BuildContext context, MixerController mixer) async {
+    if (mixer.selectedCount == 0) {
+      await _notice(
+        context,
+        'Choose a sound first',
+        'Turn on a sound to create your mix.',
+      );
+      return;
+    }
+    final name = await showCupertinoDialog<String>(
+      context: context,
+      builder: (_) => const _MixNameDialog(
+        title: 'Save your soundscape',
+        action: 'Save mix',
+        placeholder: 'e.g. Rainy study night',
+      ),
+    );
+    if (name != null && context.mounted && mixer.saveMix(name)) {
+      await _notice(
+        context,
+        'Soundscape saved',
+        'Find “$name” in Saved mixes.',
+      );
+    }
+  }
+
+  Future<void> _shareMix(BuildContext context, MixerController mixer) async {
+    final uri = mixer.shareUri(base: kIsWeb ? Uri.base : null);
+    try {
+      await Clipboard.setData(ClipboardData(text: uri.toString()));
+      if (context.mounted) {
+        await _notice(
+          context,
+          'Mix link copied',
+          'Share your soundscape with someone who could use a little calm.',
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        await _notice(context, 'Your mix link', uri.toString());
+      }
+    }
+  }
+
+  Future<void> _renamePreset(
+    BuildContext context,
+    AppState state,
+    String originalName,
+  ) async {
+    final name = await showCupertinoDialog<String>(
+      context: context,
+      builder: (_) => _MixNameDialog(
+        title: 'Rename recommended mix',
+        action: 'Save name',
+        initialValue: state.getPresetDisplayName(originalName),
+      ),
+    );
+    if (name != null && context.mounted) {
+      state.renameCuratedPreset(originalName, name);
+    }
+  }
+
+  void _savedMixes(
+    BuildContext context,
+    AppState state,
+    MixerController mixer,
+  ) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (sheetContext) => CupertinoActionSheet(
+        title: const Text('Your saved soundscapes'),
+        actions: [
+          for (final preset in state.presets)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                mixer.applyMix(preset.volumes, name: preset.name);
+                Navigator.pop(sheetContext);
+              },
+              child: Text(preset.name),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(sheetContext),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
 
   @override
-  State<SoundsScreen> createState() => _SoundsScreenState();
+  Widget build(BuildContext context) => Consumer2<AppState, MixerController>(
+    builder: (context, state, mixer, _) => LayoutBuilder(
+      builder: (context, constraints) {
+        final metrics = MixerMetrics(
+          math.min(constraints.maxWidth, MixerTheme.maxWidth),
+        );
+        final s = metrics.scale;
+        final tracks = allMixerTracks
+            .where(
+              (track) =>
+                  mixer.isVisibleTrack(track) &&
+                  (mixer.category == 'all' ||
+                      (mixer.category == 'favorites'
+                          ? state.isFavorite(track.name)
+                          : mixerCategories
+                                .firstWhere(
+                                  (category) => category.id == mixer.category,
+                                )
+                                .tracks
+                                .contains(track))),
+            )
+            .toList();
+        final candidate = vibeSoundSetForName(mixer.preset);
+        final selectedVibe =
+            candidate != null && candidate.matchesLevels(mixer.levels)
+            ? candidate
+            : null;
+        return CupertinoPageScaffold(
+          backgroundColor: MixerTheme.background,
+          child: Stack(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: CustomScrollView(
+                  key: const PageStorageKey('ambient-mixer-scroll'),
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(29 * s, 36 * s, 29 * s, 0),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sounds',
+                              key: const ValueKey('mixer-title'),
+                              style: metrics.text(
+                                53,
+                                weight: FontWeight.w700,
+                                height: 1.2,
+                                tracking: -1.5 * s,
+                              ),
+                            ),
+                            SizedBox(height: 8 * s),
+                            Row(
+                              children: [
+                                Text(
+                                  'AMBIENT SOUND MIXER',
+                                  style: metrics.text(
+                                    17,
+                                    color: const Color(0xFF80E5D2),
+                                    weight: FontWeight.w600,
+                                    tracking: 2.8 * s,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8 * s),
+                            Text(
+                              'Build Your Environment',
+                              style: metrics.text(
+                                44,
+                                weight: FontWeight.w700,
+                                height: 1.15,
+                                tracking: -0.7 * s,
+                              ),
+                            ),
+                            SizedBox(height: 8 * s),
+                            Text(
+                              'Layer natural sounds for work, study, or sleep',
+                              style: metrics.text(
+                                22,
+                                color: const Color(0xFFB9D0D5),
+                              ),
+                            ),
+                            SizedBox(height: 24 * s),
+                            _masterControls(context, state, mixer, metrics),
+                            if (mixer.hasPlaybackError)
+                              Padding(
+                                padding: EdgeInsets.only(top: 12 * s),
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    'Not playing: ${mixer.levels.entries.where((entry) => entry.value > 0 && state.ambientTrackError(entry.key) != null).map((entry) => entry.key).join(', ')}. Choose a configured sound; your other layers are unchanged.',
+                                    key: const ValueKey('mixer-source-notice'),
+                                    style: metrics.text(
+                                      20,
+                                      color: const Color(0xFFFFC9A0),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            SizedBox(
+                              height: 44 * s,
+                              width: double.infinity,
+                              child: MixerWaveform(
+                                playing:
+                                    mixer.isPlaying && !state.isBackgroundMode,
+                              ),
+                            ),
+                            _LibraryScope(mixer: mixer, metrics: metrics),
+                            SizedBox(height: 18 * s),
+                            MixerSectionHeading(
+                              'CURATED ONE-TAP MIXES',
+                              metrics: metrics,
+                            ),
+                            SizedBox(height: 12 * s),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SingleChildScrollView(
+                        key: const ValueKey('mixer-curated-mixes'),
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20 * s,
+                          vertical: 1 * s,
+                        ),
+                        child: Row(
+                          children: [
+                            for (final entry
+                                in AppState.curatedPresets.entries.where(
+                                  (entry) => mixer.isVisiblePreset(entry.value),
+                                ))
+                              Padding(
+                                padding: EdgeInsets.only(right: 12 * s),
+                                child: _MixChip(
+                                  buttonKey: ValueKey('curated-${entry.key}'),
+                                  label: state.getPresetDisplayName(entry.key),
+                                  hint: vibeSoundSetForName(entry.key)?.recipe,
+                                  selected:
+                                      mixer.preset == entry.key &&
+                                      (vibeSoundSetForName(
+                                            entry.key,
+                                          )?.matchesLevels(mixer.levels) ??
+                                          true),
+                                  onLongPress: () =>
+                                      _renamePreset(context, state, entry.key),
+                                  metrics: metrics,
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    mixer.applyMix(
+                                      entry.value,
+                                      name: entry.key,
+                                    );
+                                  },
+                                ),
+                              ),
+                            if (state.presets.isNotEmpty)
+                              _MixChip(
+                                label:
+                                    '♧ Saved mixes (${state.presets.length})',
+                                metrics: metrics,
+                                onPressed: () =>
+                                    _savedMixes(context, state, mixer),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (selectedVibe != null)
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(29 * s, 14 * s, 29 * s, 0),
+                        sliver: SliverToBoxAdapter(
+                          child: _VibeSetDetails(
+                            soundSet: selectedVibe,
+                            title: state.getPresetDisplayName(
+                              selectedVibe.name,
+                            ),
+                            metrics: metrics,
+                          ),
+                        ),
+                      ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        29 * s,
+                        18 * s,
+                        29 * s,
+                        14 * s,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: MixerSectionHeading(
+                          'SOUND CATEGORY TRAY',
+                          metrics: metrics,
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SingleChildScrollView(
+                        key: const ValueKey('mixer-categories'),
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 29 * s,
+                          vertical: 1 * s,
+                        ),
+                        child: Row(
+                          children: [
+                            _CategoryChip(
+                              id: 'favorites',
+                              emoji: '❤️',
+                              label: 'Favorites',
+                              count: allMixerTracks
+                                  .where(
+                                    (track) =>
+                                        mixer.isVisibleTrack(track) &&
+                                        state.isFavorite(track.name),
+                                  )
+                                  .length,
+                              mixer: mixer,
+                              metrics: metrics,
+                            ),
+                            _CategoryChip(
+                              id: 'all',
+                              emoji: '♪',
+                              label: 'All',
+                              count: mixer.categoryCount('all'),
+                              mixer: mixer,
+                              metrics: metrics,
+                            ),
+                            for (final category in mixerCategories.where(
+                              (category) =>
+                                  mixer.categoryCount(category.id) > 0,
+                            ))
+                              _CategoryChip(
+                                id: category.id,
+                                emoji: category.emoji,
+                                label: category.label,
+                                count: mixer.categoryCount(category.id),
+                                mixer: mixer,
+                                metrics: metrics,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(29 * s, 18 * s, 29 * s, 0),
+                      sliver: tracks.isEmpty
+                          ? SliverToBoxAdapter(
+                              child: _emptyFavorites(mixer, metrics),
+                            )
+                          : SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) => Padding(
+                                  padding: EdgeInsets.only(bottom: 16 * s),
+                                  child: _TrackCard(
+                                    key: ValueKey(
+                                      'track-${tracks[index].name}',
+                                    ),
+                                    track: tracks[index],
+                                    state: state,
+                                    mixer: mixer,
+                                    metrics: metrics,
+                                    onChooseRecording:
+                                        recordingChoicesForName(
+                                              tracks[index].name,
+                                            ).length <
+                                            2
+                                        ? null
+                                        : () => _replaceSound(
+                                            context,
+                                            tracks[index],
+                                            state,
+                                            mixer,
+                                            chooseRecording: true,
+                                          ),
+                                    onReplace: () => _replaceSound(
+                                      context,
+                                      tracks[index],
+                                      state,
+                                      mixer,
+                                    ),
+                                  ),
+                                ),
+                                childCount: tracks.length,
+                              ),
+                            ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        29 * s,
+                        12,
+                        29 * s,
+                        MediaQuery.paddingOf(context).bottom +
+                            (state.hasGuidedSession ||
+                                    state.hasAmbientSession ||
+                                    state.hasAmbientPlaybackRequest
+                                ? 126
+                                : 32),
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Touch and hold a sound to add or remove a favorite.',
+                              textAlign: TextAlign.center,
+                              style: metrics.text(18, color: MixerTheme.muted),
+                            ),
+                            const SizedBox(height: 12),
+                            CupertinoButton(
+                              onPressed: () => Navigator.of(context).push(
+                                CupertinoPageRoute<void>(
+                                  builder: (_) => const WellbeingScreen(),
+                                ),
+                              ),
+                              child: const Text(
+                                'Your wellbeing dashboard  →',
+                                style: TextStyle(color: MixerTheme.mint),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+
+  Widget _masterControls(
+    BuildContext context,
+    AppState state,
+    MixerController mixer,
+    MixerMetrics metrics,
+  ) {
+    final s = metrics.scale;
+    return MixerSurface(
+      metrics: metrics,
+      padding: EdgeInsets.symmetric(horizontal: 24 * s, vertical: 22 * s),
+      child: Row(
+        children: [
+          Semantics(
+            button: true,
+            label: mixer.isPreparing
+                ? 'Cancel pending sound mixer'
+                : mixer.isPlaying
+                ? 'Pause sound mixer'
+                : 'Play sound mixer',
+            child: CupertinoButton(
+              key: const ValueKey('mixer-play'),
+              padding: EdgeInsets.zero,
+              minSize: 0,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                mixer.togglePlayback();
+              },
+              child: SizedBox(
+                width: math.max(44.0, 70 * s),
+                height: math.max(44.0, 70 * s),
+                child: Center(
+                  child: Container(
+                    width: 70 * s,
+                    height: 70 * s,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: MixerTheme.control,
+                    ),
+                    child: Icon(
+                      mixer.isPreparing
+                          ? CupertinoIcons.xmark
+                          : mixer.isPlaying
+                          ? CupertinoIcons.pause_fill
+                          : CupertinoIcons.play_fill,
+                      color: MixerTheme.mintLight,
+                      size: 34 * s,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 24 * s),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mixer.isPlaying
+                      ? 'Soundscape Active'
+                      : mixer.isPreparing
+                      ? 'Preparing Soundscape'
+                      : mixer.hasPlaybackError
+                      ? 'Audio unavailable'
+                      : 'Mixer Paused',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: metrics.text(
+                    26,
+                    weight: FontWeight.w600,
+                    tracking: -0.6 * s,
+                  ),
+                ),
+                SizedBox(height: 3 * s),
+                Text(
+                  mixer.playbackStatusLabel,
+                  key: const ValueKey('mixer-playback-status'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: metrics.text(20, color: MixerTheme.muted),
+                ),
+              ],
+            ),
+          ),
+          _roundButton(
+            'Shuffle mix',
+            'mixer-shuffle',
+            CupertinoIcons.shuffle,
+            metrics,
+            mixer.shuffle,
+          ),
+          SizedBox(width: 8 * s),
+          _roundButton(
+            'Share mix',
+            'mixer-share',
+            CupertinoIcons.share,
+            metrics,
+            () => _shareMix(context, mixer),
+          ),
+          SizedBox(width: 14 * s),
+          Semantics(
+            button: true,
+            label: 'Save sound mix',
+            child: CupertinoButton(
+              key: const ValueKey('mixer-save'),
+              minSize: 44,
+              padding: EdgeInsets.zero,
+              onPressed: () => _saveMix(context, mixer),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 22 * s,
+                  vertical: 13 * s,
+                ),
+                decoration: BoxDecoration(
+                  color: MixerTheme.primary,
+                  borderRadius: BorderRadius.circular(34 * s),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.bookmark,
+                      color: const Color(0xFF00554F),
+                      size: 24 * s,
+                    ),
+                    SizedBox(width: 8 * s),
+                    Text(
+                      'Save',
+                      style: metrics.text(
+                        22,
+                        color: const Color(0xFF004D48),
+                        weight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roundButton(
+    String label,
+    String key,
+    IconData icon,
+    MixerMetrics metrics,
+    VoidCallback onPressed,
+  ) {
+    final s = metrics.scale;
+    return Semantics(
+      button: true,
+      label: label,
+      child: CupertinoButton(
+        key: ValueKey(key),
+        minSize: 0,
+        padding: EdgeInsets.zero,
+        onPressed: onPressed,
+        child: SizedBox(
+          width: math.max(44.0, 48 * s),
+          height: math.max(44.0, 48 * s),
+          child: Center(
+            child: Container(
+              width: 48 * s,
+              height: 48 * s,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: MixerTheme.action,
+              ),
+              child: Icon(icon, color: MixerTheme.muted, size: 21 * s),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyFavorites(MixerController mixer, MixerMetrics metrics) =>
+      MixerSurface(
+        metrics: metrics,
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          children: [
+            const Icon(CupertinoIcons.heart, color: MixerTheme.mint, size: 32),
+            const SizedBox(height: 12),
+            Text(
+              'Your quiet favorites live here',
+              textAlign: TextAlign.center,
+              style: metrics.text(28, weight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Touch and hold any sound card to save it to Favorites.',
+              textAlign: TextAlign.center,
+              style: metrics.text(21, color: MixerTheme.muted),
+            ),
+            CupertinoButton(
+              onPressed: () => mixer.selectCategory('rain'),
+              child: const Text('Explore rain sounds'),
+            ),
+          ],
+        ),
+      );
 }
 
-class _SoundsScreenState extends State<SoundsScreen> {
-  bool _isPlaying = false;
-  String _selectedCategory = '🌧️ Rain';
+/// Own the controller for the entire route transition, including dismissal.
+class _MixNameDialog extends StatefulWidget {
+  const _MixNameDialog({
+    required this.title,
+    required this.action,
+    this.initialValue = '',
+    this.placeholder = 'Name your soundscape',
+  });
+  final String title, action, initialValue, placeholder;
 
-  static const Map<String, String> soundImages = {
-    // Rain
-    'Soft Rain': 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=300&q=80',
-    'Thunderstorm': 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=300&q=80',
-    'Heavy Rain': 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=300&q=80',
-    'Rain on Window': 'https://images.unsplash.com/photo-1438449805896-28a666819a20?auto=format&fit=crop&w=300&q=80',
-    'Rain on Roof': 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=300&q=80',
-    'Rain on Umbrella': 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=300&q=80',
-    'Rain on Tent': 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=300&q=80',
-    'Rain on Leaves': 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=300&q=80',
+  @override
+  State<_MixNameDialog> createState() => _MixNameDialogState();
+}
 
-    // Nature
-    'Ocean Waves': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80',
-    'Mountain Stream': 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=300&q=80',
-    'Forest Birds': 'https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=300&q=80',
-    'Campfire': 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=300&q=80',
-    'Wind in Trees': 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=300&q=80',
-    'Howling Wind': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=300&q=80',
-    'Crickets': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=300&q=80',
-    'Waterfall': 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=300&q=80',
-    'Frogs': 'https://images.unsplash.com/photo-1550853024-fae8cd4be47f?auto=format&fit=crop&w=300&q=80',
-    'Jungle Day': 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=300&q=80',
-    'Water Droplets': 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=300&q=80',
-    'Walking in Snow': 'https://images.unsplash.com/photo-1483921020237-2ff51e5e4bfe?auto=format&fit=crop&w=300&q=80',
-    'Walking on Gravel': 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=300&q=80',
-    'Walking on Leaves': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80',
-    'Owl Hooting': 'https://images.unsplash.com/photo-1543549790-8b5f4a028cfb?auto=format&fit=crop&w=300&q=80',
-
-    // Places
-    'Coffee Shop': 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80',
-    'Library': 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=300&q=80',
-    'Office Ambience': 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=300&q=80',
-    'Church Interior': 'https://images.unsplash.com/photo-1548625361-18567117e335?auto=format&fit=crop&w=300&q=80',
-    'Temple': 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=300&q=80',
-    'Restaurant': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80',
-    'Crowded Bar': 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=300&q=80',
-    'Night Village': 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=300&q=80',
-    'Supermarket': 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=300&q=80',
-    'Airport': 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=300&q=80',
-
-    // Transport
-    'Train Ride': 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=300&q=80',
-    'Inside a Train': 'https://images.unsplash.com/photo-1515165562839-978bbcf18277?auto=format&fit=crop&w=300&q=80',
-    'Airplane Cabin': 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=300&q=80',
-    'Submarine': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80',
-    'Rowing Boat': 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=300&q=80',
-    'Sailing Ship': 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=300&q=80',
-    'Highway Traffic': 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=300&q=80',
-    'Busy Street': 'https://images.unsplash.com/photo-1477959858617-67f30ac72604?auto=format&fit=crop&w=300&q=80',
-
-    // Animals
-    'Cat Purring': 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=300&q=80',
-    'Seagulls': 'https://images.unsplash.com/photo-1498637841888-108c6b723fc2?auto=format&fit=crop&w=300&q=80',
-    'Whale Song': 'https://images.unsplash.com/photo-1568430460464-5237c8b417c8?auto=format&fit=crop&w=300&q=80',
-    'Wolf Howling': 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=300&q=80',
-  };
-
-  // 75 Sound Volumes State Map
-  final Map<String, double> _volumes = {
-    // Rain (12)
-    'Soft Rain': 0.3, 'Heavy Rain': 0.0, 'Rain on Window': 0.0, 'Rain on Roof': 0.0,
-    'Rain on Umbrella': 0.0, 'Rain on Tent': 0.0, 'Thunderstorm': 0.0, 'Rain on Leaves': 0.0,
-    'Urban Rain': 0.0, 'Light Drizzle': 0.0, 'Rain Cave': 0.0, 'Tropical Storm': 0.0,
-    // Nature (15)
-    'Ocean Waves': 0.3, 'Mountain Stream': 0.0, 'Forest Birds': 0.0, 'Campfire': 0.0,
-    'Wind in Trees': 0.0, 'Crickets': 0.0, 'Waterfall': 0.0, 'Frogs': 0.0,
-    'Waves on Pebbles': 0.0, 'Underwater': 0.0, 'Meadow Breeze': 0.0, 'Desert Wind': 0.0,
-    'Jungle Night': 0.0, 'Leaves Rustling': 0.0, 'Mountain Echo': 0.0,
-    // Places (10)
-    'Coffee Shop': 0.0, 'Library': 0.0, 'Office Ambience': 0.0, 'Church Bells': 0.0,
-    'Quiet Park': 0.0, 'Street Market': 0.0, 'Temple Bowl': 0.0, 'Zen Garden': 0.0,
-    'Harbor': 0.0, 'Farmyard': 0.0,
-    // Transport (8)
-    'Train Track': 0.0, 'Airplane Cabin': 0.0, 'Driving Rain Car': 0.0, 'Boat Deck': 0.0,
-    'Subway Train': 0.0, 'Bicycle Ride': 0.0, 'Sailing Ship': 0.0, 'Highway Traffic': 0.0,
-    // Things (10)
-    'Clock Ticking': 0.0, 'Fan Noise': 0.0, 'Keyboard Typing': 0.0, 'Washing Machine': 0.0,
-    'Vinyl Crackle': 0.0, 'Boiling Kettle': 0.0, 'Bamboo Chimes': 0.0, 'Page Turning': 0.0,
-    'Pendulum': 0.0, 'Wind Generator': 0.0,
-    // Noise Colors (6)
-    'White Noise': 0.0, 'Pink Noise': 0.0, 'Brown Noise': 0.0, 'Blue Noise': 0.0,
-    'Violet Noise': 0.0, 'Grey Noise': 0.0,
-    // Solfeggio (14)
-    'Singing Bowls': 0.0, '432Hz Healing': 0.0, '528Hz Transformation': 0.0, '639Hz Harmonics': 0.0,
-    '108Hz Theta Drone': 0.0, 'Deep Space Drone': 0.0, 'Delta Deep Sleep': 0.0, 'Alpha Focus Flow': 0.0,
-    'Beta Energy Boost': 0.0, 'Gamma Insight': 0.0, '174Hz Pain Relief': 0.0, '285Hz Cellular': 0.0,
-    '396Hz Liberation': 0.0, '741Hz Intuition': 0.0, '852Hz Awakening': 0.0, '963Hz Crown State': 0.0,
-    'Ambient Piano': 0.0, 'Cozy Hearth': 0.0, 'Soothing Breeze': 0.0,
-  };
-
-  static const Map<String, List<(String, String, String, Color)>> soundCategories = {
-    '🌧️ Rain': [
-      ('🌧️', 'Soft Rain', 'Gentle Downpour', Color(0xFF42A5F5)),
-      ('⛈️', 'Thunderstorm', 'Distant Low Rumble', Color(0xFF5C6BC0)),
-      ('🪟', 'Rain on Window', 'Soft Drops on Glass', Color(0xFF29B6F6)),
-      ('🏠', 'Rain on Roof', 'Cozy Attic Downpour', Color(0xFF0288D1)),
-      ('🌂', 'Rain on Umbrella', 'Rhythmic Pitter Patter', Color(0xFF039BE5)),
-      ('⛺', 'Rain on Tent', 'Wilderness Camping Rain', Color(0xFF00ACC1)),
-      ('🍃', 'Rain on Leaves', 'Forest Canopy Drizzle', Color(0xFF26A69A)),
-      ('🏙️', 'Urban Rain', 'City Street Rainfall', Color(0xFF78909C)),
-      ('🌧️', 'Heavy Rain', 'Continuous Pouring Storm', Color(0xFF1E88E5)),
-      ('🌧️', 'Light Drizzle', 'Gentle Atmospheric Mist', Color(0xFF80DEEA)),
-      ('洞', 'Rain Cave', 'Echoing Cavern Drops', Color(0xFF3F51B5)),
-      ('🌴', 'Tropical Storm', 'Warm Rainforest Gale', Color(0xFF00897B)),
-    ],
-    '🌲 Nature': [
-      ('🌊', 'Ocean Waves', 'Rolling Pacific Tide', Color(0xFF26A69A)),
-      ('🏞️', 'Mountain Stream', 'Flowing Crystal Creek', Color(0xFF66BB6A)),
-      ('🐦', 'Forest Birds', 'Morning Canopy Chirp', Color(0xFF9CCC65)),
-      ('🔥', 'Campfire', 'Warm Crackling Wood Logs', Color(0xFFFF7043)),
-      ('💨', 'Wind in Trees', 'Calm Mountain Breeze', Color(0xFF78909C)),
-      ('🦗', 'Crickets', 'Night Meadow Symphony', Color(0xFF8D6E63)),
-      ('🌊', 'Waterfall', 'Majestic Cascade Spray', Color(0xFF00BCD4)),
-      ('🐸', 'Frogs', 'Serene Marshland Night', Color(0xFF4CAF50)),
-      ('🪨', 'Waves on Pebbles', 'Gentle Shoreline Shimmer', Color(0xFF80CBC4)),
-      ('🤿', 'Underwater', 'Deep Ocean Submersion', Color(0xFF0277BD)),
-      ('🌾', 'Meadow Breeze', 'Soft Grasslands Whispers', Color(0xFFAED581)),
-      ('🏜️', 'Desert Wind', 'Solitary Dune Sweep', Color(0xFFFFB74D)),
-      ('🌴', 'Jungle Night', 'Nocturnal Rainforest', Color(0xFF2E7D32)),
-      ('🍂', 'Leaves Rustling', 'Autumn Footsteps', Color(0xFFD84315)),
-      ('⛰️', 'Mountain Echo', 'Resonant Valley Stillness', Color(0xFF546E7A)),
-    ],
-    '☕ Places': [
-      ('☕', 'Coffee Shop', 'Gentle Ambient Chatter', Color(0xFF8D6E63)),
-      ('📚', 'Library', 'Silent Study Sanctuary', Color(0xFF5D4037)),
-      ('🏢', 'Office Ambience', 'Low Productivity Hum', Color(0xFF78909C)),
-      ('🔔', 'Church Bells', 'Distant Resonant Chimes', Color(0xFFFFB300)),
-      ('🌳', 'Quiet Park', 'Peaceful Bench Retreat', Color(0xFF7CB342)),
-      ('🛍️', 'Street Market', 'Soft Bustling Market', Color(0xFFFB8C00)),
-      ('🥣', 'Temple Bowl', 'Zen Monastery Gong', Color(0xFFAB47BC)),
-      ('🎍', 'Zen Garden', 'Raked Sand Fountain', Color(0xFF00ACC1)),
-      ('⚓', 'Harbor', 'Gentle Boat Dock Lapping', Color(0xFF0288D1)),
-      ('🚜', 'Farmyard', 'Rural Countryside', Color(0xFF8BC34A)),
-    ],
-    '🚆 Transport': [
-      ('🚆', 'Train Track', 'Rhythmic Iron Rail Clicker', Color(0xFF546E7A)),
-      ('✈️', 'Airplane Cabin', 'Soothing White Noise Cruise', Color(0xFF0288D1)),
-      ('🚗', 'Driving Rain Car', 'Highway Windshield Rain', Color(0xFF455A64)),
-      ('⛵', 'Boat Deck', 'Creaking Wooden Hull Waves', Color(0xFF0097A7)),
-      ('🚇', 'Subway Train', 'Low Underground Metro', Color(0xFF37474F)),
-      ('🚲', 'Bicycle Ride', 'Gentle Coasting Wind', Color(0xFF689F38)),
-      ('⛵', 'Sailing Ship', 'Rigging Breeze & Swell', Color(0xFF00838F)),
-      ('🛣️', 'Highway Traffic', 'Distant Asphalt Roll', Color(0xFF607D8B)),
-    ],
-    '⚙️ Things': [
-      ('🕰️', 'Clock Ticking', 'Steady Rhythmic Pendulum', Color(0xFF78909C)),
-      ('🌀', 'Fan Noise', 'Cooling Air Circulation', Color(0xFF00ACC1)),
-      ('⌨️', 'Keyboard Typing', 'Soft Mechanical Keys', Color(0xFF546E7A)),
-      ('🧺', 'Washing Machine', 'Gentle Laundry Rinsing', Color(0xFF0288D1)),
-      ('📻', 'Vinyl Crackle', 'Warm Analog Nostalgia', Color(0xFF8D6E63)),
-      ('🫖', 'Boiling Kettle', 'Cozy Teatime Whistle', Color(0xFFFF7043)),
-      ('🎋', 'Bamboo Chimes', 'Pentatonic Wind Chimes', Color(0xFF26C6DA)),
-      ('📖', 'Page Turning', 'Book Study Leaf', Color(0xFFA1887F)),
-      ('⏱️', 'Pendulum', 'Hypnotic Second Beat', Color(0xFF455A64)),
-      ('💨', 'Wind Generator', 'Constant Turbine Sweep', Color(0xFF90A4AE)),
-    ],
-    '🔊 Noise': [
-      ('⚪', 'White Noise', 'Full Spectrum Flat Noise', Color(0xFFCFD8DC)),
-      ('🌸', 'Pink Noise', 'Balanced Waterfall Spectrum', Color(0xFFF48FB1)),
-      ('🤎', 'Brown Noise', 'Deep Low Frequency Rumble', Color(0xFF8D6E63)),
-      ('🔵', 'Blue Noise', 'High Pitch Crisp Hiss', Color(0xFF64B5F6)),
-      ('💜', 'Violet Noise', 'Ultra Crisp Shimmer', Color(0xFFBA68C8)),
-      ('🩶', 'Grey Noise', 'Equal Perception Contour', Color(0xFF90A4AE)),
-    ],
-    '🔮 Solfeggio': [
-      ('🧘', '432Hz Healing', 'Natural Harmony Tone', Color(0xFFAB47BC)),
-      ('✨', '528Hz Transformation', 'Miracle Healing Frequency', Color(0xFF00E676)),
-      ('💖', '639Hz Harmonics', 'Heart Relationship Harmony', Color(0xFFFF4081)),
-      ('🧠', '108Hz Theta Drone', 'Deep Meditation State', Color(0xFF00ACC1)),
-      ('💤', 'Delta Deep Sleep', 'Restful Subconscious Waves', Color(0xFF3F51B5)),
-      ('⚡', 'Alpha Focus Flow', 'Peak Concentration Alpha Waves', Color(0xFFFFC107)),
-      ('🔥', 'Beta Energy Boost', 'Active Consciousness', Color(0xFFFF5722)),
-      ('🌌', 'Gamma Insight', 'High Cognitive Transcendence', Color(0xFF9C27B0)),
-      ('🛡️', '174Hz Pain Relief', 'Physical Comfort Frequency', Color(0xFF4CAF50)),
-      ('🌿', '285Hz Cellular', 'Vitality & Tissue Renewal', Color(0xFF8BC34A)),
-      ('🕊️', '396Hz Liberation', 'Liberating Guilt & Fear', Color(0xFF00BCD4)),
-      ('👁️', '741Hz Intuition', 'Awakening Inner Intuition', Color(0xFF7C4DFF)),
-      ('✡️', '852Hz Awakening', 'Spiritual Order & Light', Color(0xFFE040FB)),
-      ('👑', '963Hz Crown State', 'Divine Unity Consciousness', Color(0xFFFFD700)),
-    ],
-  };
+class _MixNameDialogState extends State<_MixNameDialog> {
+  late final TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = context.read<AppState>();
-      final cached = state.cachedVolumes;
-      if (cached.isNotEmpty) {
-        setState(() {
-          cached.forEach((k, v) {
-            if (_volumes.containsKey(k)) {
-              _volumes[k] = v;
-            }
-          });
-          _isPlaying = _volumes.values.any((v) => v > 0);
-        });
-      }
-    });
+    _controller = TextEditingController(text: widget.initialValue);
   }
 
-  void _applyVolumes(Map<String, double> vols, AppState state) {
-    setState(() {
-      _volumes.forEach((k, _) {
-        final v = vols[k] ?? 0.0;
-        _volumes[k] = v;
-        state.updateSoundTrackVolume(k, v);
-      });
-      _isPlaying = true;
-    });
-    state.saveCachedVolumes(_volumes);
-    showCupertinoDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) {
-        Future.delayed(const Duration(seconds: 1), () {
-          if (ctx.mounted) Navigator.pop(ctx);
-        });
-        return const CupertinoAlertDialog(
-          title: Text('Preset Applied ✓'),
-          content: Text('Playing ambient soundscape'),
-        );
-      },
-    );
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isNotEmpty) Navigator.pop(context, name);
   }
 
-  void _toggleMasterPlay(AppState state) {
-    setState(() {
-      _isPlaying = !_isPlaying;
-      if (!_isPlaying) {
-        state.stopAllAudio();
-      } else {
-        _volumes.forEach((name, vol) {
-          if (vol > 0) {
-            state.updateSoundTrackVolume(name, vol);
-          }
-        });
-      }
-    });
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  void _randomizeMix(AppState state) {
-    final Map<String, double> newVols = {};
-    for (var key in _volumes.keys) {
-      // 30% chance for track to be active
-      final active = (DateTime.now().microsecondsSinceEpoch % 10) > 6;
-      newVols[key] = active ? (0.2 + (DateTime.now().millisecondsSinceEpoch % 5) * 0.1) : 0.0;
-    }
-    _applyVolumes(newVols, state);
-  }
+  @override
+  Widget build(BuildContext context) => CupertinoAlertDialog(
+    title: Text(widget.title),
+    content: Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: CupertinoTextField(
+        key: const ValueKey('mix-name'),
+        controller: _controller,
+        autofocus: true,
+        maxLength: 60,
+        placeholder: widget.placeholder,
+        style: const TextStyle(color: MixerTheme.text),
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) => _submit(),
+      ),
+    ),
+    actions: [
+      CupertinoDialogAction(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancel'),
+      ),
+      CupertinoDialogAction(
+        isDefaultAction: true,
+        onPressed: _controller.text.trim().isEmpty ? null : _submit,
+        child: Text(widget.action),
+      ),
+    ],
+  );
+}
 
-  void _shareCurrentMix(AppState state) {
-    final url = state.generateShareUrl();
-    Clipboard.setData(ClipboardData(text: url));
-    showCupertinoDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) {
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (ctx.mounted) Navigator.pop(ctx);
-        });
-        return const CupertinoAlertDialog(
-          title: Text('Mix Link Copied! 🔗'),
-          content: Text('Share this link with friends so they can listen to your exact sound mix.'),
-        );
-      },
-    );
-  }
+class _VibeSetDetails extends StatelessWidget {
+  const _VibeSetDetails({
+    required this.soundSet,
+    required this.title,
+    required this.metrics,
+  });
+  final VibeSoundSet soundSet;
+  final String title;
+  final MixerMetrics metrics;
 
-  void _showSavePresetDialog(BuildContext context, AppState state) {
-    final controller = TextEditingController();
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Save Sound Preset'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: CupertinoTextField(
-            controller: controller,
-            placeholder: 'e.g. Rainy Study Night',
-            style: const TextStyle(color: textPrimary),
-            decoration: BoxDecoration(
-              color: CupertinoColors.darkBackgroundGray.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: MixerSurface(
+      key: const ValueKey('vibe-set-details'),
+      metrics: metrics,
+      padding: EdgeInsets.all(metrics.space(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            key: const ValueKey('vibe-set-name'),
+            style: metrics.text(24, weight: FontWeight.w600),
+          ),
+          SizedBox(height: metrics.space(6)),
+          Text(
+            soundSet.purpose,
+            key: const ValueKey('vibe-set-purpose'),
+            style: metrics.text(
+              18,
+              color: MixerTheme.primary,
+              weight: FontWeight.w600,
             ),
           ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+          SizedBox(height: metrics.space(6)),
+          Text(soundSet.vibe, style: metrics.text(20, color: MixerTheme.muted)),
+          SizedBox(height: metrics.space(9)),
+          Text(
+            soundSet.recipe,
+            key: const ValueKey('vibe-set-levels'),
+            style: metrics.text(20),
           ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                state.savePreset(controller.text.trim(), Map.from(_volumes));
-                Navigator.pop(ctx);
-                showCupertinoDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (ctx2) {
-                    Future.delayed(const Duration(seconds: 1), () {
-                      if (ctx2.mounted) Navigator.pop(ctx2);
-                    });
-                    return const CupertinoAlertDialog(
-                      title: Text('Preset Saved ✓'),
-                    );
-                  },
-                );
-              }
-            },
-            child: const Text('Save'),
+          SizedBox(height: metrics.space(8)),
+          Text(
+            '${soundSet.levels.length} bundled layers · Individual levels need not total 100%. Overall output is gain-limited. Starting volumes, not a loudness guarantee.',
+            style: metrics.text(18, color: MixerTheme.muted),
           ),
         ],
       ),
-    );
+    ),
+  );
+}
+
+/// Expanding this inventory never changes a mix. Only an explicit view action
+/// shows the unfinished entries; returning to Available hides the review again.
+class _LibraryScope extends StatefulWidget {
+  const _LibraryScope({required this.mixer, required this.metrics});
+  final MixerController mixer;
+  final MixerMetrics metrics;
+
+  @override
+  State<_LibraryScope> createState() => _LibraryScopeState();
+}
+
+class _LibraryScopeState extends State<_LibraryScope> {
+  bool _reviewExpanded = false;
+
+  void _available() {
+    setState(() => _reviewExpanded = false);
+    widget.mixer.setAvailableOnly(true);
   }
 
-  void _showRenamePresetDialog(BuildContext context, String currentName, AppState state) {
-    final displayName = state.getPresetDisplayName(currentName);
-    final controller = TextEditingController(text: displayName);
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Rename Recommended Mix'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: CupertinoTextField(
-            controller: controller,
-            placeholder: 'Enter custom name',
-            style: const TextStyle(color: textPrimary),
-            decoration: BoxDecoration(
-              color: CupertinoColors.darkBackgroundGray.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                state.renameCuratedPreset(currentName, controller.text.trim());
-                Navigator.pop(ctx);
-                showCupertinoDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (ctx2) {
-                    Future.delayed(const Duration(seconds: 1), () {
-                      if (ctx2.mounted) Navigator.pop(ctx2);
-                    });
-                    return CupertinoAlertDialog(
-                      title: Text('Renamed to "${controller.text.trim()}" ✓'),
-                    );
-                  },
-                );
-              }
-            },
-            child: const Text('Save Name'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrackCard(
-    (String, String, String, Color) t,
-    AppState state,
-  ) {
-    final emoji = t.$1;
-    final name = t.$2;
-    final desc = t.$3;
-    final vol = _volumes[name] ?? 0.0;
-    final isActive = vol > 0 && _isPlaying;
-    final imgUrl = soundImages[name];
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.lightImpact();
-          final newVol = (vol > 0) ? 0.0 : 0.6;
-          setState(() {
-            _volumes[name] = newVol;
-            _isPlaying = true;
-          });
-          state.updateSoundTrackVolume(name, newVol);
-        },
-        child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: isActive ? tealPrimary.withOpacity(0.25) : Colors.black.withOpacity(0.35),
-                blurRadius: isActive ? 18 : 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // 🖼️ High-Definition Artwork Background with Gradient Overlay
-              if (imgUrl != null) ...[
-                Positioned.fill(
-                  child: Image.network(
-                    imgUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => const SizedBox.shrink(),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF09141D).withOpacity(0.82),
-                          const Color(0xFF050D15).withOpacity(0.94),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-
-              // 🎨 Card Content Layer
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        // 3D Artwork Thumbnail Badge
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
-                            child: imgUrl != null
-                                ? Image.network(
-                                    imgUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (ctx, err, stack) => Center(
-                                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                                    ),
-                                  )
-                                : Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-
-                        // Title & Subtitle Description
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: isActive ? tealPrimary : textPrimary,
-                                        letterSpacing: -0.2,
-                                        decoration: TextDecoration.none,
-                                      ),
-                                    ),
-                                  ),
-                                  CupertinoButton(
-                                    padding: const EdgeInsets.only(left: 6),
-                                    minSize: 0,
-                                    onPressed: () => state.toggleFavoriteSound(name),
-                                    child: Icon(
-                                      state.isFavorite(name) ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                                      color: state.isFavorite(name) ? tealPrimary : textSecondary.withOpacity(0.4),
-                                      size: 18,
-                                    ),
-                                  ),
-                                  if (isActive) ...[
-                                    const SizedBox(width: 8),
-                                    const AnimatedSoundWave(accentColor: tealPrimary),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                desc,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12.5, color: textSecondary, decoration: TextDecoration.none),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Volume Badge & Switch Toggle
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: vol > 0 ? tealPrimary.withOpacity(0.18) : Colors.white.withOpacity(0.06),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${(vol * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.bold,
-                              color: vol > 0 ? tealPrimary : textSecondary.withOpacity(0.6),
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-
-                        CupertinoSwitch(
-                          value: vol > 0,
-                          activeColor: tealPrimary,
-                          onChanged: (val) {
-                            final newVol = val ? 0.6 : 0.0;
-                            setState(() {
-                              _volumes[name] = newVol;
-                              _isPlaying = true;
-                            });
-                            state.updateSoundTrackVolume(name, newVol);
-                          },
-                        ),
-                      ],
-                    ),
-
-                    // Smooth Interactive Volume Slider
-                    AnimatedCrossFade(
-                      duration: const Duration(milliseconds: 220),
-                      crossFadeState: vol > 0 ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                      firstChild: const SizedBox.shrink(),
-                      secondChild: Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: CupertinoSlider(
-                          value: vol,
-                          activeColor: tealPrimary,
-                          onChanged: (v) {
-                            setState(() {
-                              _volumes[name] = v;
-                              _isPlaying = true;
-                            });
-                            state.updateSoundTrackVolume(name, v);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      ),
-    );
+  void _reviewSelection() {
+    setState(() => _reviewExpanded = true);
+    widget.mixer.setAvailableOnly(false);
+    widget.mixer.selectCategory('all');
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final isClay = state.themeMode.isLight;
-    final activeTextColor = isClay ? clayText : textPrimary;
-
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.transparent,
-      child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            CupertinoSliverNavigationBar(
-              largeTitle: const Text(
-                'Sounds',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: const Color(0xE6050D15),
-              trailing: CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {},
-                child: const Icon(CupertinoIcons.slider_horizontal_3, color: tealPrimary),
-              ),
+    final mixer = widget.mixer;
+    final metrics = widget.metrics;
+    final expanded = _reviewExpanded || !mixer.availableOnly;
+    final nonBundled = mixer.levels.entries
+        .where(
+          (entry) =>
+              entry.value > 0 &&
+              !AppState.localSoundAssets.containsKey(entry.key),
+        )
+        .map((entry) => entry.key)
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MixChip(
+          buttonKey: const ValueKey('library-available'),
+          label: 'Available (${bundledRecordings.length})',
+          metrics: metrics,
+          selected: mixer.availableOnly,
+          onPressed: _available,
+        ),
+        CupertinoButton(
+          key: const ValueKey('catalog-review'),
+          minSize: 44,
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            if (expanded) {
+              _available();
+            } else {
+              setState(() => _reviewExpanded = true);
+            }
+          },
+          child: Text(
+            expanded ? 'Hide catalog review' : 'Review unfinished catalog',
+            style: metrics
+                .text(19, color: const Color(0xFF9AFFE6))
+                .copyWith(decoration: TextDecoration.underline),
+          ),
+        ),
+        if (expanded) ...[
+          Text(
+            '18 bundled sounds, 23 stream-only entries and 36 entries without recordings. Streams need a connection and device verification. This view preserves older selections; it is not a 77-playable-sound library.',
+            key: const ValueKey('catalog-review-description'),
+            style: metrics.text(20, color: MixerTheme.muted),
+          ),
+          SizedBox(height: 8 * metrics.scale),
+          _MixChip(
+            buttonKey: const ValueKey('library-full'),
+            label: 'Full catalog (${allMixerTracks.length})',
+            metrics: metrics,
+            selected: !mixer.availableOnly,
+            onPressed: () => mixer.setAvailableOnly(false),
+          ),
+        ],
+        SizedBox(height: 8 * metrics.scale),
+        Text(
+          mixer.availableOnly
+              ? '18 bundled sounds, ready for your mix.'
+              : 'Catalog review — not 77 playable sounds. Streams and missing recordings are labeled.',
+          style: metrics.text(20, color: MixerTheme.muted),
+        ),
+        if (nonBundled.isNotEmpty) ...[
+          Text(
+            'Your saved selection includes non-bundled sounds: ${nonBundled.join(', ')}. Review or change these sounds; your levels are unchanged.',
+            key: const ValueKey('library-selection-notice'),
+            style: metrics.text(20, color: MixerTheme.muted),
+          ),
+          CupertinoButton(
+            key: const ValueKey('library-review-selected'),
+            minSize: 44,
+            padding: EdgeInsets.zero,
+            onPressed: _reviewSelection,
+            child: Text(
+              'Review selected sounds',
+              style: metrics.text(19, color: const Color(0xFF9AFFE6)),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MixChip extends StatelessWidget {
+  const _MixChip({
+    required this.label,
+    required this.metrics,
+    required this.onPressed,
+    this.selected = false,
+    this.onLongPress,
+    this.buttonKey,
+    this.hint,
+  });
+  final Key? buttonKey;
+  final String? hint;
+  final String label;
+  final MixerMetrics metrics;
+  final VoidCallback onPressed;
+  final bool selected;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = metrics.scale;
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Semantics(
+        selected: selected,
+        hint: hint,
+        child: CupertinoButton(
+          key: buttonKey,
+          minSize: 44,
+          padding: EdgeInsets.zero,
+          onPressed: onPressed,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 14 * s, vertical: 12 * s),
+            decoration: BoxDecoration(
+              color: selected ? MixerTheme.control : MixerTheme.action,
+              borderRadius: BorderRadius.circular(30 * s),
+            ),
+            child: Text(
+              label,
+              style: metrics
+                  .text(19, weight: FontWeight.w500)
+                  .copyWith(
+                    decoration: selected
+                        ? TextDecoration.underline
+                        : TextDecoration.none,
+                    decorationThickness: 2,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.id,
+    required this.emoji,
+    required this.label,
+    required this.count,
+    required this.mixer,
+    required this.metrics,
+  });
+  final String id, emoji, label;
+  final int count;
+  final MixerController mixer;
+  final MixerMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = mixer.category == id;
+    final s = metrics.scale;
+    return Padding(
+      padding: EdgeInsets.only(right: 10 * s),
+      child: Semantics(
+        selected: selected,
+        button: true,
+        label: '$label, $count sounds',
+        child: CupertinoButton(
+          key: ValueKey('category-$id'),
+          minSize: 44,
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            mixer.selectCategory(id);
+          },
+          child: Container(
+            width: 184 * s,
+            padding: EdgeInsets.symmetric(vertical: 12 * s),
+            decoration: BoxDecoration(
+              color: selected ? MixerTheme.primary : MixerTheme.action,
+              borderRadius: BorderRadius.circular(17 * s),
+            ),
+            child: Text(
+              '$emoji $label ($count)',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: metrics
+                  .text(
+                    21,
+                    color: selected ? MixerTheme.onPrimary : MixerTheme.text,
+                    weight: selected ? FontWeight.w600 : FontWeight.w400,
+                  )
+                  .copyWith(
+                    decoration: selected
+                        ? TextDecoration.underline
+                        : TextDecoration.none,
+                    decorationThickness: 2,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrackCard extends StatelessWidget {
+  const _TrackCard({
+    required this.track,
+    required this.state,
+    required this.mixer,
+    required this.metrics,
+    required this.onReplace,
+    this.onChooseRecording,
+    super.key,
+  });
+  final VoidCallback onReplace;
+  final VoidCallback? onChooseRecording;
+  final MixerTrack track;
+  final AppState state;
+  final MixerController mixer;
+  final MixerMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = metrics.scale;
+    final volume = mixer.volume(track.name);
+    final selected = volume > 0;
+    final canToggle = selected || AppState.hasAmbientSource(track.name);
+    final thumbWidth = math.max(40.0, 104 * s);
+    final thumbHeight = math.max(40.0, (selected ? 100 : 88) * s);
+    final verticalPadding = selected ? 14.0 : 12.0;
+    return Semantics(
+      container: true,
+      label: '${track.name}, ${track.description}',
+      hint: state.isFavorite(track.name)
+          ? 'Touch and hold to remove from Favorites'
+          : 'Touch and hold to add to Favorites',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: canToggle ? () => mixer.toggleTrack(track.name) : null,
+        onLongPress: () {
+          HapticFeedback.lightImpact();
+          state.toggleFavoriteSound(track.name);
+        },
+        child: _MotionAwareTrackSize(
+          child: MixerSurface(
+            metrics: metrics,
+            active: selected,
+            padding: EdgeInsets.symmetric(
+              horizontal: 14 * s,
+              vertical: verticalPadding * s,
+            ),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'AMBIENT SOUND MIXER',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isClay ? clayAccent : tealPrimary,
-                                  letterSpacing: 1.8,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                              Text(
-                                'Build Your Environment',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: activeTextColor,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16 * s),
+                      child: Container(
+                        width: thumbWidth,
+                        height: thumbHeight,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              track.color.withOpacity(0.6),
+                              MixerTheme.surface,
                             ],
                           ),
                         ),
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: tealPrimary.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(CupertinoIcons.slider_horizontal_3, color: tealPrimary, size: 24),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Layer natural sounds & healing frequencies for work, study, or sleep',
-                      style: TextStyle(fontSize: 13, color: textSecondary, decoration: TextDecoration.none),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 🎛️ Master Control Center Bar (Apple-level Luxury Tactile UI)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFF132230).withOpacity(0.95),
-                            const Color(0xFF091420).withOpacity(0.95),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _isPlaying ? tealPrimary.withOpacity(0.20) : Colors.black.withOpacity(0.35),
-                            blurRadius: 18,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                        child: MixerArtwork(track: track),
                       ),
-                      child: Row(
+                    ),
+                    SizedBox(width: 24 * s),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ⏯️ Glowing Play / Pause Master Dial
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.mediumImpact();
-                              _toggleMasterPlay(state);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: _isPlaying
-                                    ? const LinearGradient(
-                                        colors: [Color(0xFF2DD4BF), Color(0xFF0D9488)],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
+                          Text(
+                            track.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: metrics.text(
+                              selected ? 30 : 28,
+                              weight: FontWeight.w600,
+                              tracking: -0.7 * s,
+                            ),
+                          ),
+                          SizedBox(height: 3 * s),
+                          Text(
+                            state.ambientTrackError(track.name) ??
+                                (!AppState.hasAmbientSource(track.name)
+                                    ? 'No recording configured · unavailable'
+                                    : switch (state.ambientTrackStatus(
+                                        track.name,
+                                      )) {
+                                        AmbientPlaybackStatus.loading =>
+                                          'Loading recording…',
+                                        AmbientPlaybackStatus.buffering =>
+                                          'Buffering recording…',
+                                        AmbientPlaybackStatus.paused =>
+                                          'Playback paused · tap play to resume',
+                                        AmbientPlaybackStatus.playing =>
+                                          'Playing · ${track.description}',
+                                        _ =>
+                                          AppState.localSoundAssets.containsKey(
+                                                track.name,
+                                              )
+                                              ? track.description
+                                              : 'Streamed recording · connection required',
+                                      }),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: metrics.text(
+                              20,
+                              color: state.ambientTrackError(track.name) != null
+                                  ? const Color(0xFFFFC9A0)
+                                  : MixerTheme.muted,
+                            ),
+                          ),
+                          if (onChooseRecording != null)
+                            CupertinoButton(
+                              key: ValueKey('choose-recording-${track.name}'),
+                              minSize: 44,
+                              padding: EdgeInsets.zero,
+                              onPressed: onChooseRecording,
+                              child: Text(
+                                'Choose recording (2)',
+                                style: metrics.text(
+                                  20,
+                                  color: MixerTheme.mintLight,
+                                ),
+                              ),
+                            ),
+                          if (selected &&
+                              state.ambientTrackError(track.name) != null &&
+                              AppState.hasAmbientSource(track.name))
+                            Semantics(
+                              label: 'Retry ${track.name}',
+                              button: true,
+                              excludeSemantics: true,
+                              onTap: () => mixer.retryTrack(track.name),
+                              child: CupertinoButton(
+                                key: ValueKey('retry-${track.name}'),
+                                minSize: 44,
+                                padding: EdgeInsets.zero,
+                                onPressed: () => mixer.retryTrack(track.name),
+                                child: Text(
+                                  'Retry',
+                                  style: metrics
+                                      .text(
+                                        20,
+                                        color: MixerTheme.mintLight,
+                                        weight: FontWeight.w600,
                                       )
-                                    : LinearGradient(
-                                        colors: [Colors.white.withOpacity(0.15), Colors.white.withOpacity(0.06)],
+                                      .copyWith(
+                                        decoration: TextDecoration.underline,
                                       ),
-                                boxShadow: _isPlaying
-                                    ? [
-                                        BoxShadow(
-                                          color: tealPrimary.withOpacity(0.4),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Icon(
-                                _isPlaying ? CupertinoIcons.pause_fill : CupertinoIcons.play_fill,
-                                color: _isPlaying ? Colors.black : Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-
-                          // 🏷️ Track Status & Active Counter
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    if (_isPlaying) ...[
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        decoration: const BoxDecoration(
-                                          color: tealPrimary,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                    ],
-                                    Flexible(
-                                      child: Text(
-                                        _isPlaying ? 'Soundscape Active' : 'Mixer Paused',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          letterSpacing: -0.2,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _isPlaying
-                                      ? '${_volumes.values.where((v) => v > 0).length} active layers'
-                                      : 'Tap play to start audio',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withOpacity(0.65),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // 🔀 Shuffle Randomize Mix Button
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _randomizeMix(state);
-                            },
-                            child: Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(CupertinoIcons.shuffle, color: Colors.white70, size: 18),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // 📤 Share Mix Button
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _shareCurrentMix(state);
-                            },
-                            child: Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: tealPrimary.withOpacity(0.14),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(CupertinoIcons.share, color: tealPrimary, size: 18),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-
-                          // 💾 Save & Pin Mix Pill Button (High Contrast & Tactile)
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _showSavePresetDialog(context, state);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF2DD4BF), Color(0xFF0D9488)],
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: tealPrimary.withOpacity(0.35),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(CupertinoIcons.bookmark_fill, color: Colors.black, size: 13),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'Save',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.black,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 22),
-
-                    // 1-TAP CURATED PRESET MIXES
-                    const Text(
-                      'CURATED ONE-TAP MIXES',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: tealPrimary,
-                        letterSpacing: 1.6,
-                        decoration: TextDecoration.none,
+                    SizedBox(width: 12 * s),
+                    Container(
+                      width: math.max(38.0, 96 * s),
+                      padding: EdgeInsets.symmetric(vertical: 10 * s),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? MixerTheme.control
+                            : MixerTheme.surface,
+                        borderRadius: BorderRadius.circular(28 * s),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: AppState.curatedPresets.entries.map((e) {
-                          final displayName = state.getPresetDisplayName(e.key);
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onLongPress: () => _showRenamePresetDialog(context, e.key, state),
-                              child: GlassChip(
-                                label: displayName,
-                                onTap: () => _applyVolumes(e.value, state),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-
-                    // MESSENGER-STYLE HORIZONTAL CATEGORY FILTER TRAY
-                    const Row(
-                      children: [
-                        Icon(CupertinoIcons.square_grid_2x2_fill, color: tealPrimary, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'SOUND CATEGORY TRAY',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: textSecondary,
-                            letterSpacing: 1.6,
-                            decoration: TextDecoration.none,
-                          ),
+                      child: Text(
+                        '${(volume * 100).round()}%',
+                        textAlign: TextAlign.center,
+                        style: metrics.text(
+                          24,
+                          color: selected
+                              ? const Color(0xFF74F9DA)
+                              : MixerTheme.muted,
+                          weight: selected ? FontWeight.w600 : FontWeight.w400,
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: CupertinoSlidingSegmentedControl<String>(
-                          backgroundColor: Colors.white.withOpacity(0.08),
-                          thumbColor: tealPrimary,
-                          groupValue: _selectedCategory,
-                          onValueChanged: (String? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedCategory = value;
-                              });
-                            }
-                          },
-                          children: {
-                            '❤️ Favorites': Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: Text(
-                                '❤️ Favorites (${state.favoriteSounds.length})',
-                                style: TextStyle(
-                                  color: _selectedCategory == '❤️ Favorites' ? Colors.black : textPrimary,
-                                  fontWeight: FontWeight.bold,
+                    SizedBox(width: 6 * s),
+                    CupertinoButton(
+                      key: ValueKey('options-${track.name}'),
+                      padding: EdgeInsets.zero,
+                      minSize: 44,
+                      onPressed: onReplace,
+                      child: Semantics(
+                        label: 'Change ${track.name}',
+                        button: true,
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              3,
+                              (_) => Container(
+                                width: 3,
+                                height: 3,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 1.5,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFB0D3D4),
+                                  shape: BoxShape.circle,
                                 ),
                               ),
                             ),
-                            ...Map.fromEntries(
-                              soundCategories.keys.map((catKey) => MapEntry(
-                                    catKey,
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      child: Text(
-                                        '$catKey (${soundCategories[catKey]?.length ?? 0})',
-                                        style: TextStyle(
-                                          color: _selectedCategory == catKey ? Colors.black : textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  )),
-                            ),
-                          },
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(width: 6 * s),
+                    Semantics(
+                      label: 'Enable ${track.name}',
+                      child: SizedBox(
+                        width: math.max(44.0, 80 * s),
+                        height: math.max(44.0, 48 * s),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: CupertinoSwitch(
+                              key: ValueKey('toggle-${track.name}'),
+                              value: selected,
+                              activeColor: MixerTheme.mint,
+                              trackColor: const Color(0xFF3C536F),
+                              thumbColor: Colors.white,
+                              onChanged: canToggle
+                                  ? (_) => mixer.toggleTrack(track.name)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ),
-
-            // LIST OF SOUND CARDS FOR SELECTED CATEGORY
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-              sliver: Builder(
-                builder: (context) {
-                  List<(String, String, String, Color)> currentList = [];
-                  if (_selectedCategory == '❤️ Favorites') {
-                    for (final catList in soundCategories.values) {
-                      for (final item in catList) {
-                        if (state.isFavorite(item.$2)) {
-                          currentList.add(item);
-                        }
-                      }
-                    }
-                    if (currentList.isEmpty) {
-                      return const SliverToBoxAdapter(
-                        child: GlassCard(
-                          cornerRadius: 22,
-                          child: Padding(
-                            padding: EdgeInsets.all(28),
-                            child: Column(
-                              children: [
-                                Icon(CupertinoIcons.heart, color: coralAccent, size: 40),
-                                SizedBox(height: 12),
-                                Text(
-                                  'No Favorite Sounds Saved Yet',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary, decoration: TextDecoration.none),
+                if (selected)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: thumbWidth + 24 * s,
+                      top: 1 * s,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.volume_down,
+                          color: const Color(0xFF91B5D2),
+                          size: 26 * s,
+                        ),
+                        SizedBox(width: 14 * s),
+                        Expanded(
+                          child: SizedBox(
+                            height: math.max(44.0, 34 * s),
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: SliderTheme(
+                                data: SliderThemeData(
+                                  trackHeight: 6 * s,
+                                  activeTrackColor: MixerTheme.mint,
+                                  inactiveTrackColor: MixerTheme.border,
+                                  thumbColor: Colors.white,
+                                  overlayColor: MixerTheme.mint.withOpacity(
+                                    0.15,
+                                  ),
+                                  thumbShape: RoundSliderThumbShape(
+                                    enabledThumbRadius: math.max(8.0, 18 * s),
+                                    elevation: 0,
+                                  ),
+                                  overlayShape: RoundSliderOverlayShape(
+                                    overlayRadius: math.max(16.0, 24 * s),
+                                  ),
+                                  trackShape: const _FullWidthSliderTrack(),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Tap the ❤️ heart icon on any sound card to build your top favorites list!',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 12.5, color: textSecondary, decoration: TextDecoration.none),
+                                child: Slider(
+                                  key: ValueKey('volume-${track.name}'),
+                                  value: volume,
+                                  semanticFormatterCallback: (value) =>
+                                      '${track.name} volume ${(value * 100).round()} percent',
+                                  onChanged: (value) =>
+                                      mixer.setVolume(track.name, value),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    }
-                  } else {
-                    currentList = soundCategories[_selectedCategory] ?? [];
-                  }
-
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        if (i >= currentList.length) return const SizedBox.shrink();
-                        return _buildTrackCard(currentList[i], state);
-                      },
-                      childCount: currentList.length,
+                        SizedBox(width: 14 * s),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Reduced motion removes size animation rather than running AnimatedSize at
+/// zero duration, which can synchronously dirty itself during layout.
+class _MotionAwareTrackSize extends StatelessWidget {
+  const _MotionAwareTrackSize({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context))
+      return child;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      alignment: Alignment.topCenter,
+      child: child,
+    );
+  }
+}
+
+class _FullWidthSliderTrack extends RoundedRectSliderTrackShape {
+  const _FullWidthSliderTrack();
+
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final height = sliderTheme.trackHeight ?? 2;
+    return Rect.fromLTWH(
+      offset.dx,
+      offset.dy + (parentBox.size.height - height) / 2,
+      parentBox.size.width,
+      height,
     );
   }
 }

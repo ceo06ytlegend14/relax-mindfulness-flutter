@@ -1,755 +1,340 @@
-import 'dart:ui';
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
-import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/services/subscription_controller.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// ─── Premium Features List ────────────────────────────────────────────────────
-const _premiumFeatures = [
-  ('🧘', 'All 14 Guided Sessions', 'Healing, Sleep, Focus & Comfort'),
-  ('🌙', 'All 8 Sleep Stories', 'Narrated bedtime journeys'),
-  ('🎵', 'Full 78-Track Sound Library', 'Every ambient sound, no limits'),
-  ('🎚️', 'Unlimited Sound Presets', 'Save custom ambient mixes'),
-  ('📊', 'Advanced Progress Stats', 'Weekly charts & mood trends'),
-  ('🔔', 'Daily Reminders', 'Build your meditation habit'),
-  ('🌈', 'All 4 App Themes', 'Claymorphic, Forest, Lavender & more'),
-  ('✨', 'AI Mood Recommendations', 'Personalised session picks'),
-];
-
-// ─── Plans ────────────────────────────────────────────────────────────────────
-const _monthlyPrice = '\$6.99';
-const _yearlyPrice = '\$39.99';
-const _yearlyMonthly = '\$3.33';
-
-// ─── PremiumScreen ────────────────────────────────────────────────────────────
+/// Uses real store offerings and SDK entitlements. New sales are disabled by
+/// default; there is no local trial, hardcoded price, or no-op legal button.
 class PremiumScreen extends StatefulWidget {
-  const PremiumScreen({super.key});
+  const PremiumScreen({super.key, this.controller, this.openExternalLink});
+
+  final SubscriptionController? controller;
+  final Future<bool> Function(Uri)? openExternalLink;
 
   @override
   State<PremiumScreen> createState() => _PremiumScreenState();
 }
 
-class _PremiumScreenState extends State<PremiumScreen>
-    with TickerProviderStateMixin {
-  bool _yearlySelected = true; // default to best-value yearly
-  bool _isPurchasing = false;
-
-  late final AnimationController _glowCtrl;
-  late final AnimationController _floatCtrl;
-  late final Animation<double> _glowAnim;
-  late final Animation<double> _floatAnim;
+class _PremiumScreenState extends State<PremiumScreen> {
+  late final SubscriptionController _billing;
+  String? _selectedId;
+  String? _linkNotice;
 
   @override
   void initState() {
     super.initState();
-    _glowCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-    _floatCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat(reverse: true);
-    _glowAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
-    );
-    _floatAnim = Tween<double>(begin: -6, end: 6).animate(
-      CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut),
-    );
+    _billing = widget.controller ?? context.read<AppState>().subscriptions;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_billing.initialize());
+    });
   }
 
-  @override
-  void dispose() {
-    _glowCtrl.dispose();
-    _floatCtrl.dispose();
-    super.dispose();
+  Package? get _selected {
+    for (final package in _billing.plans) {
+      if (package.identifier == _selectedId) return package;
+    }
+    return null;
+  }
+
+  Future<void> _openLink(Uri uri) async {
+    if (_linkNotice != null) setState(() => _linkNotice = null);
+    try {
+      final opened =
+          await (widget.openExternalLink?.call(uri) ??
+              launchUrl(uri, mode: LaunchMode.externalApplication));
+      if (opened) return;
+    } catch (_) {
+      // Do not leak SDK/platform details or pretend that a link opened.
+    }
+    if (mounted)
+      setState(
+        () => _linkNotice =
+            'This link could not be opened. Please try again on your device.',
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        if (state.isPremium) return _buildAlreadyPremium(context, state);
-
+    return AnimatedBuilder(
+      animation: _billing,
+      builder: (context, _) {
+        final selected = _selected;
+        final active = _billing.hasFullAccess;
+        final waiting = _billing.isBusy || _billing.isLoading;
         return CupertinoPageScaffold(
-          backgroundColor: bgDark,
-          child: Stack(
-            children: [
-              // Animated gradient background
-              _buildBackground(),
-              // Main content
-              SafeArea(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 8),
-                        _buildHeader(context),
-                        const SizedBox(height: 24),
-                        _buildLotusHero(),
-                        const SizedBox(height: 28),
-                        _buildTrialBanner(state),
-                        const SizedBox(height: 24),
-                        _buildFeaturesGrid(),
-                        const SizedBox(height: 28),
-                        _buildPlanSelector(),
-                        const SizedBox(height: 20),
-                        _buildCTAButton(context, state),
-                        const SizedBox(height: 12),
-                        _buildRestoreRow(context, state),
-                        const SizedBox(height: 12),
-                        _buildLegalText(),
-                        const SizedBox(height: 32),
-                      ],
+          backgroundColor: MixerTheme.background,
+          navigationBar: const CupertinoNavigationBar(
+            middle: Text('Sanctuary Premium'),
+            backgroundColor: MixerTheme.background,
+            border: null,
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    active
+                        ? (_billing.trialActive
+                              ? 'Store trial active'
+                              : 'Premium access active')
+                        : 'Your store subscription',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // ─── Background ─────────────────────────────────────────────────────────────
-  Widget _buildBackground() {
-    return AnimatedBuilder(
-      animation: _glowAnim,
-      builder: (_, __) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0, -0.5),
-              radius: 1.4,
-              colors: [
-                tealPrimary.withOpacity(0.18 * _glowAnim.value),
-                purpleAccent.withOpacity(0.10 * _glowAnim.value),
-                bgDark,
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ─── Header ─────────────────────────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: CupertinoColors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: CupertinoColors.white.withOpacity(0.15)),
-            ),
-            child: const Icon(CupertinoIcons.xmark, color: CupertinoColors.white, size: 20),
-          ),
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF8C00)]),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: CupertinoColors.systemYellow.withOpacity(0.4), blurRadius: 12)],
-          ),
-          child: const Row(
-            children: [
-              Icon(CupertinoIcons.star_fill, color: CupertinoColors.white, size: 16),
-              SizedBox(width: 5),
-              Text('PREMIUM', style: TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-              )),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─── Lotus Hero ──────────────────────────────────────────────────────────────
-  Widget _buildLotusHero() {
-    return AnimatedBuilder(
-      animation: _floatAnim,
-      builder: (_, __) {
-        return Transform.translate(
-          offset: Offset(0, _floatAnim.value),
-          child: Column(
-            children: [
-              AnimatedBuilder(
-                animation: _glowAnim,
-                builder: (_, __) => Container(
-                  width: 120, height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const RadialGradient(colors: [
-                      Color(0x552DD4BF),
-                      Color(0x00050D15),
-                    ]),
-                    boxShadow: [
-                      BoxShadow(
-                        color: tealPrimary.withOpacity(0.5 * _glowAnim.value),
-                        blurRadius: 40 * _glowAnim.value,
-                        spreadRadius: 10 * _glowAnim.value,
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Access is based on your store account, not a local switch. '
+                    'The core app remains available when subscriptions are unavailable.',
+                    style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  if (active) ...[
+                    Text(
+                      _billing.trialActive
+                          ? '${_billing.trialDaysLeft} day(s) until the store trial’s recorded expiry.'
+                          : 'The store SDK reports an active premium entitlement.',
+                      key: const ValueKey('premium-active-status'),
+                      style: const TextStyle(
+                        color: Color(0xFF9CF0DA),
+                        height: 1.5,
                       ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text('🪷', style: TextStyle(fontSize: 64)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Sanctuary Premium',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: CupertinoColors.white,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your complete daily calm companion\n— unlimited, forever.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: CupertinoColors.white.withOpacity(0.6),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // ─── Trial Banner ────────────────────────────────────────────────────────────
-  Widget _buildTrialBanner(AppState state) {
-    if (state.trialActive) {
-      return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [
-            tealPrimary.withOpacity(0.2),
-            mintAccent.withOpacity(0.1),
-          ]),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: tealPrimary.withOpacity(0.4)),
-        ),
-        child: Row(
-          children: [
-            const Text('⏳', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Free Trial Active',
-                    style: TextStyle(color: tealPrimary, fontWeight: FontWeight.w700, fontSize: 13)),
-                  Text('${state.trialDaysLeft} days remaining — upgrade before it ends',
-                    style: TextStyle(color: CupertinoColors.white.withOpacity(0.7), fontSize: 12)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [
-          const Color(0xFFFFD700).withOpacity(0.12),
-          const Color(0xFFFF8C00).withOpacity(0.06),
-        ]),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Text('🎁', style: TextStyle(fontSize: 26)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('7-Day Free Trial',
-                  style: TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  )),
-                Text('Full access. Cancel anytime. No charge today.',
-                  style: TextStyle(color: CupertinoColors.white.withOpacity(0.65), fontSize: 12, height: 1.4)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Features Grid ───────────────────────────────────────────────────────────
-  Widget _buildFeaturesGrid() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Everything in Premium', style: TextStyle(
-          color: CupertinoColors.white.withOpacity(0.9),
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-        )),
-        const SizedBox(height: 14),
-        ...List.generate(_premiumFeatures.length, (i) {
-          final (emoji, title, subtitle) = _premiumFeatures[i];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: CupertinoColors.white.withOpacity(0.08)),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(emoji, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(title, style: const TextStyle(
-                              color: CupertinoColors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            )),
-                            Text(subtitle, style: TextStyle(
-                              color: CupertinoColors.white.withOpacity(0.55),
-                              fontSize: 12,
-                            )),
-                          ],
+                    ),
+                    if (_billing.expiration != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Recorded expiry: ${_billing.expiration!.toLocal().toString().split('.').first}',
+                        style: const TextStyle(
+                          color: Color(0xFFBCD0DC),
+                          fontSize: 13,
                         ),
                       ),
-                      const Icon(CupertinoIcons.checkmark_circle_fill, color: tealPrimary, size: 20),
                     ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  // ─── Plan Selector ───────────────────────────────────────────────────────────
-  Widget _buildPlanSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Choose your plan', style: TextStyle(
-          color: CupertinoColors.white.withOpacity(0.9),
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-        )),
-        const SizedBox(height: 14),
-        CupertinoListSection.insetGrouped(
-          backgroundColor: CupertinoColors.transparent,
-          margin: EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: CupertinoColors.white.withOpacity(0.04),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: CupertinoColors.white.withOpacity(0.12)),
-          ),
-          children: [
-            _buildPlanTile(
-              isSelected: _yearlySelected,
-              label: 'Yearly',
-              badge: '🔥 Best Value — Save 60%',
-              price: _yearlyPrice,
-              sub: '$_yearlyMonthly / month, billed annually',
-              onTap: () => setState(() => _yearlySelected = true),
-            ),
-            _buildPlanTile(
-              isSelected: !_yearlySelected,
-              label: 'Monthly',
-              badge: null,
-              price: _monthlyPrice,
-              sub: 'Per month, billed monthly',
-              onTap: () => setState(() => _yearlySelected = false),
-            ),
-          ]
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlanTile({
-    required bool isSelected,
-    required String label,
-    required String? badge,
-    required String price,
-    required String sub,
-    required VoidCallback onTap,
-  }) {
-    return CupertinoListTile(
-      backgroundColor: isSelected ? tealPrimary.withOpacity(0.18) : CupertinoColors.transparent,
-      onTap: onTap,
-      leading: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 22, height: 22,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? tealPrimary : CupertinoColors.white.withOpacity(0.3),
-            width: 2,
-          ),
-        ),
-        child: isSelected
-            ? Center(
-                child: Container(
-                  width: 10, height: 10,
-                  decoration: const BoxDecoration(
-                    color: tealPrimary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              )
-            : null,
-      ),
-      title: Row(
-        children: [
-          Text(label, style: const TextStyle(
-            color: CupertinoColors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
-          )),
-          if (badge != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [tealPrimary, mintAccent]),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(badge,
-                style: const TextStyle(
-                  color: CupertinoColors.black,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                )),
-            ),
-          ],
-        ],
-      ),
-      subtitle: Text(sub, style: TextStyle(
-        color: CupertinoColors.white.withOpacity(0.5),
-        fontSize: 11,
-      )),
-      trailing: Text(price, style: const TextStyle(
-        color: CupertinoColors.white,
-        fontWeight: FontWeight.w800,
-        fontSize: 18,
-      )),
-    );
-  }
-
-  // ─── CTA Button ──────────────────────────────────────────────────────────────
-  Widget _buildCTAButton(BuildContext context, AppState state) {
-    final trialText = state.trialActive
-        ? 'Upgrade Now'
-        : 'Start 7-Day Free Trial';
-
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: _isPurchasing ? null : () => _handlePurchase(context, state),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        height: 58,
-        decoration: BoxDecoration(
-          gradient: _isPurchasing
-              ? const LinearGradient(colors: [CupertinoColors.systemGrey, CupertinoColors.systemGrey2])
-              : const LinearGradient(
-                  colors: [tealPrimary, mintAccent],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: _isPurchasing ? [] : [
-            BoxShadow(
-              color: tealPrimary.withOpacity(0.45),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Center(
-          child: _isPurchasing
-              ? const SizedBox(
-                  width: 24, height: 24,
-                  child: CupertinoActivityIndicator(
-                    color: CupertinoColors.white,
-                    radius: 12,
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(CupertinoIcons.lock_open_fill, color: CupertinoColors.black, size: 20),
-                    const SizedBox(width: 8),
+                    if (_billing.managementUri != null)
+                      CupertinoButton.filled(
+                        key: const ValueKey('manage-store-subscription'),
+                        onPressed: () => _openLink(_billing.managementUri!),
+                        child: const Text('Manage subscription'),
+                      ),
+                  ] else ...[
                     Text(
-                      trialText,
+                      _billing.availabilityMessage,
+                      key: const ValueKey('premium-availability'),
                       style: const TextStyle(
-                        color: CupertinoColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        letterSpacing: 0.3,
+                        color: Color(0xFFBCD0DC),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    for (final package in _billing.plans)
+                      _planTile(
+                        package,
+                        selected: package.identifier == _selectedId,
+                      ),
+                    if (_billing.plans.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Select a plan. The full amount shown is billed for its stated period; no trial or discount is guaranteed.',
+                        style: TextStyle(
+                          color: Color(0xFFBCD0DC),
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    CupertinoButton.filled(
+                      key: const ValueKey('purchase-store-plan'),
+                      onPressed: selected != null && _billing.canPurchase
+                          ? () async {
+                              await _billing.purchase(selected);
+                            }
+                          : null,
+                      child: const Text('Continue with store'),
+                    ),
+                  ],
+                  if (waiting) ...[
+                    const SizedBox(height: 18),
+                    const CupertinoActivityIndicator(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Waiting for the store…',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Color(0xFFBCD0DC)),
+                    ),
+                  ],
+                  if (_billing.notice != null) ...[
+                    const SizedBox(height: 18),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        _billing.notice!,
+                        key: const ValueKey('store-purchase-notice'),
+                        style: const TextStyle(
+                          color: Color(0xFF9CF0DA),
+                          height: 1.5,
+                        ),
                       ),
                     ),
                   ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handlePurchase(BuildContext context, AppState state) async {
-    setState(() => _isPurchasing = true);
-    
-    try {
-      if (_yearlySelected) {
-        await Purchases.purchaseProduct('premium_yearly');
-      } else {
-        await Purchases.purchaseProduct('premium_monthly');
-      }
-      
-      // Update local state to reflect purchase success immediately
-      if (state.trialActive) {
-        await state.purchasePremium();
-      } else {
-        await state.startFreeTrial();
-      }
-
-      if (context.mounted) {
-        _showSuccessSheet(context, state.trialActive ? 'Trial Active! 🎉' : 'Welcome to Premium! 🪷');
-      }
-    } catch (e) {
-      debugPrint("Purchase Error: $e");
-      if (context.mounted) {
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Text('Purchase Failed'),
-            content: Text(e.toString()),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('OK'),
-                onPressed: () => Navigator.pop(ctx),
-              )
-            ],
-          )
+                  const SizedBox(height: 22),
+                  CupertinoButton(
+                    key: const ValueKey('restore-store-purchases'),
+                    onPressed: _billing.canRestore
+                        ? () async {
+                            await _billing.restore();
+                          }
+                        : null,
+                    child: const Text('Restore purchases'),
+                  ),
+                  CupertinoButton(
+                    key: const ValueKey('refresh-store-access'),
+                    onPressed: waiting
+                        ? null
+                        : () => unawaited(_billing.refresh()),
+                    child: const Text('Check store connection'),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 14,
+                    children: [
+                      if (_billing.configuration.privacyUri != null)
+                        CupertinoButton(
+                          key: const ValueKey('premium-privacy-link'),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 8,
+                          ),
+                          onPressed: () =>
+                              _openLink(_billing.configuration.privacyUri!),
+                          child: const Text('Privacy policy'),
+                        ),
+                      if (_billing.configuration.termsUri != null)
+                        CupertinoButton(
+                          key: const ValueKey('premium-terms-link'),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 8,
+                          ),
+                          onPressed: () =>
+                              _openLink(_billing.configuration.termsUri!),
+                          child: const Text('Terms'),
+                        ),
+                    ],
+                  ),
+                  if (_linkNotice != null)
+                    Text(
+                      _linkNotice!,
+                      style: const TextStyle(
+                        color: Color(0xFFFFCA9B),
+                        height: 1.5,
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Subscriptions renew automatically unless cancelled through your store. '
+                    'The displayed price and billing period apply to the selected plan. '
+                    'Your store confirms any eligible introductory offer and payment terms before you authorize payment. '
+                    'Manage or cancel in App Store or Google Play subscription settings.',
+                    style: TextStyle(
+                      color: Color(0xFF9BB4C4),
+                      fontSize: 12,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
-      }
-    } finally {
-      if (mounted) setState(() => _isPurchasing = false);
-    }
-  }
-
-  void _showSuccessSheet(BuildContext context, String title) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0A1F1C), Color(0xFF050D15)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: tealPrimary.withOpacity(0.3)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🎉', style: TextStyle(fontSize: 52)),
-              const SizedBox(height: 12),
-              Text(title, style: const TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              )),
-              const SizedBox(height: 8),
-              Text(
-                'You now have full access to all sessions,\nsleep stories, sounds & features.',
-                style: TextStyle(color: CupertinoColors.white.withOpacity(0.6), height: 1.5, decoration: TextDecoration.none, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => Navigator.of(context)
-                  ..pop()
-                  ..pop(),
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [tealPrimary, mintAccent]),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Text('Start Exploring 🌿',
-                      style: TextStyle(
-                        color: CupertinoColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      )),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
+      },
     );
   }
 
-  // ─── Restore Row ─────────────────────────────────────────────────────────────
-  Widget _buildRestoreRow(BuildContext context, AppState state) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () async {
-            await state.restorePurchase();
-            if (!context.mounted) return;
-            
-            showCupertinoDialog(
-              context: context,
-              builder: (ctx) => CupertinoAlertDialog(
-                title: Text(state.isPremium ? '✅ Restored' : 'Notice'),
-                content: Text(state.isPremium ? 'Purchase restored successfully!' : 'No previous purchase found.'),
-                actions: [
-                  CupertinoDialogAction(
-                    child: const Text('OK'),
-                    onPressed: () => Navigator.pop(ctx),
-                  )
-                ]
-              )
-            );
-          },
-          child: Text('Restore Purchase',
-            style: TextStyle(color: CupertinoColors.white.withOpacity(0.45), fontSize: 13)),
-        ),
-        Text('  ·  ', style: TextStyle(color: CupertinoColors.white.withOpacity(0.25))),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () {},
-          child: Text('Privacy Policy',
-            style: TextStyle(color: CupertinoColors.white.withOpacity(0.45), fontSize: 13)),
-        ),
-        Text('  ·  ', style: TextStyle(color: CupertinoColors.white.withOpacity(0.25))),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () {},
-          child: Text('Terms',
-            style: TextStyle(color: CupertinoColors.white.withOpacity(0.45), fontSize: 13)),
-        ),
-      ],
-    );
-  }
-
-  // ─── Legal Text ──────────────────────────────────────────────────────────────
-  Widget _buildLegalText() {
+  Widget _planTile(Package package, {required bool selected}) {
+    final product = package.storeProduct;
+    final annual = package.packageType == PackageType.annual;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text(
-        'Subscription auto-renews unless cancelled 24 hours before the end of the '
-        'current period. Cancel anytime in your App Store / Play Store settings. '
-        'Free trial converts to paid plan after 7 days.',
-        style: TextStyle(
-          color: CupertinoColors.white.withOpacity(0.3),
-          fontSize: 10,
-          height: 1.6,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  // ─── Already Premium State ──────────────────────────────────────────────────
-  Widget _buildAlreadyPremium(BuildContext context, AppState state) {
-    return CupertinoPageScaffold(
-      backgroundColor: bgDark,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🪷', style: TextStyle(fontSize: 72)),
-              const SizedBox(height: 20),
-              const Text('You\'re Premium! 🌟',
-                style: TextStyle(color: CupertinoColors.white, fontSize: 28, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              Text(
-                'Thank you for supporting Sanctuary.\nYou have full access to everything. 🌿',
-                style: TextStyle(color: CupertinoColors.white.withOpacity(0.6), fontSize: 15, height: 1.6),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => Navigator.of(context).pop(),
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [tealPrimary, mintAccent]),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Text('Continue Meditating 🧘',
-                      style: TextStyle(
-                        color: CupertinoColors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      )),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Semantics(
+        selected: selected,
+        child: CupertinoButton(
+          key: ValueKey('premium-plan-${package.identifier}'),
+          padding: EdgeInsets.zero,
+          onPressed: _billing.isBusy || _billing.isLoading
+              ? null
+              : () => setState(() => _selectedId = package.identifier),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: selected ? MixerTheme.surfaceActive : MixerTheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              // A selected-plan outline conveys state, not decorative chrome.
+              border: selected
+                  ? Border.all(color: MixerTheme.primary, width: 2)
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  annual ? 'Yearly' : 'Monthly',
+                  style: const TextStyle(
+                    color: CupertinoColors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              CupertinoButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Back', style: TextStyle(color: CupertinoColors.white.withOpacity(0.4))),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  product.title,
+                  style: const TextStyle(
+                    color: Color(0xFFE3F1F5),
+                    fontSize: 15,
+                  ),
+                ),
+                if (product.description.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    product.description,
+                    style: const TextStyle(
+                      color: Color(0xFFBCD0DC),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  '${product.priceString} / ${annual ? 'year' : 'month'}',
+                  key: ValueKey('store-price-${package.identifier}'),
+                  style: const TextStyle(
+                    color: Color(0xFF9CF0DA),
+                    fontSize: 23,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  annual ? 'Billed annually' : 'Billed monthly',
+                  style: const TextStyle(
+                    color: Color(0xFFBCD0DC),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,1793 +1,585 @@
-import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/sanctuary_icon.dart';
+import 'package:relax_mindfulness/models/mixer_catalog.dart';
+import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
-import 'package:relax_mindfulness/theme/app_theme.dart';
-import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/screens/wellbeing_screen.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
+/// A daily dashboard, not a second copy of the Sounds mixer. Playback uses the
+/// same selection/controller as Sounds; arriving here never starts audio.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning, Welcome 🌸';
-    if (h < 17) return 'Good Afternoon, Soft Rest 🌿';
-    return 'Good Evening, Rest Easy 🌙';
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning.';
+    if (hour < 17) return 'Good afternoon.';
+    return 'Good evening.';
   }
 
-  static const _featured = [
-    {
-      'title': 'Morning Clarity',
-      'desc': '10 Min • Quiet Awareness',
-      'icon': Icons.wb_sunny_rounded,
-      'type': 'Meditation',
-      'mins': 10,
-      'color': tealPrimary
-    },
-    {
-      'title': 'Box Breath Reset',
-      'desc': '5 Min • Stress Relief',
-      'icon': Icons.air_rounded,
-      'type': 'Breathing',
-      'mins': 5,
-      'color': mintAccent
-    },
-    {
-      'title': 'Deep Ocean Sleep',
-      'desc': '30 Min • Restorative Slumber',
-      'icon': Icons.nightlight_round,
-      'type': 'Sleep',
-      'mins': 30,
-      'color': coralAccent
-    },
-    {
-      'title': '432Hz Sound Bath',
-      'desc': '20 Min • Solfeggio Tones',
-      'icon': CupertinoIcons.waveform,
-      'type': 'Sounds',
-      'mins': 20,
-      'color': purpleAccent
-    },
-    {
-      'title': 'Evening Gratitude',
-      'desc': '15 Min • Mindful Presence',
-      'icon': CupertinoIcons.leaf_arrow_circlepath,
-      'type': 'Meditation',
-      'mins': 15,
-      'color': mintAccent
-    },
-  ];
+  void _dailySession(AppState app) {
+    HapticFeedback.lightImpact();
+    if (app.isGuidedPlaying &&
+        app.currentGuidedTitle == dailyMeditation.title) {
+      app.pauseGuidedSession();
+    } else {
+      app.playGuidedSession(dailyMeditation.title, dailyMeditation.minutes);
+    }
+  }
+
+  void _toggleSoundscape(AppState app, MixerController mixer) {
+    HapticFeedback.lightImpact();
+    if (app.hasAmbientPlaybackRequest) {
+      mixer.togglePlayback();
+    } else {
+      final selected = Map<String, double>.of(mixer.levels)
+        ..removeWhere((_, volume) => volume <= 0);
+      mixer.applyMix(
+        selected.isEmpty ? {'Soft Rain': 0.3} : selected,
+        name: mixer.preset,
+      );
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final today = _featured[DateTime.now().weekday % _featured.length];
-    final IconData featuredIcon = today['icon'] as IconData;
-
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        final isClay = state.themeMode.isLight;
-        final activeTextColor = isClay ? clayText : textPrimary;
-        final activeSubtextColor = isClay ? claySubtext : textSecondary;
-
+  Widget build(BuildContext context) => Consumer2<AppState, MixerController>(
+    builder: (context, app, mixer, _) => LayoutBuilder(
+      builder: (context, constraints) {
+        final m = MixerMetrics(constraints.maxWidth);
+        final dailyPlaying =
+            app.isGuidedPlaying &&
+            app.currentGuidedTitle == dailyMeditation.title;
         return CupertinoPageScaffold(
-          backgroundColor: Colors.transparent,
-          child: SafeArea(
-            child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      CupertinoSliverNavigationBar(
-                        backgroundColor: Colors.transparent,
-                        border: null,
-                        largeTitle: Text(
-                          _greeting(),
-                          style: TextStyle(
-                            color: activeTextColor,
-                            letterSpacing: -0.4,
+          backgroundColor: MixerTheme.background,
+          child: Stack(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: SingleChildScrollView(
+                  key: const PageStorageKey('home-dashboard-scroll'),
+                  padding: EdgeInsets.fromLTRB(
+                    m.space(29),
+                    m.space(36),
+                    m.space(29),
+                    MediaQuery.paddingOf(context).bottom +
+                        (app.hasGuidedSession ||
+                                app.hasAmbientSession ||
+                                app.hasAmbientPlaybackRequest
+                            ? 130
+                            : 36),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Home',
+                        key: const ValueKey('home-title'),
+                        style: m.text(53, weight: FontWeight.w700),
+                      ),
+                      SizedBox(height: m.space(34)),
+                      Text(
+                        _greeting(),
+                        style: m.text(23, color: MixerTheme.mintLight),
+                      ),
+                      SizedBox(height: m.space(8)),
+                      Text(
+                        'A little calm,\njust for you.',
+                        style: m
+                            .text(68, weight: FontWeight.w600, height: 1.02)
+                            .copyWith(fontFamily: 'SanctuarySerif'),
+                      ),
+                      SizedBox(height: m.space(14)),
+                      Text(
+                        'Your daily space to breathe, listen, and unwind.',
+                        style: m.text(23, color: MixerTheme.muted, height: 1.4),
+                      ),
+                      SizedBox(height: m.space(28)),
+                      _DailyHomeCard(
+                        metrics: m,
+                        playing: dailyPlaying,
+                        resumable:
+                            app.currentGuidedTitle == dailyMeditation.title,
+                        onPressed: () => _dailySession(app),
+                      ),
+                      SizedBox(height: m.space(30)),
+                      _HomeSectionHeading('MAKE IT YOUR MOMENT', metrics: m),
+                      SizedBox(height: m.space(16)),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final action in const [
+                            (
+                              AppTab.sounds,
+                              SanctuarySymbol.sounds,
+                              'Sounds',
+                              'Build a mix',
+                            ),
+                            (
+                              AppTab.meditate,
+                              SanctuarySymbol.meditate,
+                              'Meditate',
+                              'Find your focus',
+                            ),
+                            (
+                              AppTab.sleep,
+                              SanctuarySymbol.sleep,
+                              'Sleep',
+                              'Ease into rest',
+                            ),
+                          ]) ...[
+                            if (action.$1 != AppTab.sounds)
+                              SizedBox(width: m.space(14)),
+                            Expanded(
+                              child: _HomeAction(
+                                metrics: m,
+                                symbol: action.$2,
+                                label: action.$3,
+                                detail: action.$4,
+                                onPressed: () => app.setTab(action.$1),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: m.space(30)),
+                      _HomeSectionHeading('YOUR SOUNDSCAPE', metrics: m),
+                      SizedBox(height: m.space(16)),
+                      _HomeSoundscape(
+                        app: app,
+                        mixer: mixer,
+                        metrics: m,
+                        onToggle: () => _toggleSoundscape(app, mixer),
+                        onOpen: () => app.setTab(AppTab.sounds),
+                      ),
+                      SizedBox(height: m.space(24)),
+                      CupertinoButton(
+                        key: const ValueKey('home-wellbeing'),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const WellbeingScreen(),
                           ),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 🖼️ Atmospheric Living Background Switcher
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                minSize: 32,
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  showCupertinoModalPopup(
-                                    context: context,
-                                    builder: (ctx) => CupertinoActionSheet(
-                                      title: const Text('Atmospheric Background 🖼️'),
-                                      message: const Text('Change the ambient living backdrop across all pages:'),
-                                      actions: AppWallpaper.values.map((w) {
-                                        final isCurrent = state.wallpaper == w;
-                                        return CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            state.setWallpaper(w);
-                                            Navigator.pop(ctx);
-                                          },
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(w.displayName),
-                                              if (isCurrent) ...[
-                                                const SizedBox(width: 8),
-                                                const Icon(CupertinoIcons.checkmark_alt, color: tealPrimary, size: 16),
-                                              ],
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                      cancelButton: CupertinoActionSheetAction(
-                                        isDefaultAction: true,
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: const Icon(
-                                  CupertinoIcons.photo_on_rectangle,
-                                  color: textPrimary,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: isClay ? clayCardBg : Colors.white.withOpacity(0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                minSize: 32,
-                                onPressed: () {
-                                  showCupertinoModalPopup(
-                                    context: context,
-                                    builder: (ctx) => CupertinoActionSheet(
-                                      title: const Text('Data Backup & Restore 💾'),
-                                      message: const Text('Prevent data loss across browsers and devices.'),
-                                      actions: [
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final json = state.exportUserDataToJson();
-                                            Clipboard.setData(ClipboardData(text: json));
-                                            showCupertinoDialog(
-                                              context: context,
-                                              barrierDismissible: true,
-                                              builder: (dCtx) {
-                                                Future.delayed(const Duration(seconds: 2), () {
-                                                  if (dCtx.mounted) Navigator.pop(dCtx);
-                                                });
-                                                return const CupertinoAlertDialog(
-                                                  title: Text('Backup Copied ✓'),
-                                                  content: Text('Your streak, presets, and favorites JSON data has been copied to your clipboard.'),
-                                                );
-                                              },
-                                            );
-                                          },
-                                          child: const Text('Export / Backup to Clipboard'),
-                                        ),
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final controller = TextEditingController();
-                                            showCupertinoDialog(
-                                              context: context,
-                                              builder: (dCtx) => CupertinoAlertDialog(
-                                                title: const Text('Restore Data'),
-                                                content: Padding(
-                                                  padding: const EdgeInsets.only(top: 8.0),
-                                                  child: CupertinoTextField(
-                                                    controller: controller,
-                                                    placeholder: 'Paste your backup JSON here...',
-                                                    maxLines: 4,
-                                                    style: const TextStyle(fontSize: 12),
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text('Cancel'),
-                                                    onPressed: () => Navigator.pop(dCtx),
-                                                  ),
-                                                  CupertinoDialogAction(
-                                                    isDefaultAction: true,
-                                                    child: const Text('Restore'),
-                                                    onPressed: () {
-                                                      final success = state.importUserDataFromJson(controller.text.trim());
-                                                      Navigator.pop(dCtx);
-                                                      showCupertinoDialog(
-                                                        context: context,
-                                                        barrierDismissible: true,
-                                                        builder: (resCtx) {
-                                                          Future.delayed(const Duration(seconds: 2), () {
-                                                            if (resCtx.mounted) Navigator.pop(resCtx);
-                                                          });
-                                                          return CupertinoAlertDialog(
-                                                            title: Text(success ? 'Restored Successfully ✓' : 'Restore Failed'),
-                                                            content: Text(success ? 'All your presets and streak history have been restored.' : 'Invalid JSON format. Please verify and try again.'),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          child: const Text('Import / Restore from JSON'),
-                                        ),
-                                        CupertinoActionSheetAction(
-                                          onPressed: () {
-                                            Navigator.pop(ctx);
-                                            final feedbackCtrl = TextEditingController();
-                                            showCupertinoDialog(
-                                              context: context,
-                                              builder: (fCtx) => CupertinoAlertDialog(
-                                                title: const Text('Feedback & Sound Requests 💌'),
-                                                content: Padding(
-                                                  padding: const EdgeInsets.only(top: 8.0),
-                                                  child: CupertinoTextField(
-                                                    controller: feedbackCtrl,
-                                                    placeholder: 'Describe a feature or sound you would love...',
-                                                    maxLines: 3,
-                                                    style: const TextStyle(fontSize: 13),
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text('Cancel'),
-                                                    onPressed: () => Navigator.pop(fCtx),
-                                                  ),
-                                                  CupertinoDialogAction(
-                                                    isDefaultAction: true,
-                                                    child: const Text('Submit'),
-                                                    onPressed: () {
-                                                      Navigator.pop(fCtx);
-                                                      showCupertinoDialog(
-                                                        context: context,
-                                                        barrierDismissible: true,
-                                                        builder: (sCtx) {
-                                                          Future.delayed(const Duration(seconds: 2), () {
-                                                            if (sCtx.mounted) Navigator.pop(sCtx);
-                                                          });
-                                                          return const CupertinoAlertDialog(
-                                                            title: Text('Thank You! 🌿'),
-                                                            content: Text('Your feedback has been received and helps us improve Sanctuary.'),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          child: const Text('Send Feedback / Sound Request 💌'),
-                                        ),
-                                      ],
-                                      cancelButton: CupertinoActionSheetAction(
-                                        isDefaultAction: true,
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Icon(
-                                  CupertinoIcons.arrow_down_doc_fill,
-                                  color: isClay ? clayText : textPrimary,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (state.streak > 0) StreakBadge(streakCount: state.streak),
-                          ],
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(22, 18, 22, 100),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            Text(
-                              'Take a deep breath. You are safe and at peace here.',
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                color: activeSubtextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // ── 1. Hero Featured Sanctuary Card (Tall 240px & Alive Motion) ──
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          height: 230,
-                          child: Stack(
+                        child: _HomeSurface(
+                          key: const ValueKey('home-surface-wellbeing'),
+                          metrics: m,
+                          color: _HomeStyle.quiet,
+                          padding: EdgeInsets.all(m.space(22)),
+                          child: Row(
                             children: [
-                              Positioned.fill(
-                                child: Image.network(
-                                  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-                                  fit: BoxFit.cover,
-                                  // GPU-accelerated: decode once at display size, never re-decode on scroll
-                                  cacheWidth: 800,
-                                  filterQuality: FilterQuality.medium,
-                                  gaplessPlayback: true,
-                                ),
+                              SanctuaryIcon(
+                                SanctuarySymbol.leaf,
+                                size: math.max(26.0, m.space(38)),
+                                color: MixerTheme.mintLight,
                               ),
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.35),
-                                        Colors.black.withOpacity(0.88),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(22),
+                              SizedBox(width: m.space(18)),
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: tealPrimary.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(CupertinoIcons.leaf_arrow_circlepath, color: tealPrimary, size: 12),
-                                              SizedBox(width: 5),
-                                              Text(
-                                                'DAILY PRACTICE',
-                                                style: TextStyle(
-                                                  fontSize: 9.5,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: tealPrimary,
-                                                  letterSpacing: 1.2,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        const AnimatedSoundWave(accentColor: tealPrimary),
-                                      ],
-                                    ),
-
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 56,
-                                          height: 56,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.12),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(featuredIcon, color: Colors.white, size: 26),
-                                        ),
-                                        const SizedBox(width: 16),
-
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                today['title']! as String,
-                                                style: const TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                  letterSpacing: -0.3,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 3),
-                                              Text(
-                                                today['desc']! as String,
-                                                style: const TextStyle(
-                                                  fontSize: 12.5,
-                                                  color: Colors.white70,
-                                                  height: 1.3,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: GlassPillButton(
-                                        text: 'Begin Peaceful Journey →',
-                                        icon: CupertinoIcons.play_fill,
-                                        containerColor: tealPrimary,
-                                        contentColor: Colors.black,
-                                        onTap: () {
-                                          final type = today['type']! as String;
-                                          if (type == 'Meditation') {
-                                            state.playGuidedSession(today['title']! as String, today['mins']! as int);
-                                          } else if (type == 'Breathing') {
-                                            state.setTab(AppTab.breathe);
-                                          } else if (type == 'Sleep') {
-                                            state.setTab(AppTab.sleep);
-                                          } else {
-                                            state.setTab(AppTab.sounds);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ── 2. Atmospheric Mood Pod with Blurred Raindrop Backdrop ───
-                      Container(
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(26),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // 🌧️ Atmospheric Rain Droplets on Glass Wallpaper
-                            Positioned.fill(
-                              child: Image.network(
-                                'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=800&q=80',
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                              ),
-                            ),
-                            // Frosted Dark Glass Vignette Tint
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      const Color(0xFF0C1924).withOpacity(0.82),
-                                      const Color(0xFF060E16).withOpacity(0.92),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          color: tealPrimary.withOpacity(0.25),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(CupertinoIcons.sparkles, color: tealPrimary, size: 13),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'HOW DO YOU FEEL TODAY?',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white.withOpacity(0.85),
-                                          letterSpacing: 1.8,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const BouncingScrollPhysics(),
-                                    child: Row(
-                                      children: [
-                                        ('😌', 'Calm', 'Calm', tealPrimary),
-                                        ('😰', 'Stressed', 'Stressed', coralAccent),
-                                        ('😴', 'Sleepy', 'Sleepy', const Color(0xFFA855F7)),
-                                        ('🧠', 'Need Focus', 'Focus', const Color(0xFF38BDF8)),
-                                        ('❤️', 'Emotional', 'Anxiety', const Color(0xFFEC4899)),
-                                        ('🌧️', 'Want Nature', 'Nature', mintAccent),
-                                      ].map((item) {
-                                        final isSelected = state.selectedMoodFilter == item.$3;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(right: 8),
-                                          child: _AtmosphericMoodChip(
-                                            emoji: item.$1,
-                                            title: item.$2,
-                                            moodKey: item.$3,
-                                            auraColor: item.$4,
-                                            isSelected: isSelected,
-                                            onTap: () => state.setMoodFilter(item.$3),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-
-                      // ── 2b. Dynamic Curated Recommendations for Selected Mood ──
-                      const _DynamicMoodRecommendations(),
-                      const SizedBox(height: 18),
-
-                      // ── 2bb. Your Pinned Custom Sound Mixes ──
-                      if (state.presets.isNotEmpty) ...[
-                        const Row(
-                          children: [
-                            Icon(CupertinoIcons.bookmark_fill, color: mintAccent, size: 14),
-                            SizedBox(width: 6),
-                            Text(
-                              'YOUR PINNED SOUND MIXES',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: mintAccent,
-                                letterSpacing: 1.6,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: Row(
-                            children: state.presets.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final preset = entry.value;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 10),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        const Color(0xFF2DD4BF).withOpacity(0.18),
-                                        Colors.white.withOpacity(0.04),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          HapticFeedback.lightImpact();
-                                          state.applyCustomPreset(preset);
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(CupertinoIcons.play_circle_fill, color: tealPrimary, size: 20),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              preset.name,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: () {
-                                          HapticFeedback.selectionClick();
-                                          state.deletePreset(index);
-                                        },
-                                        child: const Icon(CupertinoIcons.xmark, color: Colors.white54, size: 13),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                      ],
-
-                      // ── 2c. Embedded Instant 1-Minute Calm Breathing Widget ──
-                      const _HomeQuickBreathWidget(),
-                      const SizedBox(height: 26),
-
-                      // ── 3. FEATURED AMBIENT CAROUSEL (Large 240px Cards) ──
-                      const Row(
-                        children: [
-                          Icon(CupertinoIcons.star_fill, color: tealPrimary, size: 16),
-                          SizedBox(width: 6),
-                          Text(
-                            'FEATURED AMBIENT SOUNDSCAPES',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
-                              color: tealPrimary,
-                              letterSpacing: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _SpotifyAmbientCard(
-                              title: '432Hz Healing Chimes',
-                              subtitle: 'Deep Solfeggio Resonant Harmonic Tones',
-                              duration: '20 min',
-                              imageUrl: 'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=500&q=80',
-                              color: tealPrimary,
-                              onTap: () => state.playGuidedSession('Healing Crystal Chimes', 20),
-                            ),
-                            const SizedBox(width: 14),
-                            _SpotifyAmbientCard(
-                              title: 'Cozy Rain & Hearth',
-                              subtitle: 'Soft Downpour & Warm Fireplace Crackle',
-                              duration: '25 min',
-                              imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80',
-                              color: coralAccent,
-                              onTap: () => state.applyCuratedPreset('🌧️ Rainy Cabin'),
-                            ),
-                            const SizedBox(width: 14),
-                            _SpotifyAmbientCard(
-                              title: 'Alpine Forest Stream',
-                              subtitle: 'Flowing Mountain Water & Morning Birds',
-                              duration: '30 min',
-                              imageUrl: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=500&q=80',
-                              color: mintAccent,
-                              onTap: () => state.applyCuratedPreset('🌲 Forest Walk'),
-                            ),
-                            const SizedBox(width: 14),
-                            _SpotifyAmbientCard(
-                              title: 'Cosmic Deep Waves',
-                              subtitle: '108Hz Delta Drone & Soft Space Pad',
-                              duration: '35 min',
-                              imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=500&q=80',
-                              color: purpleAccent,
-                              onTap: () => state.applyCuratedPreset('🌌 Deep Space'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ── 4. RICHER "YOUR SANCTUARY JOURNEY" CARD (Circular Progress Ring) ──
-                      const Row(
-                        children: [
-                          Icon(CupertinoIcons.heart_fill, color: coralAccent, size: 16),
-                          SizedBox(width: 6),
-                          Text(
-                            'YOUR SANCTUARY JOURNEY',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
-                              color: textSecondary,
-                              letterSpacing: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      Container(
-                        padding: const EdgeInsets.all(22),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF0F262B),
-                              Color(0xFF0C1924),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(26),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.35),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // Circular Progress Ring Indicator
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 64,
-                                  height: 64,
-                                  child: CircularProgressIndicator(
-                                    value: (state.totalMinutes % 60) / 60.0 == 0 ? 0.65 : (state.totalMinutes % 60) / 60.0,
-                                    strokeWidth: 6,
-                                    backgroundColor: Colors.white.withOpacity(0.1),
-                                    color: tealPrimary,
-                                  ),
-                                ),
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '${state.totalMinutes}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                      'Your wellbeing',
+                                      style: m.text(
+                                        25,
+                                        weight: FontWeight.w600,
                                       ),
                                     ),
-                                    const Text(
-                                      'MINS',
-                                      style: TextStyle(
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                        color: tealPrimary,
-                                        letterSpacing: 1.0,
+                                    SizedBox(height: m.space(4)),
+                                    Text(
+                                      'Breathing, progress & backup',
+                                      style: m.text(
+                                        22,
+                                        color: MixerTheme.muted,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                            const SizedBox(width: 18),
-
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(CupertinoIcons.flame_fill, color: coralAccent, size: 18),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${state.streak} Day Peace Streak 🌸',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    state.totalMinutes > 0
-                                        ? 'You have spent ${state.totalMinutes} minutes resting & healing this week 🕊️'
-                                        : 'Take a gentle breath and start your first peaceful moment today 🌿',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: textSecondary,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ── 6. Coming Soon / Next Month Roadmap Teaser ──
-                      const _ComingSoonRoadmapSection(),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ── Synesthetic Sensory Practice Action Card ──────────────────────────────────
-class _QuickAction extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final String sensorySound;
-  final String bgImage;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.sensorySound,
-    required this.bgImage,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_QuickAction> createState() => _QuickActionState();
-}
-
-class _QuickActionState extends State<_QuickAction> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 140));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _ctrl.forward(),
-        onTapUp: (_) {
-          _ctrl.reverse();
-          HapticFeedback.lightImpact();
-          widget.onTap();
-        },
-        onTapCancel: () => _ctrl.reverse(),
-        child: ScaleTransition(
-          scale: _scale,
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x33000000),
-                  blurRadius: 14,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // 🖼️ High-Res Atmospheric Sensory Background Texture
-                Positioned.fill(
-                  child: Image.network(
-                    widget.bgImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-                // Frosted Glass Dark Vignette
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          widget.color.withOpacity(0.35),
-                          const Color(0xFF07111B).withOpacity(0.86),
-                          const Color(0xFF040A10).withOpacity(0.96),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Card Content
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 4),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: tealPrimary.withOpacity(0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(widget.icon, color: Colors.white, size: 21),
-                        ),
-                        const SizedBox(height: 7),
-                        Text(
-                          widget.label,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.sensorySound,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            color: widget.color.withOpacity(0.95),
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SpotifyAmbientCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String duration;
-  final String imageUrl;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _SpotifyAmbientCard({
-    required this.title,
-    required this.subtitle,
-    required this.duration,
-    required this.imageUrl,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 115,
-            height: 115,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(color: color.withOpacity(0.2)),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                                              ),
-                      child: const Icon(CupertinoIcons.play_fill, color: Colors.white, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: 115,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            duration,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── 0. Daily Affirmation Banner ──────────────────────────────────────────────
-class _DailyAffirmationBanner extends StatefulWidget {
-  const _DailyAffirmationBanner();
-
-  @override
-  State<_DailyAffirmationBanner> createState() => _DailyAffirmationBannerState();
-}
-
-class _DailyAffirmationBannerState extends State<_DailyAffirmationBanner> {
-  int _quoteIndex = 0;
-
-  static const List<Map<String, String>> _quotes = [
-    {
-      'quote': '“In the midst of movement and chaos, keep stillness inside of you.”',
-      'author': 'Deepak Chopra',
-    },
-    {
-      'quote': '“Peace comes from within. Do not seek it without.”',
-      'author': 'Buddha',
-    },
-    {
-      'quote': '“Breath is the finest gift of nature. Be grateful for this marvelous gift.”',
-      'author': 'Amit Ray',
-    },
-    {
-      'quote': '“Quiet the mind, and the soul will speak.”',
-      'author': 'Ma Jaya Sati Bhagavati',
-    },
-    {
-      'quote': '“Rest is not idleness, but a restorative sanctuary for your spirit.”',
-      'author': 'Sanctuary Mind',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final current = _quotes[_quoteIndex];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            tealPrimary.withOpacity(0.18),
-            const Color(0xFFA855F7).withOpacity(0.08),
-            const Color(0xFF07121B).withOpacity(0.88),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-          BoxShadow(
-            color: tealPrimary.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  tealPrimary.withOpacity(0.35),
-                  tealPrimary.withOpacity(0.15),
-                ],
-              ),
-              shape: BoxShape.circle,
-                          ),
-            child: const Icon(CupertinoIcons.quote_bubble_fill, color: tealPrimary, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  current['quote']!,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.white,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '— ${current['author']!}',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: tealPrimary.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _quoteIndex = (_quoteIndex + 1) % _quotes.length;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(CupertinoIcons.refresh, color: Colors.white70, size: 16),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── 2b. Dynamic Mood Intent Recommendations ────────────────────────────────
-class _DynamicMoodRecommendations extends StatelessWidget {
-  const _DynamicMoodRecommendations();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        final mood = state.selectedMoodFilter;
-
-        final Map<String, List<Map<String, dynamic>>> moodData = {
-          'Calm': [
-            {'title': 'Peaceful Haven Journey', 'desc': '15 min • Soft River Stream', 'type': 'Guided', 'icon': CupertinoIcons.leaf_arrow_circlepath, 'color': tealPrimary, 'action': () => state.playGuidedSession('Peaceful Haven Journey', 15)},
-            {'title': 'Resonance 5-5 Coherence', 'desc': '5 min • Heart Coherence', 'type': 'Breathe', 'icon': Icons.air_rounded, 'color': mintAccent, 'action': () => state.setTab(AppTab.breathe)},
-            {'title': '432Hz Healing Chimes', 'desc': '20 min • Solfeggio Tones', 'type': 'Sounds', 'icon': CupertinoIcons.waveform, 'color': purpleAccent, 'action': () => state.playGuidedSession('Healing Crystal Chimes', 20)},
-          ],
-          'Stressed': [
-            {'title': 'Deep Stress Release', 'desc': '12 min • Body Tension Melt', 'type': 'Guided', 'icon': Icons.self_improvement_rounded, 'color': coralAccent, 'action': () => state.playGuidedSession('Gentle Relief & Comfort', 12)},
-            {'title': 'Box Breathing 4-4-4-4', 'desc': '4 min • Calm Nervous System', 'type': 'Breathe', 'icon': Icons.air_rounded, 'color': tealPrimary, 'action': () => state.setTab(AppTab.breathe)},
-            {'title': 'Cozy Rainfall Cabin', 'desc': 'Soft Downpour & Hearth', 'type': 'Sounds', 'icon': Icons.thunderstorm_rounded, 'color': mintAccent, 'action': () => state.applyCuratedPreset('🌧️ Rainy Cabin')},
-          ],
-          'Sleepy': [
-            {'title': 'Midnight Alpine Forest', 'desc': '25 min • Sleep Story', 'type': 'Sleep', 'icon': Icons.bedtime_rounded, 'color': purpleAccent, 'action': () => state.setTab(AppTab.sleep)},
-            {'title': '4-7-8 Sleep Breath', 'desc': '7 min • Dr. Weil Method', 'type': 'Breathe', 'icon': Icons.air_rounded, 'color': coralAccent, 'action': () => state.setTab(AppTab.breathe)},
-            {'title': 'Cosmic Deep Space Waves', 'desc': 'Delta Wave Slumber', 'type': 'Sounds', 'icon': Icons.nights_stay_rounded, 'color': tealPrimary, 'action': () => state.applyCuratedPreset('🌌 Deep Space')},
-          ],
-          'Focus': [
-            {'title': 'Morning Clarity & Focus', 'desc': '10 min • Crisp Awareness', 'type': 'Guided', 'icon': Icons.wb_sunny_rounded, 'color': mintAccent, 'action': () => state.playGuidedSession('Peaceful Morning Start', 10)},
-            {'title': 'Power 6-2-6 Breath', 'desc': '5 min • Clean Mental Energy', 'type': 'Breathe', 'icon': Icons.bolt_rounded, 'color': tealPrimary, 'action': () => state.setTab(AppTab.breathe)},
-            {'title': 'Alpine Forest Stream', 'desc': 'Focus Soundscape', 'type': 'Sounds', 'icon': Icons.forest_rounded, 'color': purpleAccent, 'action': () => state.applyCuratedPreset('🌲 Forest Walk')},
-          ],
-          'Anxiety': [
-            {'title': 'Warm Heart Comfort', 'desc': '15 min • Gentle Relief', 'type': 'Guided', 'icon': CupertinoIcons.heart_fill, 'color': coralAccent, 'action': () => state.playGuidedSession('Warm Heart Comfort', 15)},
-            {'title': 'Quiet Mind Sanctuary', 'desc': '12 min • Silent Center', 'type': 'Guided', 'icon': CupertinoIcons.leaf_arrow_circlepath, 'color': tealPrimary, 'action': () => state.playGuidedSession('Quiet Mind Sanctuary', 12)},
-            {'title': 'Singing Bowls 432Hz', 'desc': 'Harmonic Healing', 'type': 'Sounds', 'icon': CupertinoIcons.waveform, 'color': mintAccent, 'action': () => state.playGuidedSession('Healing Crystal Chimes', 20)},
-          ],
-          'Nature': [
-            {'title': 'Forest Bathing Journey', 'desc': '20 min • Woodland Sanctuary', 'type': 'Guided', 'icon': Icons.park_rounded, 'color': mintAccent, 'action': () => state.playGuidedSession('Peaceful Haven Journey', 20)},
-            {'title': 'Mountain Stream Flow', 'desc': 'Nature Soundscape', 'type': 'Sounds', 'icon': Icons.water_drop_rounded, 'color': tealPrimary, 'action': () => state.applyCuratedPreset('🌲 Forest Walk')},
-            {'title': 'Starlit Ocean Voyage', 'desc': '30 min • Bedtime Story', 'type': 'Sleep', 'icon': Icons.tsunami_rounded, 'color': purpleAccent, 'action': () => state.setTab(AppTab.sleep)},
-          ],
-        };
-
-        final recs = moodData[mood] ?? moodData['Calm']!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(CupertinoIcons.sparkles, color: tealPrimary, size: 15),
-                const SizedBox(width: 6),
-                Text(
-                  'CURATED FOR YOUR "$mood" MOOD',
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: tealPrimary,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            Column(
-              children: recs.map((item) {
-                final Color color = item['color'] as Color;
-                final VoidCallback onTap = item['action'] as VoidCallback;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: GestureDetector(
-                    onTap: onTap,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            color.withOpacity(0.16),
-                            const Color(0xFF0C1620).withOpacity(0.85),
-                            const Color(0xFF050D15).withOpacity(0.95),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                                                boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.12),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  color.withOpacity(0.35),
-                                  color.withOpacity(0.15),
-                                ],
+                              SanctuaryIcon(
+                                SanctuarySymbol.arrowRight,
+                                size: m.font(26),
+                                color: MixerTheme.mint,
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                                                            boxShadow: [
-                                BoxShadow(
-                                  color: color.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Icon(item['icon'] as IconData, color: color, size: 23),
+                            ],
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['title'] as String,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  item['desc'] as String,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [color, color.withOpacity(0.85)],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withOpacity(0.4),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(CupertinoIcons.play_fill, color: Colors.black, size: 12),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Begin',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-// ── 2c. Embedded Instant 1-Minute Calm Breathing Widget ──────────────────────
-class _HomeQuickBreathWidget extends StatefulWidget {
-  const _HomeQuickBreathWidget();
-
-  @override
-  State<_HomeQuickBreathWidget> createState() => _HomeQuickBreathWidgetState();
-}
-
-class _HomeQuickBreathWidgetState extends State<_HomeQuickBreathWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animCtrl;
-  bool _isActive = false;
-  String _phaseLabel = 'Tap to start 1-min calm breath';
-  int _secondsLeft = 60;
-  dynamic _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animCtrl.dispose();
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _toggleBreathing() {
-    if (_isActive) {
-      _stopBreathing();
-    } else {
-      _startBreathing();
-    }
-  }
-
-  void _startBreathing() {
-    setState(() {
-      _isActive = true;
-      _secondsLeft = 60;
-      _phaseLabel = 'Inhale deeply...';
-    });
-    _animCtrl.repeat(reverse: true);
-
-    _timer?.cancel();
-    _timer = Stream.periodic(const Duration(seconds: 1)).listen((_) {
-      if (!mounted) return;
-      if (_secondsLeft <= 1) {
-        _stopBreathing();
-      } else {
-        setState(() {
-          _secondsLeft--;
-          final cycleSec = _secondsLeft % 8;
-          if (cycleSec >= 4) {
-            _phaseLabel = 'Exhale softly...';
-          } else {
-            _phaseLabel = 'Inhale deeply...';
-          }
-        });
-      }
-    });
-  }
-
-  void _stopBreathing() {
-    _timer?.cancel();
-    _animCtrl.stop();
-    _animCtrl.reset();
-    if (mounted) {
-      setState(() {
-        _isActive = false;
-        _phaseLabel = 'Tap to start 1-min calm breath';
-        _secondsLeft = 60;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0C2226),
-            Color(0xFF091720),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Animated Glowing Breathing Circle
-          AnimatedBuilder(
-            animation: _animCtrl,
-            builder: (_, __) {
-              final scale = _isActive ? 0.75 + (0.35 * _animCtrl.value) : 1.0;
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        mintAccent.withOpacity(0.8),
-                        tealPrimary.withOpacity(0.4),
-                        Colors.transparent,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: mintAccent.withOpacity(_isActive ? 0.6 : 0.2),
-                        blurRadius: _isActive ? 20 : 8,
-                        spreadRadius: _isActive ? 4 : 1,
+                      SizedBox(height: m.space(26)),
+                      Center(
+                        child: Text(
+                          'No rush. Your quiet moment is here.',
+                          style: m.text(21, color: MixerTheme.muted),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Icon(
-                      _isActive ? Icons.air_rounded : CupertinoIcons.leaf_arrow_circlepath,
-                      color: Colors.black,
-                      size: 26,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'INSTANT 1-MIN CALM',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                        color: mintAccent,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    if (_isActive) ...[
-                      const Spacer(),
-                      Text(
-                        '00:${_secondsLeft.toString().padLeft(2, '0')}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _phaseLabel,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          GestureDetector(
-            onTap: _toggleBreathing,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: _isActive ? coralAccent : mintAccent,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isActive ? coralAccent : mintAccent).withOpacity(0.4),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Text(
-                _isActive ? 'Stop' : 'Start',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 🆘 Instant Stress SOS Widget (1-Tap Emergency Panic & Stress Relief) ─────
-class _InstantStressSOSWidget extends StatefulWidget {
-  const _InstantStressSOSWidget();
-
-  @override
-  State<_InstantStressSOSWidget> createState() => _InstantStressSOSWidgetState();
-}
-
-class _InstantStressSOSWidgetState extends State<_InstantStressSOSWidget> {
-  bool _isSOSActive = false;
-  int _secondsLeft = 60;
-  Timer? _timer;
-
-  void _triggerSOS(AppState state) {
-    if (_isSOSActive) {
-      _timer?.cancel();
-      setState(() => _isSOSActive = false);
-      state.stopAllAudio();
-      return;
-    }
-
-    setState(() {
-      _isSOSActive = true;
-      _secondsLeft = 60;
-    });
-
-    // Start soothing Soft Rain + 4-7-8 Relaxing Breathing Combo
-    state.startPanicResetCombo();
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
-      if (_secondsLeft <= 1) {
-        t.cancel();
-        setState(() => _isSOSActive = false);
-        state.recordSession('60s Emergency Stress SOS', 'Breathing', 1);
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Text('Session Complete'),
-            content: const Text('✨ Stress SOS Complete. Take a deep breath. You are safe. 🌿'),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('Close'),
-                onPressed: () => Navigator.of(ctx).pop(),
-              )
             ],
           ),
         );
-      } else {
-        setState(() => _secondsLeft--);
-      }
-    });
-  }
+      },
+    ),
+  );
+}
+
+// Home follows the same soft midnight surfaces as Sleep and the other pages.
+abstract final class _HomeStyle {
+  static const surface = MixerTheme.surface;
+  static const action = MixerTheme.action;
+  static const quiet = MixerTheme.quiet;
+  static const control = MixerTheme.control;
+  static const primary = MixerTheme.primary;
+  static const section = MixerTheme.heading;
+}
+
+class _HomeSurface extends StatelessWidget {
+  const _HomeSurface({
+    required this.child,
+    required this.metrics,
+    required this.padding,
+    this.color = _HomeStyle.surface,
+    super.key,
+  });
+
+  final Widget child;
+  final MixerMetrics metrics;
+  final EdgeInsetsGeometry padding;
+  final Color color;
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(metrics.space(26)),
+    ),
+    child: Padding(padding: padding, child: child),
+  );
+}
+
+class _HomeSectionHeading extends StatelessWidget {
+  const _HomeSectionHeading(this.label, {required this.metrics});
+  final String label;
+  final MixerMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      label,
+      style: metrics.text(
+        17,
+        color: _HomeStyle.section,
+        weight: FontWeight.w600,
+        tracking: metrics.space(2.5),
+      ),
+    ),
+  );
+}
+
+class _DailyHomeCard extends StatelessWidget {
+  const _DailyHomeCard({
+    required this.metrics,
+    required this.playing,
+    required this.resumable,
+    required this.onPressed,
+  });
+  final MixerMetrics metrics;
+  final bool playing, resumable;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            coralAccent.withOpacity(0.18),
-            const Color(0xFFA855F7).withOpacity(0.09),
-            const Color(0xFF07111B).withOpacity(0.9),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-          BoxShadow(
-            color: coralAccent.withOpacity(0.15),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
+    final m = metrics;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(math.max(18.0, m.space(28))),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              dailyMeditation.backdrop,
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
+              excludeFromSemantics: true,
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF102D4F),
+                    const Color(0xF0102D4F),
+                    const Color(0x3802132C),
+                  ],
+                  stops: const [0, 0.42, 1],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(m.space(28)),
+            child: FractionallySizedBox(
+              widthFactor: 0.7,
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TODAY’S AMBIENT PRACTICE',
+                    style: m.text(
+                      16,
+                      weight: FontWeight.w600,
+                      color: MixerTheme.mintLight,
+                      tracking: m.space(1.5),
+                    ),
+                  ),
+                  SizedBox(height: m.space(14)),
+                  Text(
+                    dailyMeditation.title,
+                    style: m
+                        .text(44, weight: FontWeight.w600, height: 1.05)
+                        .copyWith(fontFamily: 'SanctuarySerif'),
+                  ),
+                  SizedBox(height: m.space(12)),
+                  Row(
+                    children: [
+                      SanctuaryIcon(
+                        SanctuarySymbol.clock,
+                        size: m.font(22),
+                        color: MixerTheme.muted,
+                      ),
+                      SizedBox(width: m.space(8)),
+                      Expanded(
+                        child: Text(
+                          '${dailyMeditation.minutes} min · ${dailyMeditation.description}',
+                          style: m.text(22, color: const Color(0xFFC6DEDC)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: m.space(10)),
+                  Text(
+                    '${dailyMeditation.sourceLabel}\nAmbient mix · No narration',
+                    key: const ValueKey('home-daily-sources'),
+                    style: m.text(
+                      19,
+                      color: const Color(0xFFC6DEDC),
+                      height: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: m.space(16)),
+                  _HomePill(
+                    buttonKey: const ValueKey('home-daily'),
+                    metrics: m,
+                    label: playing
+                        ? 'Pause session'
+                        : resumable
+                        ? 'Resume session'
+                        : 'Begin session',
+                    symbol: playing
+                        ? SanctuarySymbol.pause
+                        : SanctuarySymbol.play,
+                    onPressed: onPressed,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HomeAction extends StatelessWidget {
+  const _HomeAction({
+    required this.metrics,
+    required this.symbol,
+    required this.label,
+    required this.detail,
+    required this.onPressed,
+  });
+  final MixerMetrics metrics;
+  final SanctuarySymbol symbol;
+  final String label, detail;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = metrics;
+    return CupertinoButton(
+      key: ValueKey('home-open-${label.toLowerCase()}'),
+      padding: EdgeInsets.zero,
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        onPressed();
+      },
+      child: _HomeSurface(
+        key: ValueKey('home-surface-${label.toLowerCase()}'),
+        metrics: m,
+        color: _HomeStyle.action,
+        padding: EdgeInsets.symmetric(
+          horizontal: m.space(8),
+          vertical: m.space(23),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            children: [
+              SanctuaryIcon(
+                symbol,
+                size: math.max(27.0, m.space(43)),
+                color: MixerTheme.mintLight,
+              ),
+              SizedBox(height: m.space(14)),
+              Text(label, style: m.text(25, weight: FontWeight.w600)),
+              SizedBox(height: m.space(6)),
+              Text(
+                detail,
+                style: m.text(19, color: MixerTheme.muted),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeSoundscape extends StatelessWidget {
+  const _HomeSoundscape({
+    required this.app,
+    required this.mixer,
+    required this.metrics,
+    required this.onToggle,
+    required this.onOpen,
+  });
+  final AppState app;
+  final MixerController mixer;
+  final MixerMetrics metrics;
+  final VoidCallback onToggle, onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = metrics;
+    final selected =
+        mixer.levels.entries.where((entry) => entry.value > 0).toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+    final first = selected.isEmpty ? null : selected.first.key;
+    final title =
+        mixer.preset ??
+        (first == null
+            ? 'A fresh soundscape'
+            : selected.length == 1
+            ? first
+            : '$first + ${selected.length - 1} more');
+    final active = mixer.isPlaying;
+    final preparing = mixer.isPreparing;
+    final track = allMixerTracks.where((track) => track.name == first);
+    final artwork = track.isEmpty ? null : track.first.artwork;
+    return _HomeSurface(
+      key: const ValueKey('home-surface-soundscape'),
+      metrics: m,
+      padding: EdgeInsets.all(m.space(22)),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: coralAccent.withOpacity(0.2),
-                  shape: BoxShape.circle,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(m.space(16)),
+                child: Image.asset(
+                  artwork ?? 'assets/images/sleep/continue_listening.webp',
+                  width: m.space(104),
+                  height: m.space(104),
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
                 ),
-                child: const Text('🆘', style: TextStyle(fontSize: 20)),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: m.space(20)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'EMERGENCY STRESS RESET',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: coralAccent,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
                     Text(
-                      _isSOSActive
-                          ? 'Releasing tension... ($_secondsLeft s)'
-                          : 'Feeling Overwhelmed or Anxious?',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      title,
+                      key: const ValueKey('home-mix-name'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: m.text(30, weight: FontWeight.w600),
+                    ),
+                    SizedBox(height: m.space(6)),
+                    Text(
+                      mixer.playbackStatusLabel,
+                      key: const ValueKey('home-mix-status'),
+                      style: m.text(21, color: MixerTheme.muted),
                     ),
                   ],
+                ),
+              ),
+              SizedBox(width: m.space(12)),
+              CupertinoButton(
+                key: const ValueKey('home-mix-toggle'),
+                padding: EdgeInsets.zero,
+                onPressed: onToggle,
+                child: Semantics(
+                  label: mixer.transportLabel,
+                  child: Container(
+                    width: math.max(44.0, m.space(64)),
+                    height: math.max(44.0, m.space(64)),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _HomeStyle.control,
+                    ),
+                    alignment: Alignment.center,
+                    child: SanctuaryIcon(
+                      preparing
+                          ? SanctuarySymbol.close
+                          : active
+                          ? SanctuarySymbol.pause
+                          : SanctuarySymbol.play,
+                      size: m.font(31),
+                      color: MixerTheme.mintLight,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            _isSOSActive
-                ? 'Follow your breath. Inhale slowly... release all tension.'
-                : 'Tap below for an instant 60-second calm audio & breathing reset.',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: Colors.white.withOpacity(0.7),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 14),
-          GestureDetector(
-            onTap: () => _triggerSOS(state),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _isSOSActive
-                      ? [coralAccent, const Color(0xFFD946EF)]
-                      : [tealPrimary, mintAccent],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isSOSActive ? coralAccent : tealPrimary).withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+          SizedBox(height: m.space(10)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: CupertinoButton(
+              key: const ValueKey('home-edit-mix'),
+              padding: EdgeInsets.zero,
+              onPressed: onOpen,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Open sound mixer',
+                    style: m.text(
+                      22,
+                      color: MixerTheme.mintLight,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: m.space(12)),
+                  SanctuaryIcon(
+                    SanctuarySymbol.arrowRight,
+                    size: m.font(24),
+                    color: MixerTheme.mintLight,
                   ),
                 ],
-              ),
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _isSOSActive ? Icons.pause_circle_filled_rounded : CupertinoIcons.heart_fill,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isSOSActive ? 'Stop SOS Session ($_secondsLeft s)' : '1-Tap Emergency Stress Relief 🌿',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -1797,382 +589,55 @@ class _InstantStressSOSWidgetState extends State<_InstantStressSOSWidget> {
   }
 }
 
-
-
-// ─── 🌧️ Atmospheric Frosted Mood Chip (Tactile + Halo Glow) ───────────────────
-class _AtmosphericMoodChip extends StatefulWidget {
-  final String emoji;
-  final String title;
-  final String moodKey;
-  final Color auraColor;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _AtmosphericMoodChip({
-    required this.emoji,
-    required this.title,
-    required this.moodKey,
-    required this.auraColor,
-    required this.isSelected,
-    required this.onTap,
+class _HomePill extends StatelessWidget {
+  const _HomePill({
+    required this.buttonKey,
+    required this.metrics,
+    required this.label,
+    required this.symbol,
+    required this.onPressed,
   });
+  final Key buttonKey;
+  final MixerMetrics metrics;
+  final String label;
+  final SanctuarySymbol symbol;
+  final VoidCallback onPressed;
 
   @override
-  State<_AtmosphericMoodChip> createState() => _AtmosphericMoodChipState();
-}
-
-class _AtmosphericMoodChipState extends State<_AtmosphericMoodChip>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 140));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        HapticFeedback.lightImpact();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: widget.isSelected
-                  ? [
-                      widget.auraColor.withOpacity(0.95),
-                      widget.auraColor.withOpacity(0.75),
-                    ]
-                  : [
-                      Colors.white.withOpacity(0.12),
-                      Colors.white.withOpacity(0.04),
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: widget.isSelected
-                ? [
-                    BoxShadow(
-                      color: widget.auraColor.withOpacity(0.55),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: widget.isSelected
-                      ? Colors.black.withOpacity(0.2)
-                      : widget.auraColor.withOpacity(0.24),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  widget.emoji,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
-              const SizedBox(width: 7),
-              Text(
-                widget.title,
-                style: TextStyle(
-                  color: widget.isSelected
-                      ? (widget.auraColor.computeLuminance() > 0.45
-                          ? Colors.black
-                          : Colors.white)
-                      : Colors.white.withOpacity(0.95),
-                  fontSize: 13,
-                  fontWeight:
-                      widget.isSelected ? FontWeight.w800 : FontWeight.w600,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => CupertinoButton(
+    key: buttonKey,
+    padding: EdgeInsets.zero,
+    onPressed: onPressed,
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: metrics.space(22),
+        vertical: metrics.space(13),
       ),
-    );
-  }
-}
-
-// ─── 🔮 Coming Soon / Next Month Roadmap Section ──────────────────────────────
-class _ComingSoonRoadmapSection extends StatelessWidget {
-  const _ComingSoonRoadmapSection();
-
-  static const _upcomingDrops = [
-    (
-      '🚆 Tokyo Sleeper Train in Rain',
-      '8D Spatial Audio • Heavy downpour & rhythmic rails',
-      'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80',
-      Color(0xFF38BDF8),
-    ),
-    (
-      '🏔️ Nordic Blizzard Fireplace',
-      '8D Spatial Audio • Roaring hearth & howling snowstorm',
-      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=400&q=80',
-      Color(0xFFE29578),
-    ),
-    (
-      '🌊 Bioluminescent Ocean (528Hz)',
-      'Healing Frequency • Deep submarine pad resonance',
-      'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=400&q=80',
-      Color(0xFF2DD4BF),
-    ),
-    (
-      '🌅 Time-of-Day Adaptive Aura',
-      'Living Interface • Sunrise Amber to Cosmic Indigo',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-      Color(0xFFFFB74D),
-    ),
-    (
-      '📖 The Starlit Observatory',
-      'Sleep Journey • Narrated deep galaxy bedtime tale',
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=400&q=80',
-      Color(0xFFA855F7),
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFA855F7).withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(CupertinoIcons.sparkles,
-                  color: Color(0xFFA855F7), size: 14),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'COMING IN NEXT MONTH DROP',
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFA855F7),
-                letterSpacing: 1.6,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD700).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                              ),
-              child: const Text(
-                'ROADMAP ✨',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFFD700),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: _upcomingDrops.map((drop) {
-              final title = drop.$1;
-              final subtitle = drop.$2;
-              final imgUrl = drop.$3;
-              final accentColor = drop.$4;
-
-              return Container(
-                width: 240,
-                margin: const EdgeInsets.only(right: 14),
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                                    boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    // Background Image
-                    Positioned.fill(
-                      child: Image.network(
-                        imgUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
-                    // Dark Glass Overlay
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.3),
-                              const Color(0xFF07111B).withOpacity(0.88),
-                              const Color(0xFF040A10).withOpacity(0.96),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Content
-                    Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: accentColor.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(10),
-                                                                  ),
-                                child: Text(
-                                  '🔒 COMING SOON',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: accentColor,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ),
-                              const Icon(CupertinoIcons.lock_fill,
-                                  color: Colors.white60, size: 13),
-                            ],
-                          ),
-                          const SizedBox(height: 38),
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withOpacity(0.7),
-                              height: 1.3,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              showCupertinoDialog(
-                                context: context,
-                                builder: (ctx) => CupertinoAlertDialog(
-                                  title: Text('$title ✨'),
-                                  content: const Padding(
-                                    padding: EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      '🔔 You\'re on the VIP list!\n\nThis will unlock automatically in Next Month\'s Sanctuary content update at no extra charge.',
-                                    ),
-                                  ),
-                                  actions: [
-                                    CupertinoDialogAction(
-                                      child: const Text('Awesome 🌿'),
-                                      onPressed: () => Navigator.pop(ctx),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            child: Container(
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                                                              ),
-                              child: const Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(CupertinoIcons.bell_fill,
-                                        color: Colors.white, size: 11),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Notify Me',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(100),
+        color: _HomeStyle.primary,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SanctuaryIcon(
+            symbol,
+            size: metrics.font(23),
+            color: const Color(0xFF004D48),
           ),
-        ),
-      ],
-    );
-  }
+          SizedBox(width: metrics.space(10)),
+          Flexible(
+            child: Text(
+              label,
+              style: metrics.text(
+                23,
+                weight: FontWeight.w600,
+                color: const Color(0xFF004D48),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

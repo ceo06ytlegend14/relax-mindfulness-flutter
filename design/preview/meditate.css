@@ -1,0 +1,106 @@
+/* Independent HTML rendition; keep the page solid midnight blue. The featured arch
+   and the compact, art-first library have deliberately different rhythms. */
+#meditate-page { background:var(--page-background,#02132c); background-image:none; color:#f5fafa; }
+#meditate-page .scenery { display:none; background:none; }
+#meditate-page .retreat-inner { padding:max(30px,calc(54px * var(--s))) max(18px,calc(32px * var(--s))) 40px; }
+#meditate-page .page-heading { font-size:max(40px,calc(72px * var(--t))); overflow-wrap:anywhere; }
+#meditate-page .med-audio-note { margin-top:10px; color:#b9c5dd; font-size:max(12px,calc(18px * var(--t))); line-height:1.5; }
+
+/* A single featured moment: warm sunrise detail, inset artwork, one clear CTA.
+   Nothing is absolutely positioned over copy, so larger text can grow freely. */
+#meditate-page .daily-journey {
+  display:block;
+  margin-top:22px;
+  padding:max(18px,calc(30px * var(--s)));
+  border:0;
+  border-radius:26px 64px 26px 26px;
+  background:var(--soft-active,#193853);
+  box-shadow:none;
+}
+#meditate-page .daily-topline { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#meditate-page .kicker { display:flex; align-items:center; gap:8px; min-width:0; color:#e1d6b3; font-size:max(10px,calc(15px * var(--t))); font-weight:600; line-height:1.5; letter-spacing:1.2px; }
+#meditate-page .kicker svg { width:19px; height:19px; }
+#meditate-page .session-meta { display:flex; align-items:center; gap:6px; min-width:0; color:#b9c5dd; font-size:max(12px,calc(18px * var(--t))); line-height:1.4; }
+#meditate-page .session-meta svg { width:15px; height:15px; }
+#meditate-page .daily-topline .session-meta { flex-shrink:0; padding:7px 10px; border-radius:100px; background:var(--soft-control,#223f5c); color:#d6e3dc; white-space:nowrap; }
+#meditate-page .daily-heading { display:grid; grid-template-columns:minmax(0,1fr) max(106px,calc(190px * var(--s))); gap:16px; align-items:center; margin-top:12px; }
+#meditate-page .daily-copy { min-width:0; }
+#meditate-page .daily-heading h2 { margin:0; font-family:SanctuarySerif,serif; font-size:max(30px,calc(52px * var(--t))); font-weight:600; line-height:1.03; letter-spacing:-.4px; }
+#meditate-page .session-ingredients { margin-top:5px; color:var(--accent,#9affe6); font-size:max(12px,calc(18px * var(--t))); line-height:1.45; overflow-wrap:anywhere; }
+#meditate-page .daily-journey .session-ingredients { margin-top:12px; color:#c1d8d2; }
+#meditate-page .daily-buttons { display:flex; align-items:center; gap:10px; margin-top:14px; }
+#meditate-page .daily-buttons .pill-hit { flex:1; min-width:0; }
+#meditate-page .daily-buttons .pill-body { width:100%; }
+#meditate-page .daily-buttons .practice-save,
+#meditate-page .daily-buttons .med-options { background:var(--soft-control,#223f5c); border-radius:50%; color:#c1d8d2; }
+#meditate-page .pill-body { min-height:44px; gap:8px; padding:13px 17px; border:0; background:#8ce7d0; box-shadow:none; color:#002b26; font-size:max(13px,calc(22px * var(--t))); line-height:1.25; white-space:normal; }
+#meditate-page .pill-body svg { width:16px; height:16px; }
+
+/* The orbital drawing stays decorative and separate from the panel chrome. */
+#meditate-page .practice-orbit { position:relative; min-width:0; aspect-ratio:.92; --accent:#d9cc9e; }
+#meditate-page .practice-orbit:before { content:""; position:absolute; inset:0; border:1px solid var(--accent); border-right-color:transparent; border-radius:50%; opacity:.6; transform:rotate(-12deg); }
+#meditate-page .practice-orbit:after { content:""; position:absolute; left:15%; bottom:5%; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+#meditate-page .arched-art { position:absolute; left:10px; top:4px; width:calc(100% - 14px); height:calc(100% - 16px); border-radius:140px 140px 16px 16px; object-fit:cover; }
+
+/* Bring the count into the collection heading instead of spending another row
+   repeating the audio type. All five filters and their non-color cue remain. */
+#meditate-page .intent-heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 14px; margin-top:24px; color:inherit; font-weight:400; letter-spacing:0; }
+#meditate-page .intent-heading h2 { font-family:SanctuarySerif,serif; font-size:max(26px,calc(39px * var(--t))); font-weight:600; line-height:1.1; }
+#meditate-page .practice-count { color:#b9c5dd; font-size:max(11px,calc(16px * var(--t))); line-height:1.5; white-space:nowrap; }
+#meditate-page .intent-tray { gap:8px; margin-top:8px; padding:4px 2px 6px; }
+#meditate-page .intent-chip > span { min-height:44px; gap:6px; padding:11px 13px; border:0; background:var(--soft-action,#0d223c); color:#f5fafa; font-size:max(12px,calc(19px * var(--t))); }
+#meditate-page .intent-chip svg { width:17px; height:17px; color:#b9c5dd; }
+#meditate-page .intent-chip[aria-pressed=true] > span { background:#8ce7d0; color:#002b26; }
+#meditate-page .intent-chip[aria-pressed=true] svg { color:#002b26; }
+
+/* Compact library rows, rather than a stack of miniature featured cards.
+   Artwork anchors the left column; every action still has a 44px hit target. */
+#meditate-page .practice-list { gap:10px; margin-top:8px; }
+#meditate-page .practice-card {
+  display:grid;
+  grid-template-columns:max(68px,calc(128px * var(--s))) minmax(0,1fr);
+  align-items:center;
+  gap:4px 14px;
+  min-height:0;
+  padding:max(14px,calc(22px * var(--s)));
+  overflow:visible;
+  isolation:auto;
+  border:0;
+  border-radius:22px;
+  background:var(--soft-surface,#122945);
+  box-shadow:none;
+}
+#meditate-page .practice-card:before { content:none; }
+#meditate-page .practice-card.is-playing { background:var(--soft-active,#193853); }
+#meditate-page .practice-thumbnail { grid-column:1; grid-row:1 / span 3; }
+#meditate-page .practice-thumbnail .practice-orbit { --accent:inherit; }
+#meditate-page .practice-thumbnail .arched-art { left:6px; width:calc(100% - 9px); height:calc(100% - 12px); border-radius:80px 80px 12px 12px; }
+#meditate-page .practice-thumbnail .practice-orbit:after { width:4px; height:4px; }
+#meditate-page .practice-heading { display:block; grid-column:2; margin:0; }
+#meditate-page .practice-heading h3 { font-family:SanctuarySerif,serif; font-size:max(23px,calc(39px * var(--t))); font-weight:600; line-height:1.08; letter-spacing:-.2px; }
+#meditate-page .practice-card .session-ingredients { grid-column:2; margin:0; }
+#meditate-page .practice-actions { display:flex; grid-column:2; align-items:center; flex-wrap:wrap; gap:4px; margin-top:2px; }
+#meditate-page .practice-actions .session-meta { margin-right:auto; }
+#meditate-page .practice-save,
+#meditate-page .med-options { display:grid; place-items:center; flex-shrink:0; width:44px; min-height:44px; padding:10px; border-radius:50%; background:none; color:#b9c5dd; }
+#meditate-page .practice-save svg { width:21px; height:21px; }
+#meditate-page .med-options svg { width:20px; height:20px; }
+#meditate-page .practice-save[aria-pressed=true] { color:#9affe6; }
+#meditate-page .practice-play,
+#meditate-page .practice-play .pill-body { width:44px; height:44px; min-width:44px; padding:0; border-radius:50%; }
+#meditate-page .practice-play .practice-play-label { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#meditate-page .practice-play .pill-body svg { width:18px; height:18px; }
+#meditate-page .practice-spinner { display:block; flex-shrink:0; width:16px; height:16px; border:2px solid #002b2640; border-top-color:#002b26; border-radius:50%; animation:meditate-spin .8s linear infinite; }
+@keyframes meditate-spin { to { transform:rotate(360deg); } }
+#meditate-page .browse-practices { display:block; min-width:44px; min-height:44px; margin:18px auto 0; padding:12px 20px; border-radius:100px; background:#223f5c; color:#f5fafa; font-size:max(13px,calc(21px * var(--t))); line-height:1.4; text-align:center; }
+#meditate-page .practice-empty { padding:18px 0; color:#b9c5dd; font-size:max(13px,calc(21px * var(--t))); line-height:1.5; }
+#meditate-page .preview-disclosure { color:#b9c5dd; font-size:12px; line-height:1.6; }
+
+/* At the narrowest phone width, return the action row to the full card width.
+   No fixed card heights, clipped titles, reduced hit areas or text shrinking. */
+@media (max-width:360px) {
+  #meditate-page .daily-journey { border-top-right-radius:46px; }
+  #meditate-page .daily-heading { grid-template-columns:minmax(0,1fr) 96px; gap:12px; }
+  #meditate-page .practice-thumbnail { grid-row:1 / span 2; }
+  #meditate-page .practice-actions { grid-column:1 / -1; margin-top:4px; }
+}

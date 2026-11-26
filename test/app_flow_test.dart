@@ -39,7 +39,8 @@ class MockAudioPlayer extends Fake implements AudioPlayerPlatform {
   Stream<PlayerDataMessage> get playerDataMessageStream => const Stream.empty();
 
   @override
-  Stream<PlaybackEventMessage> get playbackEventMessageStream => _eventController.stream;
+  Stream<PlaybackEventMessage> get playbackEventMessageStream =>
+      _eventController.stream;
 
   @override
   Future<LoadResponse> load(LoadRequest request) async {
@@ -65,30 +66,43 @@ class MockAudioPlayer extends Fake implements AudioPlayerPlatform {
   Future<PauseResponse> pause(PauseRequest request) async => PauseResponse();
 
   @override
-  Future<SetVolumeResponse> setVolume(SetVolumeRequest request) async => SetVolumeResponse();
+  Future<SetVolumeResponse> setVolume(SetVolumeRequest request) async =>
+      SetVolumeResponse();
 
   @override
-  Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) async => SetSpeedResponse();
+  Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) async =>
+      SetSpeedResponse();
 
   @override
-  Future<SetLoopModeResponse> setLoopMode(SetLoopModeRequest request) async => SetLoopModeResponse();
+  Future<SetLoopModeResponse> setLoopMode(SetLoopModeRequest request) async =>
+      SetLoopModeResponse();
 
   @override
-  Future<SetShuffleModeResponse> setShuffleMode(SetShuffleModeRequest request) async => SetShuffleModeResponse();
+  Future<SetShuffleModeResponse> setShuffleMode(
+    SetShuffleModeRequest request,
+  ) async => SetShuffleModeResponse();
 
   @override
-  Future<SetAutomaticallyWaitsToMinimizeStallingResponse> setAutomaticallyWaitsToMinimizeStalling(SetAutomaticallyWaitsToMinimizeStallingRequest request) async => SetAutomaticallyWaitsToMinimizeStallingResponse();
+  Future<SetAutomaticallyWaitsToMinimizeStallingResponse>
+  setAutomaticallyWaitsToMinimizeStalling(
+    SetAutomaticallyWaitsToMinimizeStallingRequest request,
+  ) async => SetAutomaticallyWaitsToMinimizeStallingResponse();
 }
 
 class MockJustAudio extends JustAudioPlatform {
   @override
-  Future<AudioPlayerPlatform> init(InitRequest request) async => MockAudioPlayer(request.id);
+  Future<AudioPlayerPlatform> init(InitRequest request) async =>
+      MockAudioPlayer(request.id);
 
   @override
-  Future<DisposePlayerResponse> disposePlayer(DisposePlayerRequest request) async => DisposePlayerResponse();
+  Future<DisposePlayerResponse> disposePlayer(
+    DisposePlayerRequest request,
+  ) async => DisposePlayerResponse();
 
   @override
-  Future<DisposeAllPlayersResponse> disposeAllPlayers(DisposeAllPlayersRequest request) async => DisposeAllPlayersResponse();
+  Future<DisposeAllPlayersResponse> disposeAllPlayers(
+    DisposeAllPlayersRequest request,
+  ) async => DisposeAllPlayersResponse();
 }
 
 class _MockHttpHeaders extends Fake implements HttpHeaders {
@@ -154,10 +168,11 @@ void main() {
   JustAudioPlatform.instance = MockJustAudio();
 
   setUp(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('com.ryanheise.audio_session'),
-      (MethodCall methodCall) async => true,
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('com.ryanheise.audio_session'),
+          (MethodCall methodCall) async => true,
+        );
     SharedPreferences.setMockInitialValues({
       'onboarding_done': true,
       'streak': 3,
@@ -165,27 +180,42 @@ void main() {
     });
   });
 
-  testWidgets('Test 1: App initializes and renders HomeScreen with Serenly navigation', (WidgetTester tester) async {
-    final appState = AppState();
-    await appState.init();
+  testWidgets(
+    'Test 1: App initializes and renders a distinct Home dashboard with Sanctuary navigation',
+    (WidgetTester tester) async {
+      final appState = AppState();
+      await appState.init();
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AppState>.value(
-        value: appState,
-        child: const SanctuaryApp(),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppState>.value(
+          value: appState,
+          child: const SanctuaryApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
 
-    // Verify Tab scaffold & items
-    expect(find.byType(CupertinoTabBar), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Sounds'), findsOneWidget);
-    expect(find.text('Meditate'), findsOneWidget);
-    expect(find.text('Sleep'), findsOneWidget);
-  });
+      // Verify Tab scaffold & items
+      expect(
+        find.byWidgetPredicate((widget) => widget is CupertinoTabBar),
+        findsOneWidget,
+      );
+      for (final label in ['Home', 'Sounds', 'Meditate', 'Sleep']) {
+        expect(
+          find.descendant(
+            of: find.byWidgetPredicate((widget) => widget is CupertinoTabBar),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(find.byKey(const ValueKey('home-title')), findsOneWidget);
+      expect(find.byKey(const ValueKey('mixer-title')), findsNothing);
+    },
+  );
 
-  testWidgets('Test 2: Tab switching between screens works smoothly', (WidgetTester tester) async {
+  testWidgets('Test 2: Tab switching between screens works smoothly', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await appState.init();
 
@@ -213,7 +243,9 @@ void main() {
     expect(appState.tab, AppTab.sounds);
   });
 
-  testWidgets('Test 3: Sound mixer & volume state calculations', (WidgetTester tester) async {
+  testWidgets('Test 3: Sound mixer & volume state calculations', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await appState.init();
 
@@ -226,7 +258,9 @@ void main() {
     expect(appState.isAnyAudioPlaying, false);
   });
 
-  testWidgets('Test 4: Sleep auto-fade timer start and cancel', (WidgetTester tester) async {
+  testWidgets('Test 4: Sleep auto-fade timer start and cancel', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await appState.init();
 
@@ -239,16 +273,16 @@ void main() {
     expect(appState.sleepTimerRemainingSec, null);
   });
 
-  testWidgets('Test 5: Onboarding screen and Skip button works as expected', (WidgetTester tester) async {
+  testWidgets('Test 5: Onboarding screen and Skip button works as expected', (
+    WidgetTester tester,
+  ) async {
     final appState = AppState();
     await appState.init();
 
     await tester.pumpWidget(
       ChangeNotifierProvider<AppState>.value(
         value: appState,
-        child: const CupertinoApp(
-          home: Material(child: OnboardingScreen()),
-        ),
+        child: const CupertinoApp(home: Material(child: OnboardingScreen())),
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));

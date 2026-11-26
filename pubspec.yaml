@@ -1,12 +1,13 @@
 name: relax_mindfulness
-description: "Sanctuary: Relax & Mindfulness — Guided meditation, ambient sound mixer, breathing timer & sleep stories. Your daily calm companion."
+description: "Sanctuary: Relax & Mindfulness — Customizable ambient sound mixes, timed unguided practices, breathing and sleep timers."
 publish_to: 'none'
 # Version: major.minor.patch+buildNumber
 # 1.1.0+5 — Volume shock prevention, multi-track headroom limiter & Apple StoreKit restore compliance
 version: 1.1.0+5
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.32.0'
 
 dependencies:
   flutter:
@@ -23,8 +24,8 @@ dependencies:
   intl: ^0.19.0
   flutter_local_notifications: ^17.0.0
   in_app_review: ^2.0.9
-  purchases_flutter: ^8.7.0
-  google_generative_ai: ^0.4.3
+  purchases_flutter: 10.19.1
+  url_launcher: 6.3.2
   timezone: ^0.9.2
 
 dev_dependencies:
@@ -37,4 +38,17 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/mixer/
+    - assets/images/meditate/
+    - assets/images/player/
+    - assets/images/sleep/
+    - assets/fonts/mixer/OFL.txt
+    - assets/fonts/editorial/OFL.txt
     - assets/sounds/
+  fonts:
+    - family: MixerSans
+      fonts:
+        - asset: assets/fonts/mixer/Roboto.ttf
+    - family: SanctuarySerif
+      fonts:
+        - asset: assets/fonts/editorial/CormorantGaramond.ttf

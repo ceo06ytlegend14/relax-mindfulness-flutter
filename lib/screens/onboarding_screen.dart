@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -14,12 +15,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _ctrl = PageController();
   int _page = 0;
-
-  static const _backgroundGradients = [
-    [Color(0xFF09141D), Color(0xFF0F2634), Color(0xFF081017)],
-    [Color(0xFF0A121A), Color(0xFF142431), Color(0xFF081119)],
-    [Color(0xFF0F1A24), Color(0xFF1A2E3D), Color(0xFF0A131C)],
-  ];
 
   @override
   void dispose() {
@@ -41,16 +36,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background ambient gradient
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 600),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: _backgroundGradients[_page],
-              ),
-            ),
+          // Same soft midnight background as the app's four destinations.
+          const Positioned.fill(
+            child: ColoredBox(color: MixerTheme.background),
           ),
 
           // Subtle background ambient light glow
@@ -66,8 +54,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 color: _page == 0
                     ? tealPrimary.withOpacity(0.12)
                     : _page == 1
-                        ? mintAccent.withOpacity(0.12)
-                        : coralAccent.withOpacity(0.12),
+                    ? mintAccent.withOpacity(0.12)
+                    : coralAccent.withOpacity(0.12),
               ),
             ),
           ),
@@ -99,7 +87,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 7,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
-                              color: isSelected ? tealPrimary : Colors.white.withOpacity(0.2),
+                              color: isSelected
+                                  ? tealPrimary
+                                  : Colors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           );
@@ -112,7 +102,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Row(
                           children: [
                             TextButton(
-                              onPressed: () => context.read<AppState>().completeOnboarding(),
+                              onPressed: () =>
+                                  context.read<AppState>().completeOnboarding(),
                               child: Text(
                                 'Skip',
                                 style: TextStyle(
@@ -123,10 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                             const Spacer(),
-                            GlassPillButton(
-                              text: 'Continue →',
-                              onTap: _next,
-                            ),
+                            GlassPillButton(text: 'Continue →', onTap: _next),
                           ],
                         )
                       else
@@ -134,23 +122,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           width: double.infinity,
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => context.read<AppState>().completeOnboarding(),
+                            onTap: () =>
+                                context.read<AppState>().completeOnboarding(),
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [tealPrimary, mintAccent],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
+                                color: MixerTheme.primary,
                                 borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: tealPrimary.withOpacity(0.35),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
                               ),
                               child: const Center(
                                 child: Text(
@@ -189,27 +167,15 @@ class _Slide1 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero Glowing Lotus Badge
+          // Calm tonal lotus badge
           Container(
             width: 110,
             height: 110,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: tealPrimary.withOpacity(0.12),
-              border: Border.all(color: tealPrimary.withOpacity(0.3), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: tealPrimary.withOpacity(0.2),
-                  blurRadius: 30,
-                  spreadRadius: 4,
-                ),
-              ],
             ),
-            child: const Icon(
-              Icons.spa_rounded,
-              color: tealPrimary,
-              size: 54,
-            ),
+            child: const Icon(Icons.spa_rounded, color: tealPrimary, size: 54),
           ),
           const SizedBox(height: 36),
 
@@ -241,12 +207,15 @@ class _Slide1 extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.06),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.auto_awesome_rounded, color: tealPrimary, size: 14),
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: tealPrimary,
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'Designed for daily serenity',
@@ -270,10 +239,30 @@ class _Slide2 extends StatelessWidget {
   const _Slide2();
 
   static const _features = [
-    (Icons.self_improvement_rounded, 'Guided Meditation', 'Sessions for stress relief, focus & clarity', tealPrimary),
-    (Icons.air_rounded, 'Breathing Exercises', 'Box, 4-7-8, and resonance breathing patterns', mintAccent),
-    (Icons.equalizer_rounded, 'Ambient Sound Mixer', '11 customizable continuous audio tracks', coralAccent),
-    (Icons.nightlight_round, 'Bedtime Sleep Stories', 'Narrated journeys with auto-fade sleep timer', purpleAccent),
+    (
+      Icons.self_improvement_rounded,
+      'Ambient Meditation',
+      'Timed practices with distinct mixes, no narration',
+      tealPrimary,
+    ),
+    (
+      Icons.air_rounded,
+      'Breathing Exercises',
+      'Box, 4-7-8, and resonance breathing patterns',
+      mintAccent,
+    ),
+    (
+      Icons.equalizer_rounded,
+      'Ambient Sound Mixer',
+      'Layer bundled recordings and available online sounds',
+      coralAccent,
+    ),
+    (
+      Icons.nightlight_round,
+      'Nighttime Journeys',
+      'Ambient mixes and sleep auto-fade controls',
+      purpleAccent,
+    ),
   ];
 
   @override
@@ -296,54 +285,59 @@ class _Slide2 extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Simple, effective tools crafted for daily peace.',
-            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.55)),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.55),
+            ),
           ),
           const SizedBox(height: 28),
 
-          ..._features.map((f) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: GlassCard(
-                  cornerRadius: 18,
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: f.$4.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(f.$1, color: f.$4, size: 22),
+          ..._features.map(
+            (f) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: GlassCard(
+                cornerRadius: 18,
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: f.$4.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              f.$2,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
+                      child: Icon(f.$1, color: f.$4, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            f.$2,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              f.$3,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.55),
-                                fontSize: 12,
-                              ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            f.$3,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.55),
+                              fontSize: 12,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -361,27 +355,15 @@ class _Slide3 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero Frosted Glass Checkmark Badge (Replaces generic green box emoji)
+          // A checkmark keeps the completion cue independent of color.
           Container(
             width: 96,
             height: 96,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: mintAccent.withOpacity(0.12),
-              border: Border.all(color: mintAccent.withOpacity(0.35), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: mintAccent.withOpacity(0.2),
-                  blurRadius: 30,
-                  spreadRadius: 4,
-                ),
-              ],
             ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: mintAccent,
-              size: 48,
-            ),
+            child: const Icon(Icons.check_rounded, color: mintAccent, size: 48),
           ),
           const SizedBox(height: 32),
 
@@ -408,7 +390,7 @@ class _Slide3 extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // Apple-style Glass Highlights Card
+          // Matte highlights card
           const GlassCard(
             cornerRadius: 20,
             padding: EdgeInsets.symmetric(vertical: 18, horizontal: 12),
@@ -484,10 +466,7 @@ class _HighlightTile extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           subtitle,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 11,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
         ),
       ],
     );

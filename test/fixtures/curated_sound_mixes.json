@@ -1,0 +1,62 @@
+[
+  {
+    "id": "rainy-window-cafe",
+    "name": "Rainy Window Café",
+    "purpose": "Focus",
+    "levels": { "Soft Rain": 0.65, "Coffee Shop": 0.25, "Brown Noise": 0.15, "Bamboo Chimes": 0.10 }
+  },
+  {
+    "id": "enchanted-forest-morning",
+    "name": "Enchanted Forest Morning",
+    "purpose": "Morning",
+    "levels": { "Woodland Morning": 0.65, "Forest Birds": 0.55, "Meadow Breeze": 0.25, "Mountain Stream": 0.20 }
+  },
+  {
+    "id": "ocean-deep-sleep",
+    "name": "Ocean Deep Sleep",
+    "purpose": "Sleep",
+    "levels": { "Ocean Waves": 0.65, "Brown Noise": 0.35, "Crickets": 0.15 }
+  },
+  {
+    "id": "mountain-meditation",
+    "name": "Mountain Meditation",
+    "purpose": "Meditate",
+    "levels": { "Mountain Stream": 0.50, "Meadow Breeze": 0.30, "Forest Birds": 0.25, "Temple Bowl": 0.15 }
+  },
+  {
+    "id": "cozy-fireplace-night",
+    "name": "Cozy Fireplace Night",
+    "purpose": "Comfort",
+    "levels": { "Fireplace": 0.65, "Crickets": 0.30, "Soft Rain": 0.20, "Brown Noise": 0.15 }
+  },
+  {
+    "id": "tropical-rainforest",
+    "name": "Tropical Rainforest",
+    "purpose": "Relax",
+    "levels": { "Mountain Stream": 0.55, "Soft Rain": 0.40, "Forest Birds": 0.40, "Meadow Breeze": 0.15 }
+  },
+  {
+    "id": "zen-temple-sanctuary",
+    "name": "Zen Temple Sanctuary",
+    "purpose": "Meditate",
+    "levels": { "Temple Bowl": 0.55, "Meadow Breeze": 0.25, "Mountain Stream": 0.20, "Bamboo Chimes": 0.15 }
+  },
+  {
+    "id": "midnight-focus",
+    "name": "Midnight Focus",
+    "purpose": "Focus",
+    "levels": { "Brown Noise": 0.55, "White Noise": 0.30, "Coffee Shop": 0.15, "Soft Rain": 0.10 }
+  },
+  {
+    "id": "campfire-under-stars",
+    "name": "Campfire Under Stars",
+    "purpose": "Relax",
+    "levels": { "Campfire": 0.65, "Crickets": 0.50, "Meadow Breeze": 0.20, "Ocean Waves": 0.10 }
+  },
+  {
+    "id": "peaceful-ocean-journey",
+    "name": "Peaceful Ocean Journey",
+    "purpose": "Escape",
+    "levels": { "Boat Deck": 0.45, "Ocean Waves": 0.65, "Meadow Breeze": 0.20, "Bamboo Chimes": 0.10 }
+  }
+]

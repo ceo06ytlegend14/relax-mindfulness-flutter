@@ -1,0 +1,195 @@
+name: Quality checks
+
+on:
+  push:
+    branches: [main, 'arena/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# One pinned, Xcode-26-capable Flutter toolchain across all targets. Dependency
+# drift remains a failing check; later steps collect diagnostics, not a green job.
+env:
+  FLUTTER_VERSION: '3.38.10'
+
+jobs:
+  browser:
+    name: Browser, PWA and platform configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:web
+      - run: python3 -m unittest discover -s tool -p 'test_*.py' -v
+      - name: Check release inventory drift (not release approval)
+        run: python3 tool/launch_preflight.py --inventory-only
+
+  flutter:
+    name: Flutter analysis, tests and web compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter --version
+      - id: dependencies
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      # Still collect test/build results after a lint/lockfile failure, without
+      # suppressing that failure or turning a failed job green.
+      # Legacy stylistic infos are advisory; errors and warnings still fail.
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: flutter analyze --no-fatal-infos
+      - name: Format-check safety, player and billing implementation/tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib/models/user_backup.dart lib/screens/data_backup_screen.dart
+          test/user_backup_test.dart test/user_backup_state_test.dart
+          test/data_backup_screen_test.dart test/support/inert_audio_player.dart
+          test/support/user_backup_fixture.dart
+          lib/screens/ai_studio_screen.dart test/reflection_studio_test.dart
+          lib/components/guided_player.dart test/guided_player_test.dart
+          lib/components/ambient_player.dart test/ambient_player_test.dart
+          lib/models/session_soundscapes.dart lib/models/sanctuary_catalog.dart
+          lib/screens/home_screen.dart test/guided_session_state_test.dart
+          test/session_soundscapes_test.dart
+          lib/services/subscription_controller.dart lib/screens/premium_screen.dart
+          test/subscription_controller_test.dart test/premium_screen_test.dart
+          test/support/billing_fixtures.dart
+          lib/screens/sounds_screen.dart test/mixer_screen_test.dart
+          lib/models/bundled_recordings.dart lib/models/mixer_catalog.dart
+          lib/models/vibe_sound_sets.dart test/vibe_sound_sets_test.dart
+          lib/components/mixer_artwork.dart lib/components/sound_replacement_sheet.dart
+          lib/services/sound_preview_controller.dart lib/providers/mixer_controller.dart
+          lib/services/pwa_player_visibility.dart lib/services/pwa_player_visibility_stub.dart
+          lib/services/pwa_player_visibility_web.dart
+          test/ambient_audio_state_test.dart test/ambient_playback_presentation_test.dart
+          test/sound_preview_controller_test.dart
+          test/mixer_controller_test.dart test/mixer_catalog_test.dart
+          test/support/fake_mixer_app_state.dart test/support/fake_ambient_audio_player.dart
+          test/support/fake_sound_preview_player.dart
+          lib/main.dart test/sanctuary_screen_test.dart
+          lib/components/wellbeing_components.dart lib/components/sanctuary_components.dart
+          lib/theme/mixer_theme.dart test/soft_surfaces_test.dart test/home_navigation_test.dart
+          lib/screens/wellbeing_screen.dart lib/screens/mindfulness_screen.dart
+          lib/screens/breathe_screen.dart lib/screens/meditation_screen.dart
+          lib/screens/sleep_screen.dart test/wellbeing_screen_test.dart
+      - name: Run Flutter regressions
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        # Leave time for failure annotations, event retention and the independent
+        # web build if a widget test hangs. A timeout is still a failed check.
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          flutter test --reporter json | tee test-results/flutter-tests.jsonl
+      - name: Summarize Flutter failures without masking the test exit code
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_report_tests.py test-results/flutter-tests.jsonl
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_build.py flutter build web --release --no-pub
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        with:
+          name: flutter-test-events
+          path: test-results/flutter-tests.jsonl
+          retention-days: 7
+
+  android:
+    name: Android debug and unsigned release compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
+      - id: dependencies
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      - id: debug_apk
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_build.py flutter build apk --debug --no-pub
+      - name: Reject a release without owner signing or explicit unsigned opt-in
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/verify_android_signing_guard.py
+      # Explicitly UNSIGNED, for compilation only. No production key is present,
+      # no APK/AAB is uploaded, and this cannot be submitted to Play as-is.
+      - id: release_aab
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        env:
+          ORG_GRADLE_PROJECT_allowUnsignedRelease: 'true'
+        run: python3 tool/ci_build.py flutter build appbundle --release --no-pub
+      - name: Inspect compiled identity, API, billing and 16 KB native-library compatibility
+        if: ${{ !cancelled() && steps.debug_apk.outcome == 'success' && steps.release_aab.outcome == 'success' }}
+        run: python3 tool/verify_android_artifacts.py
+
+  ios:
+    name: iOS unsigned device compilation (Xcode 26)
+    runs-on: macos-15-intel
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
+      - id: flutter_setup
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        continue-on-error: true # Retry SDK download once; never suppress a build/test failure.
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Retry transient Flutter SDK download
+        if: steps.flutter_setup.outcome == 'failure'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - id: dependencies
+        run: flutter pub get
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_check_lockfile.py
+      # Verifies device architecture/plugin linking, not signing, installation,
+      # background audio behavior, an archive, TestFlight or App Store approval.
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: python3 tool/ci_build.py flutter build ios --release --no-codesign --no-pub

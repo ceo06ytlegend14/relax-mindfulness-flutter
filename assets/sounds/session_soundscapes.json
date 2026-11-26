@@ -1,0 +1,670 @@
+{
+  "schema_version": 1,
+  "kind": "ambient-arrangements-not-narration",
+  "description": "23 different two-source ambient arrangements for timed practices and nighttime journeys. Derived from 14 existing library recordings, not 23 new original recordings. No voice, verified frequency tuning or medical benefit is implied.",
+  "loop_seconds": 30,
+  "processing": {
+    "source_normalization": "loudnorm I=-26 TP=-8 LRA=7; 44.1 kHz stereo",
+    "arrangement": "weighted mix; 1-second tail/head crossfade then 1-second rotation; loudnorm I=-24 TP=-6 LRA=7",
+    "encoding": "libmp3lame 96 kbps stereo 44.1 kHz; targets are not measured-output or seamless-loop guarantees"
+  },
+  "aliases": {
+    "Peaceful Morning Start": "Peaceful Morning Awakening",
+    "Soft Sanctuary Horizon": "Calm Mountain Horizon"
+  },
+  "recordings": {
+    "Mountain Stream": {
+      "asset": "assets/sounds/woodland_stream.mp3",
+      "sha256": "6adecfed2c40be36158c3e0588bcb4b998902edf19caf10c5220e9eb4a18c2d8",
+      "credit": "gluckose · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Meadow Breeze": {
+      "asset": "assets/sounds/meadow_wind.mp3",
+      "sha256": "497057b70d733344e15f39d38e4cc91b3680b813840a8f8a172f2449c307a7a7",
+      "credit": "felix.blume · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Bamboo Chimes": {
+      "asset": "assets/sounds/wind_chimes.mp3",
+      "sha256": "66b3a7165cbff1dca1ad5a9edc1050b05dca0435af83ddb97041e8ae4b7e8079",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Soft Rain": {
+      "asset": "assets/sounds/soft_rain.mp3",
+      "sha256": "9f40e761012c8259e142f6825eb802976850863ee99e4e6f0d2e040f8f9d9833",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Ocean Waves": {
+      "asset": "assets/sounds/ocean_waves.mp3",
+      "sha256": "69769264ab133e22ed916553794af4ae14e183227f556e7cb9dca6148c973d8c",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Pink Noise": {
+      "asset": "assets/sounds/noise_pink.mp3",
+      "sha256": "bd9e43a749c5ac3e61389a215d22cda17b72de28b0c9a29daeec9d0e9e2fc525",
+      "credit": "Sanctuary project · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Woodland Morning": {
+      "asset": "assets/sounds/woodland_morning.mp3",
+      "sha256": "6560be4398eb5257bea2413ae972db881b1cd80fe2fb1b7d7473776b437e0268",
+      "credit": "kvgarlic · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Temple Bowl": {
+      "asset": "assets/sounds/tibetan_bowls.mp3",
+      "sha256": "933c8c4218c0e89d88624db68bb89aa7eda080a41a7a404ee3d6029afaa8d582",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Fireplace": {
+      "asset": "assets/sounds/fireplace.mp3",
+      "sha256": "1639dabf206a799136fc0ea0f6e721b08c0dcddc8e4fc03fa6061752e5d9a46e",
+      "credit": "ezwa · LicenseRef-Public-Domain-SoundBible",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Brown Noise": {
+      "asset": "assets/sounds/noise_brown.mp3",
+      "sha256": "08952b28e15fa2976336153ea9c48452e0fde04162e35393405ac7e3b02384e6",
+      "credit": "Sanctuary project · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Forest Birds": {
+      "asset": "assets/sounds/forest_birds.mp3",
+      "sha256": "67e5e2bb7c94d6dd58a505f62dfc9ad3a3f5c590bddf3229b532acc3410c75bc",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Campfire": {
+      "asset": "assets/sounds/campfire.mp3",
+      "sha256": "e39ffb4d73814b67aae020e84ae9ca4ba8250ac5d6f5ed04f030df14ac3eac14",
+      "credit": "Existing bundled source · owner provenance review required",
+      "evidence": "docs/SOUND_LIBRARY.md#existing-bundled-bytes-unchanged",
+      "rights_status": "legacy-provenance-unresolved"
+    },
+    "Crickets": {
+      "asset": "assets/sounds/night_crickets.mp3",
+      "sha256": "140edb3ff3f04d25cc35a02c679b061e4c748adf9967f6d7495fa85480539089",
+      "credit": "Lisa Redfern · LicenseRef-Public-Domain-SoundBible",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    },
+    "Boat Deck": {
+      "asset": "assets/sounds/boat_deck.mp3",
+      "sha256": "5a54d5105c0c3da6ee19e7be95024a73a293bd7596ec54b80577fa16bbeed033",
+      "credit": "Falcet · CC0-1.0",
+      "evidence": "docs/audio-licenses/ambient-pack-2026-11-19.md",
+      "rights_status": "source-page-evidence-not-release-clearance"
+    }
+  },
+  "sessions": [
+    {
+      "id": "calm-mountain",
+      "title": "Calm Mountain Horizon",
+      "asset": "assets/sounds/session_calm_mountain.mp3",
+      "layers": [
+        {
+          "recording": "Mountain Stream",
+          "weight": 0.72
+        },
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.28
+        }
+      ],
+      "pcm_sha256": "a0fd94bc671d610948210468508abb11ae3dea3f9cb67c5cfbe89d1821288adb",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.02898,
+      "peak_8khz_mono": 0.260406,
+      "sha256": "591951f5febced3f23ebbfc814a94ac20d9ea006f46b36d98d381bc6546f0b0b",
+      "bytes": 360495,
+      "integrated_lufs": -24.29,
+      "true_peak_dbtp": -6.81,
+      "recipe_sha256": "01a321981e4700b8657f7da4edcbf9f10dbe94e4520de8190a5f19f54306f6f3"
+    },
+    {
+      "id": "gentle-relief",
+      "title": "Gentle Relief & Comfort",
+      "asset": "assets/sounds/session_gentle_relief.mp3",
+      "layers": [
+        {
+          "recording": "Bamboo Chimes",
+          "weight": 0.65
+        },
+        {
+          "recording": "Soft Rain",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "a1dbf926cc8a613491c0fc58f91eda33677b91d34498a405a1da68e4211f22f2",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.036198,
+      "peak_8khz_mono": 0.19458,
+      "sha256": "65d2cb4bf89393be1746fa9bc36202dd4bfdf7ea3a2e35e738a163831c8ce677",
+      "bytes": 360812,
+      "integrated_lufs": -25.06,
+      "true_peak_dbtp": -10.59,
+      "recipe_sha256": "85532fd7198d0c5a7fbd6ec62558ffe08944adc1c97dd6e4326f641cdebf1cbe"
+    },
+    {
+      "id": "body-rest",
+      "title": "Soft Body Rest & Ease",
+      "asset": "assets/sounds/session_body_rest.mp3",
+      "layers": [
+        {
+          "recording": "Ocean Waves",
+          "weight": 0.6
+        },
+        {
+          "recording": "Pink Noise",
+          "weight": 0.4
+        }
+      ],
+      "pcm_sha256": "ca64c5037ed990a33b3668f64f6725b625fe4648039d3bd1390387ea7c42589b",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.043379,
+      "peak_8khz_mono": 0.213531,
+      "sha256": "c40caf7e73758ef297bf2ec590dcc603a9d8ae6e3de40fa11aa230e2a71ee2ef",
+      "bytes": 360808,
+      "integrated_lufs": -24.73,
+      "true_peak_dbtp": -12.17,
+      "recipe_sha256": "7d3bbae84c2d6fb9cc7a73ee5097b860f7c090bef8a93ba5ab0cdc2bbbb5785b"
+    },
+    {
+      "id": "morning-awakening",
+      "title": "Peaceful Morning Awakening",
+      "asset": "assets/sounds/session_morning_awakening.mp3",
+      "layers": [
+        {
+          "recording": "Woodland Morning",
+          "weight": 0.8
+        },
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.2
+        }
+      ],
+      "pcm_sha256": "66e1ca357cbcbeddc63e8fbec69b49ce6a64f4449999a03a4a7fe87be1112d45",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.026809,
+      "peak_8khz_mono": 0.311676,
+      "sha256": "e2a1dac02720922fe08a503e631f8ecc30a105845589a6fa1f243a4d160b649d",
+      "bytes": 360505,
+      "integrated_lufs": -25.0,
+      "true_peak_dbtp": -9.39,
+      "recipe_sha256": "26f894f810b77d5c6ee6bc17e3ad196a4996dde3f16cfc75b0eac314d079ea43"
+    },
+    {
+      "id": "quiet-mind",
+      "title": "Quiet Mind Sanctuary",
+      "asset": "assets/sounds/session_quiet_mind.mp3",
+      "layers": [
+        {
+          "recording": "Temple Bowl",
+          "weight": 0.65
+        },
+        {
+          "recording": "Mountain Stream",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "2cc71fd208245fe65fa3cbcac9910db195689d9f14574d534945239536458884",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.032621,
+      "peak_8khz_mono": 0.177246,
+      "sha256": "0d78b05eb3edfa3256e982a425a454fc1abce10ac3e9cdf6200d16a11dd91098",
+      "bytes": 360806,
+      "integrated_lufs": -24.46,
+      "true_peak_dbtp": -11.4,
+      "recipe_sha256": "d119bf1f9eb2fdfbeeee4e252b04b7ed2c656cfedbc55e69bba67ed872dfebed"
+    },
+    {
+      "id": "bedtime-slumber",
+      "title": "Cozy Bedtime Slumber",
+      "asset": "assets/sounds/session_bedtime_slumber.mp3",
+      "layers": [
+        {
+          "recording": "Soft Rain",
+          "weight": 0.75
+        },
+        {
+          "recording": "Fireplace",
+          "weight": 0.25
+        }
+      ],
+      "pcm_sha256": "424314e9b8ba4f109c2d3b7212a54c23746529b621914aae36ffb5959a21e433",
+      "decoded_seconds": 29.975,
+      "rms_8khz_mono": 0.028129,
+      "peak_8khz_mono": 0.151886,
+      "sha256": "55a1f4db71ed0aebc9e39bdee7c6cb19b3842e415a73a1adc07227b41751d78b",
+      "bytes": 360806,
+      "integrated_lufs": -24.44,
+      "true_peak_dbtp": -6.2,
+      "recipe_sha256": "4fd6db90d6e8e5b7418966e9587b7bc004e769f4b6547e38bbb608f8e616c30e"
+    },
+    {
+      "id": "crystal-chimes",
+      "title": "Healing Crystal Chimes",
+      "asset": "assets/sounds/session_crystal_chimes.mp3",
+      "layers": [
+        {
+          "recording": "Bamboo Chimes",
+          "weight": 0.7
+        },
+        {
+          "recording": "Temple Bowl",
+          "weight": 0.3
+        }
+      ],
+      "pcm_sha256": "abba00e3adff0c482ce52a4a698ad72b1faf95638007c7db384041a3bd11b039",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.037866,
+      "peak_8khz_mono": 0.200958,
+      "sha256": "ecff4cc2a96daee717aba8c061ea93049b146591a4b17b64431331c531adacbe",
+      "bytes": 360810,
+      "integrated_lufs": -25.1,
+      "true_peak_dbtp": -12.72,
+      "recipe_sha256": "b83038727d920c3123cdd0f84f8b7202f31416bcbbc0974b2c194e48ad3df763"
+    },
+    {
+      "id": "warm-heart",
+      "title": "Warm Heart Comfort",
+      "asset": "assets/sounds/session_warm_heart.mp3",
+      "layers": [
+        {
+          "recording": "Fireplace",
+          "weight": 0.65
+        },
+        {
+          "recording": "Brown Noise",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "aa144531311b85f28fe1a655b7778e44b6439be712519911b79aa36a047a2488",
+      "decoded_seconds": 29.975,
+      "rms_8khz_mono": 0.032894,
+      "peak_8khz_mono": 0.166473,
+      "sha256": "87bfcf8824a2b40bd918bad89822d607f1ace9fcf32416419d59f6d279b634c3",
+      "bytes": 360802,
+      "integrated_lufs": -23.87,
+      "true_peak_dbtp": -7.07,
+      "recipe_sha256": "69ec1779173c5895e02edc2dd956c659e4a4bbfbcce95d0bca34d68d3a98bc85"
+    },
+    {
+      "id": "peaceful-haven",
+      "title": "Peaceful Haven Journey",
+      "asset": "assets/sounds/session_peaceful_haven.mp3",
+      "layers": [
+        {
+          "recording": "Mountain Stream",
+          "weight": 0.7
+        },
+        {
+          "recording": "Forest Birds",
+          "weight": 0.3
+        }
+      ],
+      "pcm_sha256": "6484853905c2510eb0c34fe9bf7ec625d6d404533ec338e14d7b69504579bdc1",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.024456,
+      "peak_8khz_mono": 0.29483,
+      "sha256": "3df7cff788d989eb5d209f1f0dece6e3f1d236c66bb3c4f23da3e32f6230942b",
+      "bytes": 360810,
+      "integrated_lufs": -24.28,
+      "true_peak_dbtp": -6.79,
+      "recipe_sha256": "04c11aa8d378ae127a40c3c94fd7746afaf9f07f2afc13eae8decf7cbfbe1c65"
+    },
+    {
+      "id": "breeze-rest",
+      "title": "Gentle Breeze Rest",
+      "asset": "assets/sounds/session_breeze_rest.mp3",
+      "layers": [
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.7
+        },
+        {
+          "recording": "Bamboo Chimes",
+          "weight": 0.3
+        }
+      ],
+      "pcm_sha256": "7292a0ee5e46dc5b5182cf5dc97f34347030c38b569c5f247334dc14d98c40ed",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.047987,
+      "peak_8khz_mono": 0.302979,
+      "sha256": "8451d59ebf0f2233ab809d52319bda8a4f7f1c0bc6588a6daf1275beb9edce3a",
+      "bytes": 360489,
+      "integrated_lufs": -24.77,
+      "true_peak_dbtp": -9.75,
+      "recipe_sha256": "62ca346de2886414033c132eb68cf5ab178ebf433e4654196fe6d16a3740c02d"
+    },
+    {
+      "id": "loving-warmth",
+      "title": "Loving Warmth & Peace",
+      "asset": "assets/sounds/session_loving_warmth.mp3",
+      "layers": [
+        {
+          "recording": "Campfire",
+          "weight": 0.65
+        },
+        {
+          "recording": "Ocean Waves",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "053e8a7be2a4202e3f398b3596f467935914583cf36e93f3a747ed9570b10f3f",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.114495,
+      "peak_8khz_mono": 0.432373,
+      "sha256": "ea5561baf3bb29fe1cccc1f39a64d2038572367586c3455d71653f5e58e88f7a",
+      "bytes": 360808,
+      "integrated_lufs": -24.57,
+      "true_peak_dbtp": -6.49,
+      "recipe_sha256": "6362f8f69d65cbf670d67073cf667da3df1b60df692a5a98aa5d5c16c0386e48"
+    },
+    {
+      "id": "ocean-horizon",
+      "title": "Ocean Horizon Slumber",
+      "asset": "assets/sounds/session_ocean_horizon.mp3",
+      "layers": [
+        {
+          "recording": "Ocean Waves",
+          "weight": 0.55
+        },
+        {
+          "recording": "Crickets",
+          "weight": 0.45
+        }
+      ],
+      "pcm_sha256": "4b309b278199aacca72293913509a946435ab630e1dabd47f3ee7e0d1cf24fad",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.037134,
+      "peak_8khz_mono": 0.180939,
+      "sha256": "3b922c9f6a5ff6066f3e1064235b60dc81960584a102a44bcfca3ea22c3de93e",
+      "bytes": 360808,
+      "integrated_lufs": -24.8,
+      "true_peak_dbtp": -12.44,
+      "recipe_sha256": "a9973eb696c9cd4c0ee0f6d64da3d7e8d031128569140f49c26ce11270598746"
+    },
+    {
+      "id": "solfeggio",
+      "title": "Chakra Solfeggio Alignment",
+      "asset": "assets/sounds/session_solfeggio.mp3",
+      "layers": [
+        {
+          "recording": "Temple Bowl",
+          "weight": 0.8
+        },
+        {
+          "recording": "Brown Noise",
+          "weight": 0.2
+        }
+      ],
+      "pcm_sha256": "d00bac6e37cfd3525859defa8d6e12de5b0b6589a1d156e0c9af118a59ca39f1",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.035736,
+      "peak_8khz_mono": 0.133392,
+      "sha256": "bd04f2829c918ebfc449b91ac409d33c6488c81547f3c006540164a9bfba1117",
+      "bytes": 360818,
+      "integrated_lufs": -24.52,
+      "true_peak_dbtp": -14.19,
+      "recipe_sha256": "8597a880ad599f2b15d7e34828192465b791067f009b40cfe7a28cacfb3057fc"
+    },
+    {
+      "id": "forest-bathing",
+      "title": "Pine Forest Bathing",
+      "asset": "assets/sounds/session_forest_bathing.mp3",
+      "layers": [
+        {
+          "recording": "Forest Birds",
+          "weight": 0.65
+        },
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "8b1a6c25da6d1b409e7750f17247eed0289a2c7762df1a349be3f86732da2f88",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.035518,
+      "peak_8khz_mono": 0.272827,
+      "sha256": "0c1251f557714cdaf41659969a2b3bd4271ef9808cc13215cfdcaeb560641644",
+      "bytes": 360491,
+      "integrated_lufs": -24.84,
+      "true_peak_dbtp": -10.84,
+      "recipe_sha256": "70fca87b0d28bc154919f382d79fa09f4a3ea5ea83806fc42fa7b440f3395e55"
+    },
+    {
+      "id": "release-tension",
+      "title": "Release Anxious Tension",
+      "asset": "assets/sounds/session_release_tension.mp3",
+      "layers": [
+        {
+          "recording": "Soft Rain",
+          "weight": 0.65
+        },
+        {
+          "recording": "Temple Bowl",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "339e36a7dff38cece8d6ec9bf0847b3041fd55ba61f970f90e550c5dfbbf72b3",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.029634,
+      "peak_8khz_mono": 0.154541,
+      "sha256": "bfbd157d0aa109e39f9ae732a9bafd9091e04a3f7a5427fab7865010b78c72a6",
+      "bytes": 360812,
+      "integrated_lufs": -24.57,
+      "true_peak_dbtp": -7.07,
+      "recipe_sha256": "226f1089d774e3bc6afc56650359a4dbf76d0614ab50d52e5763dc5439a118a6"
+    },
+    {
+      "id": "starry-night",
+      "title": "The Starry Night",
+      "asset": "assets/sounds/session_starry_night.mp3",
+      "layers": [
+        {
+          "recording": "Crickets",
+          "weight": 0.8
+        },
+        {
+          "recording": "Brown Noise",
+          "weight": 0.2
+        }
+      ],
+      "pcm_sha256": "e2c09457604b25f3177fccd8e33ac17426ac13cc785957baa61ec8efedf4b0e2",
+      "decoded_seconds": 30.0,
+      "rms_8khz_mono": 0.018405,
+      "peak_8khz_mono": 0.082062,
+      "sha256": "2c8c96c0048c62a1eba192c0dd707b9bb3cc5a00cdc4c392f1d740823f86bb71",
+      "bytes": 361112,
+      "integrated_lufs": -24.67,
+      "true_peak_dbtp": -13.53,
+      "recipe_sha256": "ca128ffae21cbf6af87fc81a9ccafce1c38a47adf2f83751f8e5a887cb2d6af4"
+    },
+    {
+      "id": "dreamland",
+      "title": "Journey to Dreamland",
+      "asset": "assets/sounds/session_dreamland.mp3",
+      "layers": [
+        {
+          "recording": "Ocean Waves",
+          "weight": 0.65
+        },
+        {
+          "recording": "Bamboo Chimes",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "5ff66495e99fd24821c51e0e225d66ec3cc1093ba275ffad740559becce18156",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.043815,
+      "peak_8khz_mono": 0.218262,
+      "sha256": "08c208f265fec789a96a128f378c36b65b78ea11b79f58f8f35f039840ece168",
+      "bytes": 360806,
+      "integrated_lufs": -24.91,
+      "true_peak_dbtp": -11.62,
+      "recipe_sha256": "aad79d335f7996da57f1991f3069bff908292aba43287938fc6f654217e08799"
+    },
+    {
+      "id": "hidden-waterfall",
+      "title": "The Hidden Waterfall",
+      "asset": "assets/sounds/session_hidden_waterfall.mp3",
+      "layers": [
+        {
+          "recording": "Mountain Stream",
+          "weight": 0.65
+        },
+        {
+          "recording": "Pink Noise",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "ff8b02d02bacb1cddfe9725b895329ad3a77064bbe8f5d957824778efa44e494",
+      "decoded_seconds": 30.0,
+      "rms_8khz_mono": 0.028713,
+      "peak_8khz_mono": 0.273285,
+      "sha256": "1a0141ff96264e0be3a6b9d5dff05ae215b1cc11363130f87553f917772f948c",
+      "bytes": 361120,
+      "integrated_lufs": -24.17,
+      "true_peak_dbtp": -6.91,
+      "recipe_sha256": "f307b38ac154a66c0afdb21dee55389f20a543cdfe8b76217737bfa7eca4be20"
+    },
+    {
+      "id": "lighthouse",
+      "title": "The Lighthouse Keeper",
+      "asset": "assets/sounds/session_lighthouse.mp3",
+      "layers": [
+        {
+          "recording": "Ocean Waves",
+          "weight": 0.55
+        },
+        {
+          "recording": "Boat Deck",
+          "weight": 0.45
+        }
+      ],
+      "pcm_sha256": "ad328ce18761ffcd03131a66e145c04b17a5dfd81b200ea425afbbeb9d5b059b",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.041735,
+      "peak_8khz_mono": 0.293732,
+      "sha256": "fbc36cb47009bdcad6529b8ec7b92b3853bb6ad414647e19191731bf4b54f041",
+      "bytes": 360808,
+      "integrated_lufs": -24.68,
+      "true_peak_dbtp": -8.26,
+      "recipe_sha256": "f31160053975e0c30584c1a8147432b56efd683fa99d80fdeed2fe652a78e243"
+    },
+    {
+      "id": "japanese-garden",
+      "title": "Moonlit Japanese Garden",
+      "asset": "assets/sounds/session_japanese_garden.mp3",
+      "layers": [
+        {
+          "recording": "Bamboo Chimes",
+          "weight": 0.45
+        },
+        {
+          "recording": "Mountain Stream",
+          "weight": 0.55
+        }
+      ],
+      "pcm_sha256": "cf5e25f36fe758ab935d3fae8a1acb2ab75fc2fdf5d0b04234582d894a3c6d32",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.030961,
+      "peak_8khz_mono": 0.23465,
+      "sha256": "9aef3d1c727ab8b0888e0be79998102b307414a01ce6d2bfacdae088a60ea200",
+      "bytes": 360812,
+      "integrated_lufs": -24.59,
+      "true_peak_dbtp": -8.75,
+      "recipe_sha256": "3148dcc8ec85990fa7e9651c7cacd45bdb474574c8c92d63c066b24df035a038"
+    },
+    {
+      "id": "whispering-pines",
+      "title": "Whispering Pine Forest",
+      "asset": "assets/sounds/session_whispering_pines.mp3",
+      "layers": [
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.6
+        },
+        {
+          "recording": "Crickets",
+          "weight": 0.4
+        }
+      ],
+      "pcm_sha256": "87b37f310c9508c09f0bb9c1c168989c34dcd9fadd5711886dbf18f7c14c9a62",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.041748,
+      "peak_8khz_mono": 0.249847,
+      "sha256": "b8039b3d409da68f3302bbdad42bd29ce8dd5ebf8678cd80fc68a7a9d8baff83",
+      "bytes": 360497,
+      "integrated_lufs": -24.67,
+      "true_peak_dbtp": -10.73,
+      "recipe_sha256": "7aadf7708bd075e215811fb90e0a955438a3784d1ec1424cb255577e0ee30525"
+    },
+    {
+      "id": "stargazing",
+      "title": "Desert Stargazing",
+      "asset": "assets/sounds/session_stargazing.mp3",
+      "layers": [
+        {
+          "recording": "Meadow Breeze",
+          "weight": 0.65
+        },
+        {
+          "recording": "Brown Noise",
+          "weight": 0.35
+        }
+      ],
+      "pcm_sha256": "f905f6dc11b67b532f1d462cc2667206bf3c80fd52d2005ccc2488c606770768",
+      "decoded_seconds": 29.949875,
+      "rms_8khz_mono": 0.049743,
+      "peak_8khz_mono": 0.32486,
+      "sha256": "7b3764924462d618d2a9161a5a9e63a92d9e99a33478ed773c72586a27b72cea",
+      "bytes": 360487,
+      "integrated_lufs": -24.64,
+      "true_peak_dbtp": -9.12,
+      "recipe_sha256": "bf6c0bc7cfed7bc6f99805966d3a04ad313d4a902cbdc237208b6c4a39d78347"
+    },
+    {
+      "id": "temple-bells",
+      "title": "Ancient Temple Bells",
+      "asset": "assets/sounds/session_temple_bells.mp3",
+      "layers": [
+        {
+          "recording": "Temple Bowl",
+          "weight": 0.75
+        },
+        {
+          "recording": "Crickets",
+          "weight": 0.25
+        }
+      ],
+      "pcm_sha256": "9e2a8144ec0a6167475acf3e266c3357c62245a37d30fc17c8377d294e98f468",
+      "decoded_seconds": 29.977,
+      "rms_8khz_mono": 0.033162,
+      "peak_8khz_mono": 0.118225,
+      "sha256": "51ddbd43e35b3276ead09ee51ccbe4a511abe2bde6ad86caf54b223f3ef4a2fe",
+      "bytes": 360806,
+      "integrated_lufs": -24.53,
+      "true_peak_dbtp": -14.26,
+      "recipe_sha256": "8abfbc498fb0b4036a6215540634f0e98700333bf0fcbcdeddc7ce43e7272c1c"
+    }
+  ],
+  "encoder": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers"
+}

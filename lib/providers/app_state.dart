@@ -6,17 +6,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/main.dart' show localNotifications;
+import 'package:relax_mindfulness/models/user_backup.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
+import 'package:relax_mindfulness/models/vibe_sound_sets.dart';
+import 'package:relax_mindfulness/models/session_soundscapes.dart';
+import 'package:relax_mindfulness/services/subscription_controller.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 enum AppTab { home, meditate, breathe, sounds, sleep, aiStudio }
 
+/// Selected/requested levels are not evidence that a player is ready to play.
+enum AmbientPlaybackStatus {
+  idle('Not playing'),
+  loading('Loading'),
+  buffering('Buffering'),
+  playing('Playing'),
+  paused('Paused'),
+  failed('Unavailable');
+
+  const AmbientPlaybackStatus(this.label);
+  final String label;
+}
+
 enum BreathingPattern {
-  box4444('Box 4-4-4-4', 4, 4, 4, 4, 'Classic Navy SEAL stress relief'),
-  relax478('4-7-8 Sleep', 4, 7, 8, 0, 'Dr. Weil sleep technique'),
-  resonance55('Resonance 5-5', 5, 0, 5, 0, 'Heart rate coherence'),
-  power626('Power 6-2-6', 6, 2, 6, 2, 'Energy & focus boost');
+  box4444('Box 4-4-4-4', 4, 4, 4, 4, 'Inhale 4 · hold 4 · exhale 4 · rest 4'),
+  relax478('4-7-8', 4, 7, 8, 0, 'Inhale 4 · hold 7 · exhale 8'),
+  resonance55('Even 5-5', 5, 0, 5, 0, 'Inhale 5 · exhale 5 · no holds'),
+  power626('Steady 6-2-6', 6, 2, 6, 2, 'Inhale 6 · hold 2 · exhale 6 · rest 2');
 
   const BreathingPattern(this.displayName, this.inhale, this.hold, this.exhale, this.holdOut, this.description);
   final String displayName;
@@ -121,16 +138,144 @@ class SoundPreset {
 
 // ─── AppState ─────────────────────────────────────────────────────────────────
 class AppState extends ChangeNotifier {
+  AppState({
+    AudioPlayer? guidedPlayer,
+    AudioPlayer Function()? ambientPlayerFactory,
+    DateTime Function()? now,
+    SharedPreferences? preferences,
+    SubscriptionController? subscriptions,
+  }) : _prefs = preferences,
+       _subscriptions = subscriptions ?? SubscriptionController(),
+       _guidedPlayer = guidedPlayer ?? AudioPlayer(),
+       _ambientPlayerFactory = ambientPlayerFactory ?? (() => AudioPlayer()),
+       _now = now ?? DateTime.now {
+    _subscriptions.addListener(_subscriptionChanged);
+    _guidedStateSubscription = _guidedPlayer.playerStateStream.listen(
+      (state) {
+        if (_guidedDisposed || !hasGuidedSession) return;
+        if (_isGuidedPlaying &&
+            state.processingState == ProcessingState.completed) {
+          unawaited(stopGuidedSession(completed: true));
+          return;
+        }
+        // Follow platform interruptions and activation refusal too, not just taps.
+        // A queued old event must not override the player's current intent.
+        if (!_guidedReady || _isGuidedLoading) return;
+        if (_isGuidedPlaying && !state.playing && !_guidedPlayer.playing) {
+          _freezeGuidedClock();
+          _isGuidedPlaying = false;
+          notifyListeners();
+        } else if (!_isGuidedPlaying &&
+            state.playing &&
+            _guidedPlayer.playing) {
+          _startGuidedPlayback(_guidedRequest);
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // The selected arrangement load reports its own failure; never substitute audio.
+        if (!_isGuidedLoading) _failGuidedPlayback(_guidedRequest, error);
+      },
+    );
+    _guidedPlaybackSubscription = _guidedPlayer.playbackEventStream.listen(
+      (_) {},
+      onError: (Object error, StackTrace stack) {
+        // The selected arrangement load reports its own failure; never substitute audio.
+        if (!_isGuidedLoading) _failGuidedPlayback(_guidedRequest, error);
+      },
+    );
+  }
+
   SharedPreferences? _prefs;
 
+  final AudioPlayer Function() _ambientPlayerFactory;
   final Map<String, AudioPlayer> _audioPlayers = {};
   final Set<String> _loadingTracks = {};
   final Map<String, double> _targetVolumes = {};
+  final Map<String, String> _ambientErrors = {};
+  final Map<AudioPlayer, StreamSubscription<PlaybackEvent>> _ambientSubscriptions = {};
+  final Map<AudioPlayer, StreamSubscription<PlayerState>> _ambientStateSubscriptions = {};
+  final Map<AudioPlayer, Timer> _ambientReadinessTimers = {};
+  final Map<AudioPlayer, Object> _ambientPlayRequests = {};
+  final Set<String> _startingTracks = {};
+  double _previewDuck = 1;
 
-  final AudioPlayer _guidedPlayer = AudioPlayer();
+  // Presentation lifetime is separate from transport intent. Pausing keeps a
+  // reopenable ambient player; stopping or starting a session dismisses it.
+  bool _hasAmbientSession = false;
+  bool _isAmbientPlayerExpanded = false;
+  bool get hasAmbientSession => _hasAmbientSession;
+  bool get isAmbientPlayerExpanded =>
+      _hasAmbientSession && _isAmbientPlayerExpanded;
+
+  void showAmbientPlayer() {
+    if (_guidedDisposed) return;
+    _hasAmbientSession = true;
+    _isAmbientPlayerExpanded = true;
+    _isGuidedPlayerExpanded = false;
+    notifyListeners();
+  }
+
+  void minimizeAmbientPlayer() {
+    _isAmbientPlayerExpanded = false;
+    if (!_guidedDisposed) notifyListeners();
+  }
+
+  String? ambientTrackError(String name) => _ambientErrors[name];
+
+  AmbientPlaybackStatus ambientTrackStatus(String name) {
+    if (_ambientErrors.containsKey(name)) return AmbientPlaybackStatus.failed;
+    if ((_targetVolumes[name] ?? 0) <= 0) return AmbientPlaybackStatus.idle;
+    final player = _audioPlayers[name];
+    if (player == null || _loadingTracks.contains(name)) {
+      return AmbientPlaybackStatus.loading;
+    }
+    if (player.processingState == ProcessingState.buffering ||
+        player.processingState == ProcessingState.loading) {
+      return AmbientPlaybackStatus.buffering;
+    }
+    if (player.playing && player.processingState == ProcessingState.ready) {
+      return AmbientPlaybackStatus.playing;
+    }
+    if (_startingTracks.contains(name)) return AmbientPlaybackStatus.loading;
+    return AmbientPlaybackStatus.paused;
+  }
+
+  bool isAmbientTrackLoading(String name) =>
+      ambientTrackStatus(name) == AmbientPlaybackStatus.loading;
+  bool isAmbientTrackPlaying(String name) =>
+      ambientTrackStatus(name) == AmbientPlaybackStatus.playing;
+
+  bool get hasAmbientPlaybackRequest => requestedAmbientTracks.isNotEmpty;
+  bool get isAmbientPlaybackPending => requestedAmbientTracks.keys.any((name) {
+    final status = ambientTrackStatus(name);
+    return status == AmbientPlaybackStatus.loading ||
+        status == AmbientPlaybackStatus.buffering;
+  });
+
+  /// Previewing never changes a saved/selected level or starts a paused mix.
+  void setAmbientPreviewDucking(bool previewing) {
+    if (_guidedDisposed) return;
+    _previewDuck = previewing ? 0.2 : 1;
+    _recalculateGainAndApply();
+  }
+
+  final AudioPlayer _guidedPlayer;
+  final DateTime Function() _now;
+  StreamSubscription<PlayerState>? _guidedStateSubscription;
+  StreamSubscription<PlaybackEvent>? _guidedPlaybackSubscription;
+  bool _guidedDisposed = false;
+  int _guidedRequest = 0;
+  bool _guidedReady = false;
   bool _isGuidedPlaying = false;
+  bool _isGuidedLoading = false;
+  bool _isGuidedPlayerExpanded = false;
+  String? _guidedPlaybackError;
   String? _currentGuidedTitle;
   int _guidedRemainingSec = 0;
+  int _guidedTotalSec = 0;
+  int _guidedListenedMs = 0;
+  DateTime? _guidedDeadline;
+  DateTime? _guidedListeningStartedAt;
   Timer? _guidedTimer;
 
   // Master Gain Limiter & Sleep Fade Control
@@ -147,9 +292,29 @@ class AppState extends ChangeNotifier {
   bool get isSleepTimerRunning => _sleepTimerRemainingSec != null && _sleepTimerRemainingSec! > 0;
 
   bool get isGuidedPlaying => _isGuidedPlaying;
+  bool get isGuidedLoading => _isGuidedLoading;
+  bool get hasGuidedSession => _currentGuidedTitle != null;
+  bool get isGuidedPlayerExpanded =>
+      hasGuidedSession && _isGuidedPlayerExpanded;
+  String? get guidedPlaybackError => _guidedPlaybackError;
   String? get currentGuidedTitle => _currentGuidedTitle;
-  int get guidedRemainingSec => _guidedRemainingSec;
-  
+  int get guidedTotalSec => _guidedTotalSec;
+  int get guidedRemainingSec {
+    final deadline = _guidedDeadline;
+    if (deadline == null) return _guidedRemainingSec;
+    return ((deadline.difference(_now()).inMilliseconds + 999) ~/ 1000)
+        .clamp(0, _guidedTotalSec)
+        .toInt();
+  }
+
+  int get guidedElapsedSec =>
+      (_guidedTotalSec - guidedRemainingSec).clamp(0, _guidedTotalSec).toInt();
+  bool get canSeekGuidedSession =>
+      hasGuidedSession &&
+      _guidedReady &&
+      !_isGuidedLoading &&
+      (_guidedPlayer.duration?.inMilliseconds ?? 0) > 0;
+
   static const Map<String, String> soundStreamUrls = {
     'Soft Rain': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/light-rain.mp3',
     'Thunderstorm': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/thunder.mp3',
@@ -160,12 +325,10 @@ class AppState extends ChangeNotifier {
     'Rain on Tent': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-tent.mp3',
     'Rain on Leaves': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-leaves.mp3',
     'Ocean Waves': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'Mountain Stream': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
     'Forest Birds': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/birds.mp3',
     'Campfire': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/campfire.mp3',
     'Wind in Trees': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
     'Howling Wind': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/howling-wind.mp3',
-    'Crickets': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/crickets.mp3',
     'Waterfall': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waterfall.mp3',
     'Frogs': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/frog.mp3',
     'Jungle Day': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/jungle.mp3',
@@ -174,7 +337,6 @@ class AppState extends ChangeNotifier {
     'Walking on Gravel': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/walk-on-gravel.mp3',
     'Walking on Leaves': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/walk-on-leaves.mp3',
     'Owl Hooting': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/owl.mp3',
-    'Coffee Shop': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/cafe.mp3',
     'Library': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/library.mp3',
     'Office Ambience': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/office.mp3',
     'Church Interior': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/church.mp3',
@@ -202,9 +364,6 @@ class AppState extends ChangeNotifier {
     'Boiling Water': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/boiling-water.mp3',
     'Wind Chimes': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
     'Windshield Wipers': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/windshield-wipers.mp3',
-    'White Noise': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/noise/white-noise.wav',
-    'Pink Noise': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/noise/pink-noise.wav',
-    'Brown Noise': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/noise/brown-noise.wav',
     'Steady Wind': 'https://actions.google.com/sounds/v1/weather/wind.ogg',
     'Desert Howling Wind': 'https://actions.google.com/sounds/v1/weather/desert_howling_wind.ogg',
     'Singing Bowl': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
@@ -235,7 +394,9 @@ class AppState extends ChangeNotifier {
     'Heartbeat': 'https://actions.google.com/sounds/v1/human_voices/heartbeat.ogg',
     'Cozy Hearth': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/campfire.mp3',
     'Singing Bowls': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-    'Ambient Piano': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
+    'Temple Bowl': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
+    // Legacy mixes may still name Ambient Piano, but a singing bowl is not a
+    // piano recording. Leave that layer explicitly unconfigured until sourced.
     'Bamboo Chimes': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
     'Soothing Breeze': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
     'Deep Space Drone': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-gamma.wav',
@@ -245,46 +406,10 @@ class AppState extends ChangeNotifier {
     'Space Drift': 'https://actions.google.com/sounds/v1/science_fiction/space_atmosphere.ogg',
   };
 
-  static const Map<String, String> localSoundAssets = {
-    'Soft Rain': 'assets/sounds/soft_rain.mp3',
-    'Ocean Waves': 'assets/sounds/ocean_waves.mp3',
-    'Campfire': 'assets/sounds/campfire.mp3',
-    'Cozy Hearth': 'assets/sounds/campfire.mp3',
-    'Forest Birds': 'assets/sounds/forest_birds.mp3',
-    'Wind Chimes': 'assets/sounds/wind_chimes.mp3',
-    'Bamboo Chimes': 'assets/sounds/wind_chimes.mp3',
-    'Singing Bowl': 'assets/sounds/tibetan_bowls.mp3',
-    'Singing Bowls': 'assets/sounds/tibetan_bowls.mp3',
-    'Tibetan Bowls': 'assets/sounds/tibetan_bowls.mp3',
-  };
+  static const Map<String, String> localSoundAssets = bundledSoundAssets;
 
-  static const Map<String, String> guidedAudioUrls = {
-    'Calm Mountain Horizon': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
-    'Peaceful Haven Journey': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
-    'Gentle Relief & Comfort': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
-    'Soft Body Rest & Ease': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'Peaceful Morning Awakening': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/birds.mp3',
-    'Peaceful Morning Start': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/birds.mp3',
-    'Quiet Mind Sanctuary': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-    'Cozy Bedtime Slumber': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/light-rain.mp3',
-    'Warm Heart Comfort': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/campfire.mp3',
-    'Gentle Breeze Rest': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
-    'Healing Crystal Chimes': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
-    'Loving Warmth & Peace': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'Soft Sanctuary Horizon': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
-    'Ocean Horizon Slumber': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'Chakra Solfeggio Alignment': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-    'Pine Forest Bathing': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
-    'Release Anxious Tension': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
-    'The Starry Night': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-theta.wav',
-    'Journey to Dreamland': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'The Hidden Waterfall': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/river.mp3',
-    'The Lighthouse Keeper': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waves.mp3',
-    'Moonlit Japanese Garden': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/wind-chimes.mp3',
-    'Whispering Pine Forest': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3',
-    'Desert Stargazing': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-    'Ancient Temple Bells': 'https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/singing-bowl.mp3',
-  };
+  static bool hasAmbientSource(String name) =>
+      localSoundAssets.containsKey(name) || soundStreamUrls.containsKey(name);
 
   static String _resolveCdnUrl(String rawUrl) {
     if (rawUrl.contains('raw.githubusercontent.com/remvze/moodist/main/')) {
@@ -305,11 +430,11 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ─── Data Backup & Restore (Prevents Safari 7-day eviction) ────────────────
+  // ─── Manual device backup (not automatic sync or eviction prevention) ─────
   String exportUserDataToJson() {
     final data = {
-      'version': '2.0.0',
-      'exported_at': DateTime.now().toIso8601String(),
+      'version': UserBackupData.version,
+      'exported_at': _now().toIso8601String(),
       'streak': _streak,
       'longest_streak': _longestStreak,
       'theme_mode': _themeMode.name,
@@ -325,58 +450,115 @@ class AppState extends ChangeNotifier {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
+  bool get isUserDataReady => _prefs != null;
+
+  /// A side-effect-free review. Partial legacy backups preserve omitted fields.
+  UserBackupData validateUserBackupFromJson(String source) {
+    final backup = UserBackupData.parse(
+      source,
+      themeModes: SanctuaryThemeMode.values.map((mode) => mode.name).toSet(),
+    );
+    final streak = backup.values['streak'] as int? ?? _streak;
+    final longest = backup.values['longest_streak'] as int? ?? _longestStreak;
+    if (streak > longest) {
+      throw const FormatException(
+        'Longest streak cannot be shorter than streak.',
+      );
+    }
+    return backup;
+  }
+
   bool importUserDataFromJson(String jsonString) {
+    // Do not let an early restore race the initial preference hydration.
+    if (!isUserDataReady) return false;
+    late final Map<String, dynamic> data;
+    late final List<SoundPreset>? restoredPresets;
+    late final List<SessionRecord>? restoredSessions;
+    late final SanctuaryThemeMode? restoredTheme;
     try {
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      if (map.containsKey('streak')) _streak = (map['streak'] as num).toInt();
-      if (map.containsKey('longest_streak')) _longestStreak = (map['longest_streak'] as num).toInt();
-      if (map.containsKey('theme_mode')) {
-        final modeName = map['theme_mode'] as String;
-        _themeMode = SanctuaryThemeMode.values.firstWhere(
-          (e) => e.name == modeName,
-          orElse: () => _themeMode,
-        );
-      }
-      if (map.containsKey('favorites')) {
-        _favorites
-          ..clear()
-          ..addAll(List<String>.from(map['favorites'] as List));
-      }
-      if (map.containsKey('favorite_sounds')) {
-        _favoriteSounds = Set<String>.from(map['favorite_sounds'] as List);
-      }
-      if (map.containsKey('presets')) {
-        _presets = (map['presets'] as List)
-            .map((p) => SoundPreset.fromJson(p as Map<String, dynamic>))
-            .toList();
-      }
-      if (map.containsKey('renamed_presets')) {
-        _renamedPresets = Map<String, String>.from(map['renamed_presets'] as Map);
-      }
-      if (map.containsKey('sessions')) {
-        _sessions = (map['sessions'] as List)
-            .map((s) => SessionRecord.fromJson(s as Map<String, dynamic>))
-            .toList();
-      }
-      if (map.containsKey('reminder_enabled')) {
-        _reminderEnabled = map['reminder_enabled'] as bool;
-        _reminderHour = (map['reminder_hour'] as int?) ?? 22;
-        _reminderMinute = (map['reminder_minute'] as int?) ?? 0;
-      }
-      _saveFavorites();
-      _savePresets();
-      _saveSessions();
-      _prefs?.setStringList('favorite_sounds', _favoriteSounds.toList());
-      _prefs?.setString('renamed_presets', jsonEncode(_renamedPresets));
-      _prefs?.setInt('streak', _streak);
-      _prefs?.setInt('longest_streak', _longestStreak);
-      _prefs?.setString('theme_mode', _themeMode.name);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint('Error importing user data: $e');
+      data = validateUserBackupFromJson(jsonString).values;
+      restoredPresets = (data['presets'] as List<Map<String, dynamic>>?)
+          ?.map(SoundPreset.fromJson)
+          .toList();
+      restoredSessions = (data['sessions'] as List<Map<String, dynamic>>?)
+          ?.map(SessionRecord.fromJson)
+          .toList();
+      restoredSessions?.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final theme = data['theme_mode'] as String?;
+      restoredTheme = theme == null
+          ? null
+          : SanctuaryThemeMode.values.firstWhere((mode) => mode.name == theme);
+    } catch (_) {
+      // Never log a backup body: session titles and mood history are personal.
+      debugPrint('Backup validation failed; existing profile was not changed.');
       return false;
     }
+
+    // Commit only after every field and model has been validated. In particular,
+    // a bad session near the end cannot clear existing favorites or presets.
+    _streak = data['streak'] as int? ?? _streak;
+    _longestStreak = data['longest_streak'] as int? ?? _longestStreak;
+    _themeMode = restoredTheme ?? _themeMode;
+    if (data.containsKey('favorites')) {
+      _favorites
+        ..clear()
+        ..addAll(data['favorites'] as List<String>);
+    }
+    if (data.containsKey('favorite_sounds')) {
+      _favoriteSounds = (data['favorite_sounds'] as List<String>).toSet();
+    }
+    if (restoredPresets != null) _presets = restoredPresets;
+    if (data.containsKey('renamed_presets')) {
+      _renamedPresets = Map<String, String>.from(
+        data['renamed_presets'] as Map,
+      );
+    }
+    if (restoredSessions != null) {
+      _sessions = restoredSessions;
+      _totalSessions = restoredSessions.length;
+      _practicedToday = _sessions.any(
+        (session) => _sameDay(session.timestamp, _now()),
+      );
+      if (_sessions.isEmpty) {
+        _prefs?.remove('last_practice_ms');
+      } else {
+        final latest = _sessions
+            .map((session) => session.timestamp.millisecondsSinceEpoch)
+            .reduce((a, b) => a > b ? a : b);
+        _prefs?.setInt('last_practice_ms', latest);
+      }
+    }
+    _reminderEnabled = data['reminder_enabled'] as bool? ?? _reminderEnabled;
+    _reminderHour = data['reminder_hour'] as int? ?? _reminderHour;
+    _reminderMinute = data['reminder_minute'] as int? ?? _reminderMinute;
+    // A partial backup must not rewrite unrelated preference categories either.
+    if (data.containsKey('favorites')) _saveFavorites();
+    if (restoredPresets != null) _savePresets();
+    if (restoredSessions != null) _saveSessions();
+    if (data.containsKey('favorite_sounds')) {
+      _prefs?.setStringList('favorite_sounds', _favoriteSounds.toList());
+    }
+    if (data.containsKey('renamed_presets')) {
+      _prefs?.setString('renamed_presets', jsonEncode(_renamedPresets));
+    }
+    if (data.containsKey('streak')) _prefs?.setInt('streak', _streak);
+    if (data.containsKey('longest_streak')) {
+      _prefs?.setInt('longest_streak', _longestStreak);
+    }
+    if (data.containsKey('theme_mode')) {
+      _prefs?.setString('theme_mode', _themeMode.name);
+    }
+    if (data.containsKey('reminder_enabled')) {
+      _prefs?.setBool('reminder_enabled', _reminderEnabled);
+    }
+    if (data.containsKey('reminder_hour')) {
+      _prefs?.setInt('reminder_hour', _reminderHour);
+    }
+    if (data.containsKey('reminder_minute')) {
+      _prefs?.setInt('reminder_minute', _reminderMinute);
+    }
+    notifyListeners();
+    return true;
   }
 
   SanctuaryThemeMode _themeMode = SanctuaryThemeMode.midnightNavy;
@@ -395,79 +577,47 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get isAnyAudioPlaying => _isGuidedPlaying || _targetVolumes.values.any((v) => v > 0);
+  bool get isAnyAudioPlaying => _isGuidedPlaying || activeAmbientTracks.isNotEmpty;
   bool get isPlayingAny => isAnyAudioPlaying;
-  Map<String, double> get activeAmbientTracks =>
-      Map.fromEntries(_targetVolumes.entries.where((e) => e.value > 0.001));
+
+  /// Intent is retained through loading, buffering and platform interruptions.
+  /// Use this for cancellation/selection, never for a playing count or glow.
+  Map<String, double> get requestedAmbientTracks =>
+      Map.fromEntries(_targetVolumes.entries.where((e) => e.value > 0));
+
+  /// The owned player must report both playing and ready. This is native
+  /// readiness evidence, not a guarantee about the device's speaker output.
+  Map<String, double> get activeAmbientTracks => Map.fromEntries(
+    _targetVolumes.entries.where((e) => isAmbientTrackPlaying(e.key)),
+  );
 
   String get activePlayingLabel {
     if (_isGuidedPlaying && _currentGuidedTitle != null) {
       return _currentGuidedTitle!;
     }
-    final activeTracks = _targetVolumes.entries.where((e) => e.value > 0.001).map((e) => e.key).toList();
+    final activeTracks = activeAmbientTracks.keys.toList();
     if (activeTracks.isEmpty) return 'No Audio Playing';
     if (activeTracks.length == 1) return activeTracks.first;
     return '${activeTracks.first} + ${activeTracks.length - 1} more';
   }
 
-  bool _isPremium = false;
-  bool _trialActive = false;
-  int _trialDaysLeft = 7;
-  DateTime? _trialStartDate;
+  // Store access is never loaded from the legacy is_premium/trial_* flags.
+  // AppState owns this controller, including when injected for tests.
+  final SubscriptionController _subscriptions;
+  SubscriptionController get subscriptions => _subscriptions;
   int _totalSessions = 0;
 
-  bool get isPremium => _isPremium;
-  bool get trialActive => _trialActive;
-  int get trialDaysLeft => _trialDaysLeft;
-  bool get hasFullAccess => _isPremium || _trialActive;
+  bool get isPremium => _subscriptions.hasFullAccess;
+  bool get trialActive => _subscriptions.trialActive;
+  int get trialDaysLeft => _subscriptions.trialDaysLeft;
+  bool get hasFullAccess => _subscriptions.hasFullAccess;
 
-  Future<void> purchasePremium() async {
-    _isPremium = true;
-    _trialActive = false;
-    await _prefs?.setBool('is_premium', true);
-    await _prefs?.setBool('trial_active', false);
-    notifyListeners();
-  }
+  Future<void> initializePurchases() => _subscriptions.initialize();
+  Future<void> refreshPurchaseStatus() => _subscriptions.refresh();
+  Future<BillingResult> restorePurchase() => _subscriptions.restore();
 
-  Future<void> startFreeTrial() async {
-    if (_isPremium || _trialActive) return;
-    _trialActive = true;
-    _trialStartDate = DateTime.now();
-    _trialDaysLeft = 7;
-    await _prefs?.setBool('trial_active', true);
-    await _prefs?.setString('trial_start', _trialStartDate!.toIso8601String());
-    notifyListeners();
-  }
-
-  Future<void> restorePurchase() async {
-    try {
-      final customerInfo = await Purchases.restorePurchases();
-      final isPro = customerInfo.entitlements.all["premium"]?.isActive ?? false;
-      if (isPro) {
-        _isPremium = true;
-        _prefs?.setBool('is_premium', true);
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint("Restore error: $e");
-    }
-  }
-
-  void _loadPremiumState() {
-    _isPremium = _prefs?.getBool('is_premium') ?? false;
-    _trialActive = _prefs?.getBool('trial_active') ?? false;
-    final trialStartStr = _prefs?.getString('trial_start');
-    if (trialStartStr != null && _trialActive) {
-      _trialStartDate = DateTime.tryParse(trialStartStr);
-      if (_trialStartDate != null) {
-        final elapsed = DateTime.now().difference(_trialStartDate!).inDays;
-        _trialDaysLeft = (7 - elapsed).clamp(0, 7);
-        if (_trialDaysLeft <= 0) {
-          _trialActive = false;
-          _prefs?.setBool('trial_active', false);
-        }
-      }
-    }
+  void _subscriptionChanged() {
+    if (!_guidedDisposed) notifyListeners();
   }
 
   bool _onboardingDone = true;
@@ -499,11 +649,13 @@ class AppState extends ChangeNotifier {
 
   List<MapEntry<String, int>> get weeklyMinutes {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final now = _now();
+    // Calendar dates, not 24-hour offsets: a daylight-saving transition must
+    // not shift Monday's activity onto the neighboring day.
+    final mondayDay = now.day - (now.weekday - 1);
 
     return days.asMap().entries.map((e) {
-      final dayDate = startOfWeek.add(Duration(days: e.key));
+      final dayDate = DateTime(now.year, now.month, mondayDay + e.key);
       final dayMins = _sessions
           .where((s) => _sameDay(s.timestamp, dayDate))
           .fold(0, (sum, s) => sum + s.durationMinutes);
@@ -559,164 +711,362 @@ class AppState extends ChangeNotifier {
     return _renamedPresets[originalName] ?? originalName;
   }
 
-  static const Map<String, Map<String, double>> curatedPresets = {
-    '🌧️ Rainy Cabin': {
-      'Soft Rain': 0.70,
-      'Cozy Hearth': 0.35,
-      'Ambient Piano': 0.20,
-    },
-    '🌊 Beach Sunset': {
-      'Ocean Waves': 0.70,
-      'Soothing Breeze': 0.40,
-      'Bamboo Chimes': 0.20,
-    },
-    '🌌 Deep Space': {
-      'Deep Space Drone': 0.70,
-      'Singing Bowls': 0.30,
-    },
-    '🌲 Forest Walk': {
-      'Mountain Stream': 0.60,
-      'Forest Birds': 0.40,
-      'Soothing Breeze': 0.30,
-    },
-    '⚡ Thunderstorm': {
-      'Thunderstorm': 0.70,
-      'Soft Rain': 0.50,
-      'Soothing Breeze': 0.20,
-    },
-    '🧘 Zen Sanctuary': {
-      'Singing Bowls': 0.60,
-      'Bamboo Chimes': 0.40,
-      'Mountain Stream': 0.30,
-    },
-    '🔥 Campfire Night': {
-      'Cozy Hearth': 0.75,
-      'Soothing Breeze': 0.30,
-    },
-    '🕊️ Peace Flow': {
-      'Ambient Piano': 0.65,
-      'Soft Rain': 0.30,
-      'Singing Bowls': 0.25,
-    },
-  };
+  // New bundled-source sets lead the tray; the eight familiar names/recipes stay
+  // addressable for existing bookmarks, renames and saved mix workflows.
+  static final Map<String, Map<String, double>> curatedPresets =
+      Map<String, Map<String, double>>.unmodifiable({
+        for (final soundSet in vibeSoundSets) soundSet.name: soundSet.levels,
+        ...const <String, Map<String, double>>{
+          '🌧️ Rainy Cabin': {
+            'Soft Rain': 0.70,
+            'Cozy Hearth': 0.35,
+            'Ambient Piano': 0.20,
+          },
+          '🌊 Beach Sunset': {
+            'Ocean Waves': 0.70,
+            'Soothing Breeze': 0.40,
+            'Bamboo Chimes': 0.20,
+          },
+          '🌌 Deep Space': {'Deep Space Drone': 0.70, 'Singing Bowls': 0.30},
+          '🌲 Forest Walk': {
+            'Mountain Stream': 0.60,
+            'Forest Birds': 0.40,
+            'Soothing Breeze': 0.30,
+          },
+          '⚡ Thunderstorm': {
+            'Thunderstorm': 0.70,
+            'Soft Rain': 0.50,
+            'Soothing Breeze': 0.20,
+          },
+          '🧘 Zen Sanctuary': {
+            'Singing Bowls': 0.60,
+            'Bamboo Chimes': 0.40,
+            'Mountain Stream': 0.30,
+          },
+          '🔥 Campfire Night': {'Cozy Hearth': 0.75, 'Soothing Breeze': 0.30},
+          '🕊️ Peace Flow': {
+            'Ambient Piano': 0.65,
+            'Soft Rain': 0.30,
+            'Singing Bowls': 0.25,
+          },
+        },
+      });
 
   Future<void> applyCuratedPreset(String presetName) async {
-    if (_isGuidedPlaying) {
-      await pauseGuidedSession();
-    }
-
+    if (_guidedDisposed) return;
     final volumes = curatedPresets[presetName];
     if (volumes == null) return;
-
-    for (final track in soundStreamUrls.keys) {
-      final vol = volumes[track] ?? 0.0;
-      await updateSoundTrackVolume(track, vol);
-    }
+    showAmbientPlayer();
+    // Preset links must include local-only recordings, not just URL-map keys.
+    // Set intent concurrently so one pending source cannot serialize the mix.
+    final names = {...requestedAmbientTracks.keys, ...volumes.keys};
+    await Future.wait([
+      for (final name in names)
+        updateSoundTrackVolume(name, volumes[name] ?? 0),
+    ]);
   }
 
   Future<void> pauseAllAmbientSoundTracks() async {
-    for (final name in _targetVolumes.keys.toList()) {
-      _targetVolumes[name] = 0.0;
-    }
-    for (final entry in _audioPlayers.entries) {
-      try {
-        await entry.value.setVolume(0);
-        await entry.value.pause();
-      } catch (e) {
-        debugPrint('Error pausing ambient track ${entry.key}: $e');
+    final entries = _audioPlayers.entries.toList();
+    final pending = {
+      for (final entry in entries)
+        if (_loadingTracks.contains(entry.key) ||
+            _startingTracks.contains(entry.key) ||
+            ambientTrackStatus(entry.key) == AmbientPlaybackStatus.buffering)
+          entry.key,
+    };
+    _targetVolumes.clear();
+    final operations = <Future<void>>[];
+    for (final entry in entries) {
+      if (pending.contains(entry.key)) {
+        // Revoke ownership synchronously, before a new request can reuse a
+        // cancelled load/start. Its late events cannot affect the new player.
+        _audioPlayers.remove(entry.key);
+        _loadingTracks.remove(entry.key);
+        _startingTracks.remove(entry.key);
+        operations.add(_releaseAmbient(entry.value));
+      } else {
+        operations.add(_silenceAmbientIfUnwanted(entry.key, entry.value));
       }
     }
+    _recalculateGainAndApply();
+    if (!_guidedDisposed) notifyListeners();
+    await Future.wait(operations);
   }
 
+  // Timed, per-session ambient arrangements, never narration. Loading never consumes the
+  // session timer; pausing retains both the session and the source position.
   Future<void> playGuidedSession(String title, int durationMins) async {
-    await pauseAllAmbientSoundTracks();
+    if (durationMins <= 0 || _guidedDisposed) return;
+    if (_currentGuidedTitle == title && guidedRemainingSec > 0) {
+      showGuidedPlayer();
+      await resumeGuidedSession();
+      return;
+    }
 
-    _guidedTimer?.cancel();
+    final request = ++_guidedRequest;
+    _hasAmbientSession = false;
+    _isAmbientPlayerExpanded = false;
+    _freezeGuidedClock();
     _currentGuidedTitle = title;
-    _guidedRemainingSec = durationMins * 60;
-    _isGuidedPlaying = true;
+    _guidedTotalSec = durationMins * 60;
+    _guidedRemainingSec = _guidedTotalSec;
+    _guidedListenedMs = 0;
+    _guidedReady = false;
+    _isGuidedPlaying = false;
+    _isGuidedLoading = true;
+    _isGuidedPlayerExpanded = true;
+    _guidedPlaybackError = null;
     notifyListeners();
 
-    _guidedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_isGuidedPlaying || _guidedRemainingSec <= 0) {
-        timer.cancel();
-        stopGuidedSession(completed: true, durationMins: durationMins);
-      } else {
-        _guidedRemainingSec--;
-        notifyListeners();
-      }
-    });
-
     try {
-      await _guidedPlayer.setAsset('assets/sounds/calm_guided.mp3');
-      await _guidedPlayer.setLoopMode(LoopMode.one);
-      await _guidedPlayer.setVolume(0.35);
-      _guidedPlayer.play();
-    } catch (e) {
-      debugPrint('Local guided asset failed, falling back to CDN: $e');
-      final rawUrl = guidedAudioUrls[title] ?? guidedAudioUrls['Calm Mountain Horizon']!;
-      final cdnUrl = _resolveCdnUrl(rawUrl);
-
-      try {
-        await _guidedPlayer.setUrl(cdnUrl);
-        await _guidedPlayer.setLoopMode(LoopMode.one);
-        await _guidedPlayer.setVolume(0.35);
-        _guidedPlayer.play();
-      } catch (e2) {
-        debugPrint('Error starting guided audio on CDN, trying fallback: $e2');
-        try {
-          await _guidedPlayer.setUrl(rawUrl);
-          await _guidedPlayer.setLoopMode(LoopMode.one);
-          await _guidedPlayer.setVolume(0.35);
-          _guidedPlayer.play();
-        } catch (e3) {
-          debugPrint('Guided audio fallback error: $e3');
-        }
-      }
+      await _guidedPlayer.stop();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await pauseAllAmbientSoundTracks();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _loadGuidedAudio(request);
+      if (!_isCurrentGuidedRequest(request)) return;
+      _startGuidedPlayback(request);
+    } catch (error) {
+      _failGuidedPlayback(request, error);
     }
   }
 
   bool _isGuidedLooping = true;
   bool get isGuidedLooping => _isGuidedLooping;
 
-  void extendGuidedSession(int extraMins) {
-    _guidedRemainingSec += extraMins * 60;
+  bool _isCurrentGuidedRequest(int request) =>
+      !_guidedDisposed && request == _guidedRequest && hasGuidedSession;
+
+  Future<void> _loadGuidedAudio(int request) async {
+    final soundscape = sessionSoundscapeForTitle(_currentGuidedTitle);
+    if (soundscape == null) {
+      throw StateError('No ambient arrangement is configured for this session.');
+    }
+    if (!_isCurrentGuidedRequest(request)) return;
+    // A card has one explicit, local arrangement. A missing/corrupt asset must
+    // not silently become the old shared sample or an unrelated remote stream.
+    await _guidedPlayer.setAsset(soundscape.assetPath);
+    if (!_isCurrentGuidedRequest(request)) return;
+    await _guidedPlayer.setLoopMode(
+      _isGuidedLooping ? LoopMode.one : LoopMode.off,
+    );
+    if (!_isCurrentGuidedRequest(request)) return;
+    await _guidedPlayer.setVolume(0.35);
+    if (!_isCurrentGuidedRequest(request)) return;
+    _guidedReady = true;
+    // A retry preserves elapsed session time rather than silently starting over.
+    if (guidedElapsedSec > 0) await _seekGuidedAudio(guidedElapsedSec);
+  }
+
+  void _startGuidedPlayback(int request) {
+    if (!_isCurrentGuidedRequest(request)) return;
+    _isGuidedLoading = false;
+    _guidedPlaybackError = null;
+    _isGuidedPlaying = true;
+    final now = _now();
+    _guidedDeadline = now.add(Duration(seconds: _guidedRemainingSec));
+    _guidedListeningStartedAt = now;
+    _guidedTimer?.cancel();
+    _guidedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_isCurrentGuidedRequest(request) || !_isGuidedPlaying) return;
+      if (guidedRemainingSec <= 0) {
+        unawaited(stopGuidedSession(completed: true));
+      } else {
+        notifyListeners();
+      }
+    });
+    notifyListeners();
+    // just_audio's play future finishes when playback stops, not when it starts.
+    unawaited(
+      _guidedPlayer.play().catchError((Object error) {
+        _failGuidedPlayback(request, error);
+      }),
+    );
+  }
+
+  void _freezeGuidedClock() {
+    final remaining = guidedRemainingSec;
+    final started = _guidedListeningStartedAt;
+    if (started != null) {
+      // Do not count time beyond an expired deadline when a background timer is late.
+      final deadline = _guidedDeadline;
+      final now = _now();
+      final end = deadline != null && now.isAfter(deadline) ? deadline : now;
+      final listened = end.difference(started).inMilliseconds;
+      if (listened > 0) _guidedListenedMs += listened;
+    }
+    _guidedRemainingSec = remaining;
+    _guidedDeadline = null;
+    _guidedListeningStartedAt = null;
+    _guidedTimer?.cancel();
+    _guidedTimer = null;
+  }
+
+  void _failGuidedPlayback(int request, Object error) {
+    if (!_isCurrentGuidedRequest(request)) return;
+    ++_guidedRequest;
+    _freezeGuidedClock();
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    _guidedReady = false;
+    _guidedPlaybackError =
+        'This session’s soundscape is unavailable. Try again.';
+    debugPrint('Guided playback error: $error');
+    unawaited(
+      _guidedPlayer.pause().catchError((Object pauseError) {
+        debugPrint('Could not pause failed guided audio: $pauseError');
+      }),
+    );
     notifyListeners();
   }
 
-  void toggleGuidedLoop() {
-    _isGuidedLooping = !_isGuidedLooping;
-    if (_isGuidedLooping) {
-      _guidedPlayer.setLoopMode(LoopMode.one);
-    } else {
-      _guidedPlayer.setLoopMode(LoopMode.off);
+  void showGuidedPlayer() {
+    if (!hasGuidedSession) return;
+    _hasAmbientSession = false;
+    _isAmbientPlayerExpanded = false;
+    _isGuidedPlayerExpanded = true;
+    notifyListeners();
+  }
+
+  void minimizeGuidedPlayer() {
+    _isGuidedPlayerExpanded = false;
+    notifyListeners();
+  }
+
+  Future<void> resumeGuidedSession() async {
+    if (!hasGuidedSession ||
+        _isGuidedPlaying ||
+        _isGuidedLoading ||
+        _guidedDisposed)
+      return;
+    if (_guidedRemainingSec <= 0) return;
+    _hasAmbientSession = false;
+    _isAmbientPlayerExpanded = false;
+    final request = ++_guidedRequest;
+    _isGuidedLoading = true;
+    _guidedPlaybackError = null;
+    notifyListeners();
+    try {
+      await pauseAllAmbientSoundTracks();
+      if (!_isCurrentGuidedRequest(request)) return;
+      if (!_guidedReady) await _loadGuidedAudio(request);
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _guidedPlayer.setLoopMode(
+        _isGuidedLooping ? LoopMode.one : LoopMode.off,
+      );
+      if (!_isCurrentGuidedRequest(request)) return;
+      _startGuidedPlayback(request);
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
+  }
+
+  Future<void> pauseGuidedSession() async {
+    if (!hasGuidedSession) return;
+    ++_guidedRequest; // Prevent an in-flight load or play failure from reviving audio.
+    _freezeGuidedClock();
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    notifyListeners();
+    try {
+      await _guidedPlayer.pause();
+    } catch (error) {
+      debugPrint('Could not pause guided audio: $error');
+    }
+  }
+
+  void extendGuidedSession(int extraMins) {
+    if (!hasGuidedSession || extraMins <= 0) return;
+    final extra = extraMins * 60;
+    _guidedRemainingSec = guidedRemainingSec + extra;
+    _guidedTotalSec += extra;
+    if (_guidedDeadline != null) {
+      _guidedDeadline = _guidedDeadline!.add(Duration(seconds: extra));
     }
     notifyListeners();
   }
 
-  void restartGuidedSession(int initialMins) {
-    _guidedRemainingSec = initialMins * 60;
-    _guidedPlayer.seek(Duration.zero);
+  Future<void> toggleGuidedLoop() async {
+    if (!hasGuidedSession || _isGuidedLoading) return;
+    final request = _guidedRequest;
+    _isGuidedLooping = !_isGuidedLooping;
     notifyListeners();
+    try {
+      await _guidedPlayer.setLoopMode(
+        _isGuidedLooping ? LoopMode.one : LoopMode.off,
+      );
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
   }
 
-  Future<void> pauseGuidedSession() async {
-    _guidedTimer?.cancel();
-    await _guidedPlayer.pause();
-    _isGuidedPlaying = false;
-    notifyListeners();
+  Future<void> _seekGuidedAudio(int elapsedSeconds) async {
+    final duration = _guidedPlayer.duration?.inMilliseconds ?? 0;
+    final milliseconds = elapsedSeconds * 1000;
+    final position = duration <= 0
+        ? milliseconds
+        : _isGuidedLooping
+        ? milliseconds % duration
+        : milliseconds.clamp(0, duration - 1).toInt();
+    await _guidedPlayer.seek(Duration(milliseconds: position));
   }
 
-  Future<void> stopGuidedSession({bool completed = false, int durationMins = 10}) async {
-    _guidedTimer?.cancel();
-    await _guidedPlayer.stop();
+  Future<void> seekGuidedSession(int elapsedSeconds) async {
+    if (!canSeekGuidedSession) return;
+    final wasPlaying = _isGuidedPlaying;
+    final request = ++_guidedRequest;
+    _freezeGuidedClock();
     _isGuidedPlaying = false;
-    final title = _currentGuidedTitle ?? 'Guided Meditation';
+    _isGuidedLoading = true;
+    // Seeking does not count skipped time as listening or complete a session.
+    final elapsed = elapsedSeconds.clamp(0, _guidedTotalSec - 1).toInt();
+    _guidedRemainingSec = _guidedTotalSec - elapsed;
+    notifyListeners();
+    try {
+      await _guidedPlayer.pause();
+      if (!_isCurrentGuidedRequest(request)) return;
+      await _seekGuidedAudio(elapsed);
+      if (!_isCurrentGuidedRequest(request)) return;
+      _isGuidedLoading = false;
+      if (wasPlaying) {
+        _startGuidedPlayback(request);
+      } else {
+        notifyListeners();
+      }
+    } catch (error) {
+      _failGuidedPlayback(request, error);
+    }
+  }
+
+  Future<void> restartGuidedSession() async {
+    // Restart the actual selected (and possibly extended) duration, never 10 min.
+    await seekGuidedSession(0);
+  }
+
+  Future<void> stopGuidedSession({bool completed = false}) async {
+    final title = _currentGuidedTitle;
+    ++_guidedRequest;
+    _freezeGuidedClock();
+    final listenedMinutes = _guidedListenedMs ~/ Duration.millisecondsPerMinute;
+    _isGuidedPlaying = false;
+    _isGuidedLoading = false;
+    _isGuidedPlayerExpanded = false;
+    _guidedReady = false;
+    _guidedPlaybackError = null;
     _currentGuidedTitle = null;
-    notifyListeners();
-
-    if (completed) {
-      recordSession(title, 'Meditation', durationMins);
+    _guidedRemainingSec = 0;
+    _guidedTotalSec = 0;
+    _guidedListenedMs = 0;
+    if (!_guidedDisposed) notifyListeners();
+    try {
+      await _guidedPlayer.stop();
+    } catch (error) {
+      debugPrint('Could not stop guided audio: $error');
+    }
+    // Do not manufacture a ten-minute completion or count skipped/paused time.
+    if (!_guidedDisposed && completed && title != null && listenedMinutes > 0) {
+      recordSession(title, 'Meditation', listenedMinutes);
     }
   }
 
@@ -734,10 +1084,10 @@ class AppState extends ChangeNotifier {
       final target = _targetVolumes[name] ?? 0.0;
       if (target > 0) {
         // Soft per-track cap (0.85 max) + master limiter + sleep fade master
-        final effective = (target * _masterGain * _fadeMaster).clamp(0.0, 0.85);
-        player.setVolume(effective);
+        final effective = (target * _masterGain * _fadeMaster * _previewDuck).clamp(0.0, 0.85);
+        unawaited(player.setVolume(effective).catchError((Object error) {}));
       } else {
-        player.setVolume(0.0);
+        unawaited(player.setVolume(0.0).catchError((Object error) {}));
       }
     }
   }
@@ -749,110 +1099,282 @@ class AppState extends ChangeNotifier {
         .take(_audioPlayers.length - 12)
         .toList();
     for (final key in coldKeys) {
+      // Another user action may have resumed this track while a previous
+      // eviction was awaiting disposal. Never evict a newly active layer.
+      if ((_targetVolumes[key] ?? 0) > 0) continue;
+      _loadingTracks.remove(key);
+      _startingTracks.remove(key);
       final player = _audioPlayers.remove(key);
-      if (player != null) {
-        try {
-          await player.stop();
-          await player.dispose();
-        } catch (_) {}
-      }
+      if (player != null) await _releaseAmbient(player);
     }
   }
 
-  Future<void> updateSoundTrackVolume(String name, double volume) async {
-    if (volume > 0 && _isGuidedPlaying) {
-      await pauseGuidedSession();
+  bool _ownsAmbient(String name, AudioPlayer player) =>
+      !_guidedDisposed && identical(_audioPlayers[name], player);
+
+  bool _wantsAmbient(String name, AudioPlayer player) =>
+      _ownsAmbient(name, player) && (_targetVolumes[name] ?? 0) > 0;
+
+  Future<void> _releaseAmbient(AudioPlayer player) async {
+    _ambientReadinessTimers.remove(player)?.cancel();
+    _ambientPlayRequests.remove(player);
+    // Queue silence before awaiting stream cancellation/disposal: an old
+    // activation may still complete while this no-longer-owned player closes.
+    try {
+      unawaited(player.setVolume(0).catchError((Object error) {}));
+    } catch (_) {}
+    try {
+      await _ambientStateSubscriptions.remove(player)?.cancel();
+    } catch (_) {}
+    try {
+      await _ambientSubscriptions.remove(player)?.cancel();
+    } catch (_) {}
+    try {
+      await player.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> _silenceAmbientIfUnwanted(String name, AudioPlayer player) async {
+    if (!_ownsAmbient(name, player) || _wantsAmbient(name, player)) return;
+    _ambientPlayRequests.remove(player);
+    _ambientReadinessTimers.remove(player)?.cancel();
+    _startingTracks.remove(name);
+    try {
+      await player.setVolume(0);
+      if (!_ownsAmbient(name, player)) return;
+      if (!_wantsAmbient(name, player)) await player.pause();
+      if (_wantsAmbient(name, player)) {
+        // A new request may have arrived while the mute/pause was in flight.
+        // The completed pause can end that newer play future as well; restart
+        // it with a fresh token rather than leaving a stale pending-start flag.
+        if (!player.playing) _startingTracks.remove(name);
+        _recalculateGainAndApply();
+        _startAmbient(name, player);
+      }
+    } catch (_) {}
+  }
+
+  void _onAmbientStateChanged(String name, AudioPlayer player) {
+    if (!_ownsAmbient(name, player) || _loadingTracks.contains(name)) return;
+    // Read the current player rather than trusting a queued old stream event.
+    if (_wantsAmbient(name, player) &&
+        player.processingState == ProcessingState.completed) {
+      // Ambient sources loop. An unexpected end must be retryable, not an
+      // apparently paused layer whose player still has playing intent set.
+      unawaited(_failAmbient(name, player));
+      return;
     }
+    if (isAmbientTrackPlaying(name)) {
+      _startingTracks.remove(name);
+      _ambientReadinessTimers.remove(player)?.cancel();
+    } else if (!_wantsAmbient(name, player) && player.playing) {
+      unawaited(_silenceAmbientIfUnwanted(name, player));
+    }
+    notifyListeners();
+  }
 
-    final url = soundStreamUrls[name] ?? 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg';
-    final effectiveVolume = volume.clamp(0.0, 1.0);
-    _targetVolumes[name] = effectiveVolume;
+  Future<void> _failAmbient(String name, AudioPlayer player) async {
+    if (!_ownsAmbient(name, player)) return;
+    _audioPlayers.remove(name);
+    _loadingTracks.remove(name);
+    _startingTracks.remove(name);
+    _targetVolumes.remove(name);
+    _ambientErrors[name] = 'This recording could not play. Try again or replace this sound.';
+    _recalculateGainAndApply();
+    notifyListeners();
+    await _releaseAmbient(player);
+  }
 
-    if (volume <= 0) {
-      final existingPlayer = _audioPlayers[name];
-      if (existingPlayer != null) {
-        await existingPlayer.setVolume(0);
-        await existingPlayer.pause();
+  void _startAmbient(String name, AudioPlayer player) {
+    if (!_wantsAmbient(name, player) || player.playing ||
+        _startingTracks.contains(name)) return;
+    final request = Object();
+    _ambientPlayRequests[player] = request;
+    _startingTracks.add(name);
+    _ambientReadinessTimers.remove(player)?.cancel();
+    _ambientReadinessTimers[player] = Timer(const Duration(seconds: 12), () {
+      if (!_wantsAmbient(name, player) ||
+          !identical(_ambientPlayRequests[player], request)) return;
+      if (!isAmbientTrackPlaying(name)) {
+        unawaited(_failAmbient(name, player));
+      } else {
+        _onAmbientStateChanged(name, player);
+      }
+    });
+    try {
+      // A loop's play future ends at pause/stop, not when playback starts.
+      // Readiness comes only from the player's current ready/playing state.
+      unawaited(player.play().then((_) {
+        if (!_ownsAmbient(name, player) ||
+            !identical(_ambientPlayRequests[player], request)) return;
+        _startingTracks.remove(name);
+        _ambientReadinessTimers.remove(player)?.cancel();
+        _onAmbientStateChanged(name, player);
+      }, onError: (Object error, StackTrace stack) {
+        if (_wantsAmbient(name, player) &&
+            identical(_ambientPlayRequests[player], request)) {
+          unawaited(_failAmbient(name, player));
+        }
+      }));
+      _onAmbientStateChanged(name, player);
+    } catch (_) {
+      unawaited(_failAmbient(name, player));
+    }
+  }
+
+  /// Updates mixer intent/gain. Gain-only edits to retained players pass
+  /// [resumePaused] false so native interruptions need an explicit Play action.
+  /// New/pending loads still follow their existing request and readiness fences.
+  /// Mixer layer edits pass [expandPlayer] false: a sound switch or volume
+  /// gesture keeps the current page and exposes the mini-player instead.
+  Future<void> updateSoundTrackVolume(
+    String name,
+    double volume, {
+    bool resumePaused = true,
+    bool expandPlayer = true,
+  }) async {
+    if (_guidedDisposed || !volume.isFinite) return;
+    final effectiveVolume = volume.clamp(0.0, 1.0).toDouble();
+    if (effectiveVolume <= 0) {
+      final pending = _loadingTracks.contains(name) ||
+          _startingTracks.contains(name) ||
+          ambientTrackStatus(name) == AmbientPlaybackStatus.buffering;
+      _targetVolumes[name] = 0;
+      final player = _audioPlayers[name];
+      Future<void>? stopping;
+      if (player != null) {
+        if (pending) {
+          // Remove ownership before disposal: a late load cannot start playback.
+          _audioPlayers.remove(name);
+          _loadingTracks.remove(name);
+          _startingTracks.remove(name);
+          stopping = _releaseAmbient(player);
+        } else {
+          stopping = _silenceAmbientIfUnwanted(name, player);
+        }
       }
       _recalculateGainAndApply();
-      _evictColdPlayers();
+      notifyListeners();
+      await stopping;
+      if (_guidedDisposed) return;
+      unawaited(_evictColdPlayers());
+      return;
+    }
+
+    final localAsset = localSoundAssets[name];
+    final url = soundStreamUrls[name];
+    if (localAsset == null && url == null) {
+      // Never substitute unrelated heavy rain for a missing catalog recording.
+      _targetVolumes.remove(name);
+      _ambientErrors[name] = 'No recording is configured for this sound. Choose a bundled replacement.';
+      notifyListeners();
+      return;
+    }
+    _ambientErrors.remove(name);
+    _targetVolumes[name] = effectiveVolume;
+    // Keep a reopenable mini-player even for the first inline sound switch.
+    // Direct legacy starts keep their existing opt-in/default expansion, while
+    // later volume/loading events never undo an intentional minimize.
+    if (!_hasAmbientSession) {
+      _hasAmbientSession = true;
+      _isAmbientPlayerExpanded = expandPlayer;
+    }
+    _isGuidedPlayerExpanded = false;
+    if (_isGuidedPlaying || _isGuidedLoading) await pauseGuidedSession();
+    if (_guidedDisposed || (_targetVolumes[name] ?? 0) <= 0) return;
+    final existing = _audioPlayers[name];
+    if (existing != null) {
+      _recalculateGainAndApply();
+      // Gain-only updates preserve a native/platform pause, while an original
+      // in-flight load still owns its eventual start. Play/Retry opt into resume.
+      if (resumePaused && !_loadingTracks.contains(name)) {
+        _startAmbient(name, existing);
+      }
       notifyListeners();
       return;
     }
 
-    if (!_audioPlayers.containsKey(name)) {
-      final newPlayer = AudioPlayer();
-      _audioPlayers[name] = newPlayer;
-      _loadingTracks.add(name);
-
-      final localAsset = localSoundAssets[name];
-      if (localAsset != null) {
-        try {
-          await newPlayer.setAsset(localAsset);
-          await newPlayer.setLoopMode(LoopMode.one);
-        } catch (e) {
-          debugPrint('Local asset failed for $name ($e), falling back to remote URL');
-          final primaryUrl = _resolveCdnUrl(url);
-          try {
-            await newPlayer.setUrl(primaryUrl);
-            await newPlayer.setLoopMode(LoopMode.one);
-          } catch (e2) {
-            debugPrint('Primary CDN failed for $name, trying fallback: $e2');
-            try {
-              await newPlayer.setUrl(url);
-              await newPlayer.setLoopMode(LoopMode.one);
-            } catch (e3) {
-              debugPrint('Secondary source failed for $name: $e3');
-            }
-          }
-        } finally {
-          _loadingTracks.remove(name);
-        }
-      } else {
-        final primaryUrl = _resolveCdnUrl(url);
-        try {
-          await newPlayer.setUrl(primaryUrl);
-          await newPlayer.setLoopMode(LoopMode.one);
-        } catch (e) {
-          debugPrint('Primary CDN failed for $name, trying fallback: $e');
-          try {
-            await newPlayer.setUrl(url);
-            await newPlayer.setLoopMode(LoopMode.one);
-          } catch (e2) {
-            debugPrint('Secondary source failed for $name: $e2');
-          }
-        } finally {
-          _loadingTracks.remove(name);
-        }
-      }
+    late final AudioPlayer player;
+    try {
+      player = _ambientPlayerFactory();
+    } catch (_) {
+      _targetVolumes.remove(name);
+      _ambientErrors[name] = 'This recording could not play. Try again or replace this sound.';
+      notifyListeners();
+      return;
     }
-
-    final player = _audioPlayers[name]!;
+    _audioPlayers[name] = player;
+    _loadingTracks.add(name);
+    _ambientSubscriptions[player] = player.playbackEventStream.listen(
+      (_) {},
+      onError: (Object error, StackTrace stack) {
+        if (!_loadingTracks.contains(name)) unawaited(_failAmbient(name, player));
+      },
+    );
+    _ambientStateSubscriptions[player] = player.playerStateStream.listen(
+      (_) => _onAmbientStateChanged(name, player),
+      onError: (Object error, StackTrace stack) {
+        if (!_loadingTracks.contains(name)) unawaited(_failAmbient(name, player));
+      },
+    );
     _recalculateGainAndApply();
-
-    if (!player.playing) {
+    notifyListeners();
+    // A bundled recording has one fixed local identity. A matching display name
+    // does not prove the legacy network file is the same recording or cleared
+    // for redistribution. Retry the bundled asset; never silently switch it.
+    // Stream-only legacy selections remain explicit CDN/raw transport attempts.
+    final sources = <String>[
+      if (localAsset != null)
+        localAsset
+      else if (url != null) ...[
+        _resolveCdnUrl(url),
+        if (_resolveCdnUrl(url) != url) url,
+      ],
+    ];
+    var loaded = false;
+    for (final source in sources) {
+      if (!_wantsAmbient(name, player)) break;
       try {
-        await player.play();
-      } catch (e) {
-        debugPrint('Error playing track $name: $e');
+        if (source.startsWith('assets/')) {
+          await player.setAsset(source).timeout(const Duration(seconds: 12));
+        } else {
+          await player.setUrl(source).timeout(const Duration(seconds: 12));
+        }
+        if (!_wantsAmbient(name, player)) break;
+        await player.setLoopMode(LoopMode.one);
+        loaded = true;
+        break;
+      } catch (_) {
+        // A bundled failure must not try a different recording. Stream-only
+        // CDN/raw attempts use the same configured URL. Keep payloads private.
       }
     }
+    if (!_ownsAmbient(name, player)) return;
+    _loadingTracks.remove(name);
+    if (!_wantsAmbient(name, player)) {
+      _audioPlayers.remove(name);
+      await _releaseAmbient(player);
+      if (!_guidedDisposed) notifyListeners();
+      return;
+    }
+    if (!loaded) {
+      await _failAmbient(name, player);
+      return;
+    }
+    _recalculateGainAndApply();
+    _startAmbient(name, player);
     notifyListeners();
   }
 
   Future<void> stopAllAudio() async {
-    _targetVolumes.clear();
-    await stopGuidedSession(completed: false);
-    for (final entry in _audioPlayers.entries) {
-      try {
-        await entry.value.setVolume(0);
-        await entry.value.pause();
-      } catch (e) {
-        debugPrint('Error stopping track ${entry.key}: $e');
-      }
-    }
-    _recalculateGainAndApply();
-    notifyListeners();
+    _hasAmbientSession = false;
+    _isAmbientPlayerExpanded = false;
+    // Both operations revoke intent before their first await. A late global
+    // stop must not pause a newer ambient request that now owns playback.
+    await Future.wait([
+      pauseAllAmbientSoundTracks(),
+      stopGuidedSession(completed: false),
+    ]);
   }
 
   // ─── Global Sleep Auto-Fade Timer ───────────────────────────────────────────
@@ -873,8 +1395,10 @@ class AppState extends ChangeNotifier {
         _sleepTimerTotalSec = null;
         _fadeMaster = 1.0;
         await stopAllAudio();
-        recordSession('Sleep Sanctuary Auto-Fade', 'Sleep', minutes);
-        notifyListeners();
+        // An auto-fade deadline is a shutdown control, not proof of listening.
+        // It can expire while paused, loading or after every source has failed.
+        // Do not manufacture a session or mood check-in from its chosen length.
+        if (!_guidedDisposed) notifyListeners();
       } else {
         _sleepTimerRemainingSec = _sleepTimerRemainingSec! - 1;
         // Last 30 seconds: smooth linear volume fade out
@@ -915,7 +1439,7 @@ class AppState extends ChangeNotifier {
           if (kv.length == 2) {
             final name = Uri.decodeComponent(kv[0]);
             final vol = (double.tryParse(kv[1]) ?? 50) / 100.0;
-            if (soundStreamUrls.containsKey(name)) {
+            if (hasAmbientSource(name)) {
               updateSoundTrackVolume(name, vol);
             }
           }
@@ -956,18 +1480,20 @@ class AppState extends ChangeNotifier {
   }
 
   void recordSession(String title, String type, int minutes, {bool showMoodCheckIn = true}) {
+    final now = _now();
     final record = SessionRecord(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: now.microsecondsSinceEpoch.toString(),
       title: title,
       type: type,
       durationMinutes: minutes,
-      timestamp: DateTime.now(),
+      timestamp: now,
     );
 
     if (showMoodCheckIn) {
       requestMoodCheckIn(record);
     } else {
       _addSession(record);
+      notifyListeners();
     }
   }
 
@@ -1047,7 +1573,7 @@ class AppState extends ChangeNotifier {
 
   // ─── Init ───────────────────────────────────────────────────────────────────
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    _prefs ??= await SharedPreferences.getInstance();
     _onboardingDone = _prefs!.getBool('onboarding_done') ?? true;
     _streak = _prefs!.getInt('streak') ?? 0;
     _longestStreak = _prefs!.getInt('longest_streak') ?? 0;
@@ -1082,7 +1608,6 @@ class AppState extends ChangeNotifier {
 
     _loadRecents();
     _loadReminder();
-    _loadPremiumState();
 
     try {
       final session = await AudioSession.instance;
@@ -1318,12 +1843,35 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _guidedDisposed = true;
+    _subscriptions.removeListener(_subscriptionChanged);
+    _subscriptions.dispose();
+    ++_guidedRequest;
     _sleepTimer?.cancel();
     _guidedTimer?.cancel();
+    _guidedStateSubscription?.cancel();
+    _guidedPlaybackSubscription?.cancel();
     _guidedPlayer.dispose();
-    for (final player in _audioPlayers.values) {
-      player.dispose();
+    for (final subscription in _ambientSubscriptions.values) {
+      unawaited(subscription.cancel());
     }
+    _ambientSubscriptions.clear();
+    for (final subscription in _ambientStateSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _ambientStateSubscriptions.clear();
+    for (final timer in _ambientReadinessTimers.values) {
+      timer.cancel();
+    }
+    _ambientReadinessTimers.clear();
+    _ambientPlayRequests.clear();
+    for (final player in _audioPlayers.values) {
+      unawaited(_releaseAmbient(player));
+    }
+    _audioPlayers.clear();
+    _loadingTracks.clear();
+    _startingTracks.clear();
+    _targetVolumes.clear();
     super.dispose();
   }
 }

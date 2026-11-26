@@ -30,8 +30,7 @@
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large">
   <meta name="bingbot" content="index, follow">
-  <meta name="theme-color" content="#2DD4BF" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#14B8A6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#02132C">
   <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Sanctuary">
   <meta name="generator" content="Flutter Web">
@@ -83,11 +82,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Sanctuary">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="icons/Icon-192.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="icons/Icon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-192.png">
-  <link rel="apple-touch-startup-image" href="icons/Icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 
   <!-- ── Favicon ── -->
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
@@ -95,6 +90,8 @@
 
   <!-- ── PWA Manifest ── -->
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="pwa-install.css">
+  <script src="pwa-install.js" defer></script>
 
   <!-- ── Structured Data #1: MobileApplication (App Store SEO) ── -->
   <script type="application/ld+json">
@@ -145,7 +142,7 @@
       "1-Tap Stress SOS Relief (Instant 30-Second Calm)",
       "Daily Morning & Bedtime Push Notifications",
       "4 Premium Themes (Midnight Navy, Forest, Lavender, Claymorphic)",
-      "Offline-First PWA (Works Without Internet)",
+      "Installable PWA with a reconnect screen",
       "Native iOS Cupertino Design with Glassmorphism"
     ],
     "screenshot": [
@@ -213,7 +210,7 @@
         "name": "Does Sanctuary work offline?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Sanctuary is built as a Progressive Web App (PWA) with offline-first architecture. After your first visit, the app shell and UI are cached locally. Breathing exercises, timers, mood tracking, and streak features work fully offline. Sound streaming requires an internet connection."
+          "text": "Sanctuary can be installed as a Progressive Web App (PWA). This version caches a small reconnect screen, not the full app or audio library. An internet connection is needed to load the app and stream sounds. Saved settings stay in the current browser unless its data is cleared."
         }
       },
       {
@@ -281,7 +278,7 @@
 
     body {
       height: 100%;
-      background-color: #071018;
+      background-color: #02132c;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -298,7 +295,7 @@
     #splash {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% 38%, #15162C 0%, #090C19 55%, #04060C 100%);
+      background: #02132c;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -482,17 +479,6 @@
     <a href="privacy.html">Privacy Policy</a>
   </footer>
 
-  <script>
-    // Unregister stale service workers to ensure fresh code loads immediately
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (var r of registrations) {
-          r.unregister();
-        }
-      });
-    }
-  </script>
-
   <script src="flutter_bootstrap.js" async></script>
 
   <script>
@@ -507,13 +493,6 @@
       };
     })();
 
-    // ── Automatic Service Worker Fresh Update ──
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        console.log('App updated with latest icons & assets.');
-      });
-    }
-
     // ── Instant splash hide when Flutter paints first frame ──
     window.addEventListener('flutter-first-frame', function() {
       var splash = document.getElementById('splash');
@@ -524,26 +503,6 @@
         }, 650);
       }
     });
-
-    // ── Native PWA Install Prompt Handler ──
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      window.isPwaInstallable = true;
-    });
-
-    window.triggerPwaInstall = function() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the PWA install prompt');
-          }
-          deferredPrompt = null;
-        });
-      }
-    };
   </script>
 </body>
 </html>

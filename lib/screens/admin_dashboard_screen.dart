@@ -108,7 +108,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.greenAccent.withOpacity(0.4)),
             ),
             child: const Row(
               children: [

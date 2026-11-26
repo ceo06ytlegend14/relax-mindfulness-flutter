@@ -6,6 +6,13 @@
 build/
 *.dill
 
+# Development-only browser checks
+node_modules/
+playwright-report/
+test-results/
+__pycache__/
+*.py[cod]
+
 # Secrets & Environment variables
 .env
 .env.*
