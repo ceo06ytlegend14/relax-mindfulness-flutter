@@ -323,7 +323,11 @@ void main() {
     tester,
   ) async {
     factory = () => FakeAmbientAudioPlayer()..failLoads = true;
-    await app.updateSoundTrackVolume('Mountain Stream', .4);
+    // Finish asynchronous failed-source cleanup before advancing the fake clock.
+    // The timer assertions below still run against deterministic virtual time.
+    await tester.runAsync(
+      () => app.updateSoundTrackVolume('Mountain Stream', .4),
+    );
     expect(app.ambientTrackError('Mountain Stream'), isNotNull);
     app.startSleepTimer(1);
     await tester.pump(const Duration(seconds: 61));

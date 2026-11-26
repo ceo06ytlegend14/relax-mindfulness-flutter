@@ -62,7 +62,8 @@ def report(source):
     skipped = sum(bool(e.get('skipped')) for e in completed)
     summary = f'Flutter tests: {passed} passed, {failed} failed, {skipped} skipped.'
     annotations = []
-    for test_id, messages in list(errors.items())[:8]:
+    # Keep diagnostics bounded while covering a multi-suite regression batch.
+    for test_id, messages in list(errors.items())[:32]:
         test = tests.get(test_id, {})
         name = test.get('name', f'Test {test_id}')
         path = suites.get(test.get('suiteID'), '')

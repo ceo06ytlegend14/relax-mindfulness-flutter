@@ -95,7 +95,7 @@ class TestReporterTest(unittest.TestCase):
             *({'type': 'error', 'testID': i, 'error': 'e' * 50000} for i in range(40)),
             {'type': 'done', 'success': False},
         ))
-        self.assertEqual(len(annotations), 8)
+        self.assertEqual(len(annotations), 32)
         self.assertTrue(all(len(annotation) < 14500 for annotation in annotations))
 
 

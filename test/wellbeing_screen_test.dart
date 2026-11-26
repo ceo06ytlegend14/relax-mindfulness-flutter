@@ -68,6 +68,8 @@ Future<void> tapWellbeing(WidgetTester tester, String key) async {
   await tester.ensureVisible(target);
   await tester.pump();
   await tester.tap(target);
+  // Start the pushed route's animation before advancing its duration.
+  await tester.pump();
   await tester.pump(const Duration(milliseconds: 450));
 }
 
@@ -144,6 +146,7 @@ void main() {
         'Sleep',
       ]);
       await tester.tap(find.byType(CupertinoNavigationBarBackButton));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 450));
       expect(find.byType(WellbeingScreen), findsOneWidget);
       expect(find.byType(BreatheScreen), findsNothing);
@@ -164,6 +167,7 @@ void main() {
         expect(find.byType(destination.$2), findsOneWidget);
         expect(app.tab, AppTab.home);
         await tester.tap(find.byType(CupertinoNavigationBarBackButton));
+        await tester.pump();
         await tester.pump(const Duration(milliseconds: 450));
         expect(find.byKey(const ValueKey('wellbeing-title')), findsOneWidget);
         expect(app.sessions, isEmpty);

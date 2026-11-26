@@ -21,9 +21,10 @@ Future<MixerController> mountPlaybackPresentation(
   FakeMixerAppState app,
   Widget child, {
   double width = 823,
+  double height = 1500,
   double textScale = 1,
 }) async {
-  await tester.binding.setSurfaceSize(Size(width, 1500));
+  await tester.binding.setSurfaceSize(Size(width, height));
   final mixer = MixerController(app);
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -108,30 +109,37 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    final app = FakeMixerAppState()
-      ..active['Soft Rain'] = .48
-      ..ambientLoading.add('Soft Rain');
-    final mixer = await mountPlaybackPresentation(
-      tester,
-      app,
-      const HomeScreen(),
-      width: 320,
-      textScale: 1.6,
-    );
-    final toggle = find.byKey(const ValueKey('home-mix-toggle'));
-    await tester.ensureVisible(toggle);
-    await tester.pump();
-    expect(find.text('Loading soundscape…'), findsOneWidget);
-    expect(find.bySemanticsLabel('Cancel pending soundscape'), findsOneWidget);
-    expect(tester.getSize(toggle).width, greaterThanOrEqualTo(44));
-    expect(tester.getSize(toggle).height, greaterThanOrEqualTo(44));
-    expect(app.isAnyAudioPlaying, isFalse);
-    await tester.tap(toggle);
-    await tester.pump();
-    expect(app.hasAmbientPlaybackRequest, isFalse);
-    expect(mixer.volume('Soft Rain'), .48);
-    expect(tester.takeException(), isNull);
+    try {
+      final app = FakeMixerAppState()
+        ..active['Soft Rain'] = .48
+        ..ambientLoading.add('Soft Rain');
+      final mixer = await mountPlaybackPresentation(
+        tester,
+        app,
+        const HomeScreen(),
+        width: 320,
+        textScale: 1.6,
+      );
+      final toggle = find.byKey(const ValueKey('home-mix-toggle'));
+      await tester.ensureVisible(toggle);
+      await tester.pump();
+      expect(find.text('Loading soundscape…'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Cancel pending soundscape'),
+        findsOneWidget,
+      );
+      expect(tester.getSize(toggle).width, greaterThanOrEqualTo(44));
+      expect(tester.getSize(toggle).height, greaterThanOrEqualTo(44));
+      expect(app.isAnyAudioPlaying, isFalse);
+      await tester.tap(toggle);
+      await tester.pump();
+      expect(app.hasAmbientPlaybackRequest, isFalse);
+      expect(mixer.volume('Soft Rain'), .48);
+      expect(tester.takeException(), isNull);
+    } finally {
+      // Widget-test end checks run before addTearDown callbacks.
+      semantics.dispose();
+    }
   });
 
   testWidgets(
@@ -314,32 +322,70 @@ void main() {
     },
   );
 
+  for (final viewport in const [
+    (320.0, 1.0),
+    (320.0, 1.6),
+    (390.0, 1.0),
+    (390.0, 1.6),
+  ]) {
+    testWidgets(
+      'sound controls keep ready counts and pending removal at $viewport',
+      (tester) async {
+        final app = FakeMixerAppState()
+          ..active.addAll({'Soft Rain': .6, 'Ocean Waves': .2})
+          ..ambientLoading.add('Soft Rain');
+        await mountPlaybackPresentation(
+          tester,
+          app,
+          const CupertinoPageScaffold(
+            child: Center(child: ActivePlayingListModal()),
+          ),
+          width: viewport.$1,
+          height: 844,
+          textScale: viewport.$2,
+        );
+        expect(find.text('Active Soundscapes (1)'), findsOneWidget);
+        expect(find.text('Loading · Level: 60%'), findsOneWidget);
+        expect(find.text('Playing · Level: 20%'), findsOneWidget);
+        final remove = find.byKey(
+          const ValueKey('remove-active-track-Soft Rain'),
+        );
+        expect(tester.getSize(remove).width, greaterThanOrEqualTo(44));
+        expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
+        await tester.tap(remove);
+        await tester.pump();
+        expect(app.requestedAmbientTracks, {'Ocean Waves': .2});
+        expect(find.text('Active Soundscapes (1)'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
-    'sound controls count ready layers but retain pending removal controls',
+    'sound controls gain edits cannot resume a platform interruption',
     (tester) async {
       final app = FakeMixerAppState()
-        ..active.addAll({'Soft Rain': .6, 'Ocean Waves': .2})
-        ..ambientLoading.add('Soft Rain');
+        ..active['Soft Rain'] = .6
+        ..ambientPaused.add('Soft Rain');
       await mountPlaybackPresentation(
         tester,
         app,
         const CupertinoPageScaffold(
           child: Center(child: ActivePlayingListModal()),
         ),
-        width: 390,
+        width: 320,
+        height: 844,
+        textScale: 1.6,
       );
-      expect(find.text('Active Soundscapes (1)'), findsOneWidget);
-      expect(find.text('Loading · Level: 60%'), findsOneWidget);
-      expect(find.text('Playing · Level: 20%'), findsOneWidget);
-      final remove = find.byKey(
-        const ValueKey('remove-active-track-Soft Rain'),
+      final slider = tester.widget<CupertinoSlider>(
+        find.byType(CupertinoSlider),
       );
-      expect(tester.getSize(remove).width, greaterThanOrEqualTo(44));
-      expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
-      await tester.tap(remove);
+      slider.onChanged!(.53);
       await tester.pump();
-      expect(app.requestedAmbientTracks, {'Ocean Waves': .2});
-      expect(find.text('Active Soundscapes (1)'), findsOneWidget);
+      expect(app.requestedAmbientTracks, {'Soft Rain': .53});
+      expect(app.activeAmbientTracks, isEmpty);
+      expect(app.ambientTrackStatus('Soft Rain'), AmbientPlaybackStatus.paused);
+      expect(find.text('Paused · Level: 53%'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

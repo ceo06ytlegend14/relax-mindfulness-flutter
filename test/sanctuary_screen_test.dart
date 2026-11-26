@@ -286,6 +286,7 @@ void main() {
       );
       await reveal(tester, options);
       await tester.tap(options);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 450));
       expect(find.text('Save practice'), findsOneWidget);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -299,6 +300,7 @@ void main() {
             .setMockMethodCallHandler(SystemChannels.platform, null),
       );
       await tester.tap(find.text('Copy session details'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 450));
       expect(find.text('Could not copy details'), findsOneWidget);
       expect(find.text('Session details copied'), findsNothing);
@@ -462,6 +464,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey('stories-My Journeys')),
       );
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('stories-My Journeys')));
       await tester.pump();
       expect(find.byKey(const ValueKey('story-starry-night')), findsOneWidget);
@@ -497,8 +500,9 @@ void main() {
       await tester.tap(browse);
       await tester.pump();
       expect(count(), 14);
-      expect(find.text('Show featured practices'), findsOneWidget);
+      // Expanding the lazy list moves its footer below the viewport.
       await reveal(tester, browse);
+      expect(find.text('Show featured practices'), findsOneWidget);
       await tester.tap(browse);
       await tester.pump();
       expect(count(), 3);
@@ -521,6 +525,7 @@ void main() {
       await tester.pump();
       final savedFilter = find.byKey(const ValueKey('intent-Saved'));
       await tester.ensureVisible(savedFilter);
+      await tester.pump();
       await tester.tap(savedFilter);
       await tester.pump();
       expect(

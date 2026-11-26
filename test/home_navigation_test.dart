@@ -201,7 +201,9 @@ void main() {
     await tester.pump();
     expect(state.app.active, isEmpty);
     expect(state.mixer.volume('Soft Rain'), 0.65);
-    expect(find.text('Ready when you are · Not playing'), findsOneWidget);
+    expect(state.mixer.hasPlaybackRequest, isFalse);
+    expect(state.mixer.transportLabel, 'Resume soundscape');
+    expect(find.text('Paused · Your sounds are kept'), findsOneWidget);
   });
 
   testWidgets('Home displays the actual selection and later named mixes', (

@@ -771,42 +771,50 @@ class ActivePlayingListModal extends StatelessWidget {
                 ),
               ),
 
-              // Header
+              // Let the title wrap beside a full-size dismissal target.
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SOUND CONTROLS',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: tealPrimary,
-                          letterSpacing: 1.5,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SOUND CONTROLS',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: tealPrimary,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Active Soundscapes ($totalCount)',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        const SizedBox(height: 2),
+                        Text(
+                          'Active Soundscapes ($totalCount)',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        shape: BoxShape.circle,
+                  const SizedBox(width: 8),
+                  CupertinoButton(
+                    minSize: 44,
+                    padding: EdgeInsets.zero,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    child: Semantics(
+                      label: 'Dismiss sound controls',
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(CupertinoIcons.chevron_down, color: Colors.white, size: 18),
                       ),
-                      child: const Icon(CupertinoIcons.chevron_down, color: Colors.white, size: 18),
                     ),
                   ),
                 ],
@@ -969,7 +977,7 @@ class ActivePlayingListModal extends StatelessWidget {
                                     value: volume,
                                     activeColor: tealPrimary,
                                     onChanged: (v) {
-                                      state.updateSoundTrackVolume(name, v);
+                                      state.updateSoundTrackVolume(name, v, resumePaused: false);
                                     },
                                   ),
                                 ],
@@ -1034,7 +1042,8 @@ class ActivePlayingListModal extends StatelessWidget {
                           );
                         },
                         child: Container(
-                          height: 44,
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           decoration: BoxDecoration(
                             color: MixerTheme.primary,
                             borderRadius: BorderRadius.circular(16),
@@ -1045,12 +1054,15 @@ class ActivePlayingListModal extends StatelessWidget {
                               children: [
                                 Icon(CupertinoIcons.bookmark_fill, color: Colors.black, size: 14),
                                 SizedBox(width: 6),
-                                Text(
-                                  'Save & Pin Mix 💾',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                Flexible(
+                                  child: Text(
+                                    'Save & Pin Mix 💾',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1070,7 +1082,8 @@ class ActivePlayingListModal extends StatelessWidget {
                           ZenFullscreenModal.show(context);
                         },
                         child: Container(
-                          height: 44,
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           decoration: BoxDecoration(
                             color: const Color(0xFF504A71),
                             borderRadius: BorderRadius.circular(16),
@@ -1081,12 +1094,15 @@ class ActivePlayingListModal extends StatelessWidget {
                               children: [
                                 Icon(CupertinoIcons.fullscreen, color: Colors.white, size: 14),
                                 SizedBox(width: 6),
-                                Text(
-                                  'Zen Screen ⛶',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                Flexible(
+                                  child: Text(
+                                    'Zen Screen ⛶',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1108,7 +1124,8 @@ class ActivePlayingListModal extends StatelessWidget {
                   Navigator.of(context).pop();
                 },
                 child: Container(
-                  height: 48,
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: coralAccent,
                     borderRadius: BorderRadius.circular(18),
@@ -1119,12 +1136,15 @@ class ActivePlayingListModal extends StatelessWidget {
                       children: [
                         Icon(CupertinoIcons.stop_fill, color: Colors.black, size: 16),
                         SizedBox(width: 8),
-                        Text(
-                          'Stop All Soundscapes & Clear ✕',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                        Flexible(
+                          child: Text(
+                            'Stop All Soundscapes & Clear ✕',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ],
