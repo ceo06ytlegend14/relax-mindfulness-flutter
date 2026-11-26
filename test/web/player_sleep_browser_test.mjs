@@ -189,12 +189,7 @@ for (const [width, height] of [[320, 640], [390, 844], [431, 809], [823, 1568], 
     assert.equal(await page.evaluate(() => [...document.images].every(image => image.complete && image.naturalWidth > 0)), true);
     assert.deepEqual(await page.locator('.nav-item').allTextContents(), ['Home', 'Sounds', 'Meditate', 'Sleep']);
     assert.equal(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('data-tab'), 'sleep');
-    const install = page.locator('#sanctuary-install-ui .install-entry');
-    assert.equal(await install.count(), 1, 'The actual install control is tested, not skipped');
-    assert.equal(await install.isVisible(), true);
-    const button = await install.boundingBox();
-    const welcome = await page.locator('.sleep-welcome').boundingBox();
-    assert(button.y + button.height <= welcome.y || button.x >= welcome.x + welcome.width, 'Install button does not cover Sleep copy');
+    assert.equal(await page.locator('.install-entry').count(), 0, 'No install button is added over Sleep');
     const orbs = await page.locator('[data-quick]').evaluateAll(nodes => nodes.map(node => {
       const button = node.getBoundingClientRect();
       const orb = node.querySelector('.quick-orb').getBoundingClientRect();
@@ -612,27 +607,26 @@ test('loading is explicit and completing during a pending request cannot revive 
 });
 
 
-test('the real install entry never covers Minimize and returns without resetting install state', async t => {
+test('player minimize/reopen never recreates an install entry or resets installation state', async t => {
   const { page } = await open(t, { route: '/#meditate' });
   const entry = page.locator('#sanctuary-install-ui .install-entry');
   const state = await page.evaluate(() => SanctuaryInstall.state);
-  assert.equal(await entry.isVisible(), true);
+  assert.equal(await entry.count(), 0);
   await begin(page);
-  assert.equal(await entry.isHidden(), true);
+  assert.equal(await entry.count(), 0);
   assert.equal(await page.evaluate(() => document.documentElement.classList.contains('sanctuary-player-expanded')), true);
   await page.locator('#session-minimize').click();
-  assert.equal(await entry.isVisible(), true);
+  assert.equal(await entry.count(), 0);
   assert.deepEqual(await page.evaluate(() => SanctuaryInstall.state), state);
   await page.locator('#mini-open').click();
-  assert.equal(await entry.isHidden(), true);
+  assert.equal(await entry.count(), 0);
   await page.locator('#session-stop').click();
-  assert.equal(await entry.isVisible(), true);
-  // A real installation stays hidden even when the player releases the corner.
+  assert.equal(await entry.count(), 0);
   await page.evaluate(() => dispatchEvent(new Event('appinstalled')));
-  assert.equal(await entry.isHidden(), true);
+  assert.equal(await page.evaluate(() => SanctuaryInstall.state.installed), true);
   await begin(page);
   await page.locator('#session-minimize').click();
-  assert.equal(await entry.isHidden(), true);
+  assert.equal(await entry.count(), 0);
 });
 
 test('every meditation and nighttime card actually plays its named mix and shows its ingredients', async t => {

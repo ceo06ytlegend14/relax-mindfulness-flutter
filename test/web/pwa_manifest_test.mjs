@@ -70,7 +70,7 @@ test('Apple touch icon and favicon are real 180px and 32px opaque PNGs', async (
   }
 });
 
-test('Flutter web entry includes the install UI and correct Apple metadata', async () => {
+test('Flutter web entry retains the shared worker and correct Apple install metadata', async () => {
   const html = await read('web/index.html');
   assert.match(html, /<base href="\$FLUTTER_BASE_HREF">/);
   assert.match(html, /rel="manifest" href="manifest\.json"/);
@@ -83,6 +83,14 @@ test('Flutter web entry includes the install UI and correct Apple metadata', asy
   assert.doesNotMatch(html, /getRegistrations|\.unregister\(/);
   assert.doesNotMatch(html, /beforeinstallprompt/);
   assert.doesNotMatch(html, /Offline-First PWA \(Works Without Internet\)/);
+});
+
+test('the shared web controller never mounts a page-level Install app button', async () => {
+  const controller = await read('web/pwa-install.js');
+  assert.doesNotMatch(controller, /class="install-entry"/);
+  assert.doesNotMatch(controller, /ui\.entry/);
+  assert.match(controller, /window\.SanctuaryInstall = Object\.freeze/);
+  assert.match(controller, /navigator\.serviceWorker\.register/);
 });
 
 test('custom Flutter bootstrap leaves worker registration to the installer', async () => {

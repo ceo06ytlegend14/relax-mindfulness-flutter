@@ -1,4 +1,4 @@
-/* Framework-independent installation UI shared by Flutter Web and the demo. */
+/* Shared manual-install compatibility API and worker. No in-page install entry. */
 (() => {
   'use strict';
   if (window.SanctuaryInstall) return;
@@ -44,7 +44,7 @@
     ];
     if (embedded) return [
       'Open this preview in its own browser tab using the button below.',
-      'In that tab, choose Install app. Installation is not available inside this embedded preview.',
+      'In that tab, use your browser menu to install or add to your home screen. Installation is not available inside this embedded preview.',
     ];
     if (ios) return [
       'Open this page in Safari on your iPhone or iPad.',
@@ -69,9 +69,6 @@
   function render() {
     if (!ui) return;
     const current = state();
-    ui.entry.hidden = current.installed;
-    ui.entry.disabled = current.prompting;
-    ui.entry.setAttribute('aria-label', `Install ${appName}`);
     ui.primary.hidden = !current.canPrompt;
     ui.primary.disabled = current.prompting;
     ui.primary.textContent = current.prompting ? 'Opening installation…' : `Install ${appName}`;
@@ -91,10 +88,6 @@
     const root = document.createElement('div');
     root.id = 'sanctuary-install-ui';
     root.innerHTML = `
-      <button class="install-entry" type="button" aria-haspopup="dialog" aria-controls="sanctuary-install-dialog">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg>
-        <span>Install app</span>
-      </button>
       <dialog id="sanctuary-install-dialog" aria-labelledby="sanctuary-install-title" aria-describedby="sanctuary-install-description" aria-modal="true">
         <div class="install-dialog-top"><img class="install-logo" width="64" height="64" alt=""><button class="install-close" type="button" aria-label="Close installation help">×</button></div>
         <p class="install-eyebrow">YOUR CALM, ONE TAP AWAY</p>
@@ -110,7 +103,6 @@
     document.body.append(root);
     ui = {
       root,
-      entry: root.querySelector('.install-entry'),
       dialog: root.querySelector('dialog'),
       primary: root.querySelector('button.install-primary'),
       newTab: root.querySelector('.install-new-tab'),
@@ -123,7 +115,6 @@
     root.querySelector('.install-description').textContent =
       `Add ${appName} to your home screen or desktop and open it like an app.`;
     ui.newTab.href = window.location.href;
-    ui.entry.addEventListener('click', requestInstall);
     ui.primary.addEventListener('click', requestInstall);
     root.querySelector('.install-close').addEventListener('click', closeHelp);
     ui.dialog.addEventListener('cancel', (event) => {

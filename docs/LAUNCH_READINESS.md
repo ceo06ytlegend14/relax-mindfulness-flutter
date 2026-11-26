@@ -8,11 +8,19 @@ Updated: 2026-11-19. Product ownership, branding, accounts, spending authority a
 
 A proposed $100,000 traffic budget is not evidence of readiness or authorization to spend. First prove that people can install, use, return to and—if monetized—safely pay for the real application. No ads, production billing changes, store submission or public release have been made. Existing **Home / Sounds / Meditate / Sleep** navigation and shared playback are retained.
 
-## Latest development-audio follow-up — release still BLOCKED
+## Latest UI/source follow-up — current design, no install entry
+
+The midnight-blue design and four-tab navigation remain the target. The page-level **Install app** entry is removed from both shared web surfaces, with no native runtime/layout or audio-source changes. Local suites pass **326/326 web + 93/93 Python**; a controlled Home comparison changed no pixels outside the removed control, and 24 tab/viewport checks passed. [Current captures](../design/README.md#current-visual-target--no-install-app-button).
+
+Default `main` was still the original app at inspection; updated code was on the working branch. A branch push is not a default-branch merge or site deployment. The inspected `b2e2a1a` CI passed browser/Android/unsigned-iOS jobs but **failed three Flutter tests (426 passed)**. Prepared test corrections require a fresh hosted run; no older green result is substituted. [Exact-source evidence](release/BUILD_CHECKS.md).
+
+Runtime fingerprint: `133eb131f88b436c7124b496b80f45d388ee78bb5fca17ccfc7838430e53e514`. Preflight remains **BLOCKED / 202 pending**; purchases remain off. This evidence alone does not authorize a default-branch merge, website deployment, identity change, signing or store upload.
+
+## Preceding development-audio follow-up — release still BLOCKED
 
 Temporary audio is accepted for development, not distribution. Six older mixer clips now use separately inventoried overlap-blended loop edits; the original inputs, twelve newer mixer sources and all 23 arrangements remain unchanged. No video audio or extra #2/#3 takes were acquired. The target is three genuinely different recordings per available sound, **54 total**, still pending. [Scope and reproduction](PLACEHOLDER_AUDIO.md).
 
-Latest local suites: **322/322 web + 93/93 Python**, zero failures/skips; six final edits also passed full decode/headroom checks. One new native case and the updated source paths are authored/WASM-parsed, **not Flutter-executed or device-listened**. Current preflight is **BLOCKED / 202 pending**: 118 local media reviews (including 48 audio files, not 48 unique recordings), 75 stream reviews and nine gates. No source is newly approved; purchases remain off. The historical hosted results and the older counts below do not certify these changes.
+At the audio checkpoint, local suites passed **322/322 web + 93/93 Python**, zero failures/skips; six final edits also passed full decode/headroom checks. One new native case and the updated source paths are authored/WASM-parsed, **not Flutter-executed or device-listened**. Current preflight is **BLOCKED / 202 pending**: 118 local media reviews (including 48 audio files, not 48 unique recordings), 75 stream reviews and nine gates. No source is newly approved; purchases remain off. The historical hosted results and the older counts below do not certify these changes.
 
 ## Original launch-hardening pass — historical engineering checkpoint
 

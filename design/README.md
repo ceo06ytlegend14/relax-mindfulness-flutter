@@ -2,7 +2,20 @@
 
 All screenshots on this page are **independent interactive HTML captures**, not compiled Flutter, native-device or store screenshots. Corresponding Flutter source lives in `lib/screens/` and `lib/components/`. Browser behavior does not verify Flutter behavior.
 
-## Latest audio follow-up — loop-edited development placeholders
+## Current visual target — no Install app button
+
+The owner-selected midnight Home design and **Home / Sounds / Meditate / Sleep** footer remain intact. The floating **Install app** entry is removed from the shared web controller, not merely hidden in CSS. No native screen, recording, recipe, source map, gain or timer policy changed for this removal.
+
+- [Current Home — 418 × 885](home-no-install-mobile-preview.png)
+- [Current Meditate — 418 × 885](meditate-no-install-mobile-preview.png)
+
+Both are inspected HTML captures from the existing port-3000 process, with no autoplay or fabricated activity. A controlled original-installer render versus the new Home changed **5,002 pixels inside the button area and zero outside it**. All **24 viewport/tab checks** retained ≥44px navigation targets, footer order/clearance and no overflow/page errors. Complete local suites pass **326/326 web + 93/93 Python**, no failures/skips. Browser events, navigation, players and the chooser cannot recreate the entry; the manual compatibility API and scoped offline worker remain available.
+
+At inspection, default `main` was still the initial `c48f2d3` app, while newer source was on the current Arena branch; no GitHub Pages site was configured. This pass does not delete older source/history or silently merge/deploy it. The inspected newer CI checkpoint has **426 Flutter passes / 3 failures** with Android/unsigned-iOS compilation and browser jobs passing. Test corrections are prepared but require a fresh hosted run. [Build boundaries](../docs/release/BUILD_CHECKS.md).
+
+Older captures below are historical and may include the former install entry. None is a native-device screenshot or the current visual target.
+
+## Previous audio follow-up — loop-edited development placeholders
 
 The six older mixer clips now play separate overlap-blended edits in the HTML preview and Flutter source. A 3–6-second end/start overlap replaces the abrupt intro restart; the originals and all twelve newer mixer recordings/23 session arrangements are untouched. The edits are **24–27 seconds**, not longer masters or new #2/#3 recordings. The library remains 18 source choices, with a target of 54 genuinely different approved recordings still to acquire. [Exact processing, provenance and remaining listening/native work](../docs/PLACEHOLDER_AUDIO.md).
 

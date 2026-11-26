@@ -17,7 +17,7 @@ let origin;
 const rangeRequests = [];
 
 function fixture(base) {
-  return `<!doctype html><html lang="en"><head><base href="${base}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="application-name" content="Sanctuary"><meta name="theme-color" content="#02132C"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"><link rel="stylesheet" href="pwa-install.css"><script src="pwa-install.js" defer></script></head><body style="margin:0;background:#02132c;color:white"><h1 id="fixture-title">PWA integration fixture</h1><p>The actual installer and manifest, without a Flutter runtime.</p><script>window.pageMarker=Math.random();</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><base href="${base}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="application-name" content="Sanctuary"><meta name="theme-color" content="#02132C"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"><link rel="stylesheet" href="pwa-install.css"><script src="pwa-install.js" defer></script></head><body style="margin:0;background:#02132c;color:white"><h1 id="fixture-title">PWA integration fixture</h1><p>The actual installer and manifest, without a Flutter runtime.</p><button id="fixture-action" type="button">Existing page action</button><script>window.pageMarker=Math.random();</script></body></html>`;
 }
 
 before(async () => {
@@ -122,6 +122,12 @@ async function fakePrompt(page, outcome = 'dismissed') {
   }, outcome);
 }
 
+// Exercise the retained integration API directly; the app no longer exposes
+// an installation button. Prompt outcomes remain synthetic, never an OS install.
+async function requestInstall(page) {
+  await page.evaluate(() => { void window.triggerPwaInstall(); });
+}
+
 for (const route of ['/', '/app/', '/nested/sanctuary/']) {
   test(`Chromium accepts the real manifest and scoped worker at ${route}`, { timeout: 20000 }, async (t) => {
     const { page } = await open(t, { route });
@@ -138,15 +144,40 @@ for (const route of ['/', '/app/', '/nested/sanctuary/']) {
   });
 }
 
-test('fallback help is accessible, dismissible, and restores keyboard focus', { timeout: 15000 }, async (t) => {
+for (const route of ['/', '/app/', '/nested/sanctuary/']) {
+  test(`no page-level Install app control appears at ${route}, even after browser events`, { timeout: 20000 }, async (t) => {
+    const { page } = await open(t, { route });
+    assert.equal(await page.locator('.install-entry').count(), 0, 'The removed button is not mounted, hidden or focusable');
+    assert.equal(await page.getByRole('button', { name: /^Install / }).count(), 0);
+    assert.equal(await fakePrompt(page), true);
+    assert.equal(await page.evaluate(() => window.promptCalls), 0, 'A browser event never launches installation automatically');
+    assert.equal(await page.locator('.install-entry').count(), 0);
+    assert.equal(await page.locator('#sanctuary-install-dialog').evaluate(dialog => dialog.open), false);
+    if (route === '/') {
+      for (const tab of ['sounds', 'meditate', 'sleep', 'home']) {
+        await page.locator(`.bottom-nav [data-tab="${tab}"]`).click();
+        assert.equal(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('data-tab'), tab);
+        assert.equal(await page.locator('.install-entry').count(), 0);
+      }
+      assert.equal(await page.locator('#home-page').isVisible(), true);
+      assert.equal(await page.evaluate(() => playing), false);
+    }
+    await page.evaluate(() => window.dispatchEvent(new Event('appinstalled')));
+    assert.equal(await page.locator('.install-entry').count(), 0);
+    assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), true);
+  });
+}
+
+test('compatibility help is accessible, dismissible, and restores existing page focus', { timeout: 15000 }, async (t) => {
   const { page } = await open(t);
-  await page.locator('.install-entry').click();
+  await page.locator('#fixture-action').focus();
+  await requestInstall(page);
   assert.equal(await page.locator('#sanctuary-install-dialog').evaluate((dialog) => dialog.open), true);
   assert.equal(await page.locator('.install-title').evaluate((title) => title === document.activeElement), true);
   assert.match(await page.locator('.install-steps').innerText(), /browser menu|browser’s/);
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#sanctuary-install-dialog').evaluate((dialog) => dialog.open), false);
-  assert.equal(await page.locator('.install-entry').evaluate((button) => button === document.activeElement), true);
+  assert.equal(await page.locator('#fixture-action').evaluate(button => button === document.activeElement), true);
 });
 
 test('native prompt is single-use, prevents a second invocation, and waits for actual installation', { timeout: 15000 }, async (t) => {
@@ -160,7 +191,7 @@ test('native prompt is single-use, prevents a second invocation, and waits for a
     return event.defaultPrevented;
   }), true);
   assert.equal(await page.evaluate(() => window.isPwaInstallable), true);
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.prompting), true);
   assert.equal(await page.evaluate(() => window.triggerPwaInstall()), 'pending');
   assert.equal(await page.evaluate(() => window.promptCalls), 1);
@@ -169,14 +200,14 @@ test('native prompt is single-use, prevents a second invocation, and waits for a
   assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), false);
   assert.equal(await page.evaluate(() => window.isPwaInstallable), false);
   await page.evaluate(() => window.dispatchEvent(new Event('appinstalled')));
-  assert.equal(await page.locator('.install-entry').isHidden(), true);
+  assert.equal(await page.locator('.install-entry').count(), 0);
   assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), true);
 });
 
 test('dismissed prompts show manual help and cannot be reused', { timeout: 15000 }, async (t) => {
   const { page } = await open(t);
   assert.equal(await fakePrompt(page), true);
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   await page.waitForFunction(() => !window.SanctuaryInstall.state.prompting);
   assert.equal(await page.evaluate(() => window.promptCalls), 1);
   assert.match(await page.locator('.install-feedback').innerText(), /Not installed yet/);
@@ -194,7 +225,7 @@ test('prompt failures recover to browser-menu help without an unhandled error', 
     event.userChoice = Promise.resolve({ outcome: 'dismissed' });
     window.dispatchEvent(event);
   });
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   await page.waitForFunction(() => !window.SanctuaryInstall.state.prompting);
   assert.match(await page.locator('.install-feedback').innerText(), /could not open/);
   assert.equal(await page.evaluate(() => window.isPwaInstallable), false);
@@ -202,7 +233,7 @@ test('prompt failures recover to browser-menu help without an unhandled error', 
 
 test('iPhone Safari gets manual Share → Add to Home Screen instructions', { timeout: 15000 }, async (t) => {
   const { page } = await open(t, { options: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', isMobile: true, hasTouch: true } });
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   const text = await page.locator('.install-steps').innerText();
   assert.match(text, /Safari/);
   assert.match(text, /Share, then Add to Home Screen/);
@@ -215,18 +246,18 @@ test('desktop-user-agent iPads are detected using MacIntel plus touch capability
     Object.defineProperty(navigator, 'platform', { value: 'MacIntel' });
     Object.defineProperty(navigator, 'maxTouchPoints', { value: 5 });
   } });
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   assert.match(await page.locator('.install-steps').innerText(), /iPhone or iPad/);
 });
 
 test('macOS Safari gets Add to Dock instructions', { timeout: 15000 }, async (t) => {
   const { page } = await open(t, { options: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15' }, init: () => Object.defineProperty(navigator, 'platform', { value: 'MacIntel' }) });
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   assert.match(await page.locator('.install-steps').innerText(), /Add to Dock/);
 });
 
 for (const mode of ['standalone', 'ios']) {
-  test(`${mode}: already-installed mode hides the install entry`, { timeout: 15000 }, async (t) => {
+  test(`${mode}: already-installed mode keeps installation state without a page entry`, { timeout: 15000 }, async (t) => {
     const { page } = await open(t, { init: mode === 'ios' ? () => Object.defineProperty(navigator, 'standalone', { value: true }) : () => {
       const original = window.matchMedia;
       window.matchMedia = (query) => {
@@ -235,13 +266,13 @@ for (const mode of ['standalone', 'ios']) {
         return result;
       };
     } });
-    assert.equal(await page.locator('.install-entry').isHidden(), true);
+    assert.equal(await page.locator('.install-entry').count(), 0);
     assert.equal(await page.evaluate(() => window.triggerPwaInstall()), 'installed');
     assert.equal(await page.locator('#sanctuary-install-dialog').evaluate((dialog) => dialog.open), false);
   });
 }
 
-test('display-mode changes update the install entry without a reload', { timeout: 15000 }, async (t) => {
+test('display-mode changes update state without recreating an install entry or reloading', { timeout: 15000 }, async (t) => {
   const { page } = await open(t, { init: () => {
     window.testStandalone = false;
     const original = window.matchMedia;
@@ -256,9 +287,11 @@ test('display-mode changes update the install entry without a reload', { timeout
   } });
   const marker = await page.evaluate(() => window.pageMarker);
   await page.evaluate(() => { window.testStandalone = true; window.testDisplayQuery.dispatchEvent(new Event('change')); });
-  assert.equal(await page.locator('.install-entry').isHidden(), true);
+  assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), true);
+  assert.equal(await page.locator('.install-entry').count(), 0);
   await page.evaluate(() => { window.testStandalone = false; window.testDisplayQuery.dispatchEvent(new Event('change')); });
-  assert.equal(await page.locator('.install-entry').isVisible(), true);
+  assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), false);
+  assert.equal(await page.locator('.install-entry').count(), 0);
   assert.equal(await page.evaluate(() => window.pageMarker), marker);
 });
 
@@ -268,7 +301,7 @@ test('embedded previews open a safe top-level tab rather than invoking installat
   assert(frame);
   await fakePrompt(frame);
   assert.equal(await frame.evaluate(() => window.SanctuaryInstall.state.canPrompt), false);
-  await frame.locator('.install-entry').click();
+  await requestInstall(frame);
   assert.match(await frame.locator('.install-steps').innerText(), /own browser tab/);
   assert.equal(await frame.evaluate(() => window.promptCalls), 0);
   const popupPromise = context.waitForEvent('page');
@@ -282,7 +315,7 @@ test('embedded previews open a safe top-level tab rather than invoking installat
 test('insecure contexts explain HTTPS and do not register the worker', { timeout: 15000 }, async (t) => {
   const { page } = await open(t, { worker: false, init: () => Object.defineProperty(window, 'isSecureContext', { value: false }) });
   await fakePrompt(page);
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   assert.match(await page.locator('.install-steps').innerText(), /HTTPS/);
   assert.equal(await page.evaluate(() => window.isPwaInstallable), false);
   assert.equal(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0);
@@ -290,7 +323,7 @@ test('insecure contexts explain HTTPS and do not register the worker', { timeout
 
 test('blocked service-worker storage leaves install guidance usable', { timeout: 15000 }, async (t) => {
   const { page } = await open(t, { worker: false, init: () => Object.defineProperty(navigator, 'serviceWorker', { get() { throw new DOMException('Storage denied', 'SecurityError'); } }) });
-  await page.locator('.install-entry').click();
+  await requestInstall(page);
   assert.equal(await page.locator('#sanctuary-install-dialog').evaluate((dialog) => dialog.open), true);
 });
 
@@ -359,7 +392,8 @@ test('install help fits narrow phones, wider layouts and keeps the existing foot
   const { page } = await open(t, { route: '/#meditate' });
   for (const [width, height] of [[320, 640], [390, 844], [823, 1568], [1440, 1000]]) {
     await page.setViewportSize({ width, height });
-    await page.locator('.install-entry').click();
+    await page.locator('.bottom-nav [data-tab="home"]').focus();
+    await requestInstall(page);
     const result = await page.locator('#sanctuary-install-dialog').evaluate((dialog) => {
       const rect = dialog.getBoundingClientRect();
       return { left: rect.left, right: rect.right, width: innerWidth, scrollWidth: dialog.scrollWidth, clientWidth: dialog.clientWidth };
@@ -372,16 +406,12 @@ test('install help fits narrow phones, wider layouts and keeps the existing foot
   }
 });
 
-test('soft pages: installation help uses matte surfaces while retaining targets and keyboard focus', async t => {
+test('manual compatibility help retains matte surfaces, 44px close targets and focus without a page entry', async t => {
   const { page } = await open(t);
-  await page.keyboard.press('Tab');
-  const entry = page.locator('.install-entry');
-  await entry.focus();
-  const entryStyle = await entry.evaluate(node => ({ border: getComputedStyle(node).borderTopWidth,
-    shadow: getComputedStyle(node).boxShadow, focus: node.matches(':focus-visible'), outline: getComputedStyle(node).outlineWidth,
-    height: node.getBoundingClientRect().height }));
-  assert.deepEqual(entryStyle, { border: '0px', shadow: 'none', focus: true, outline: '2px', height: 44 });
-  await entry.click();
+  assert.equal(await page.locator('.install-entry').count(), 0);
+  const returnTarget = page.locator('#fixture-action');
+  await returnTarget.focus();
+  await requestInstall(page);
   for (const selector of ['#sanctuary-install-dialog', '.install-steps']) {
     const panel = await page.locator(selector).evaluate(node => ({ border: getComputedStyle(node).borderTopWidth,
       image: getComputedStyle(node).backgroundImage, shadow: getComputedStyle(node).boxShadow }));
@@ -392,9 +422,14 @@ test('soft pages: installation help uses matte surfaces while retaining targets 
   }));
   assert.deepEqual(primary, { fill: 'rgb(140, 231, 208)', color: 'rgb(0, 43, 38)', border: '0px' });
   await page.keyboard.press('Tab');
-  await page.locator('.install-close').focus();
-  assert.equal(await page.locator('.install-close').evaluate(node => node.matches(':focus-visible')), true);
+  const close = page.locator('.install-close');
+  await close.focus();
+  const closeStyle = await close.evaluate(node => ({ focus: node.matches(':focus-visible'),
+    outline: getComputedStyle(node).outlineWidth, height: node.getBoundingClientRect().height,
+    width: node.getBoundingClientRect().width }));
+  assert.deepEqual(closeStyle, { focus: true, outline: '2px', height: 44, width: 44 });
   await page.keyboard.press('Escape');
-  assert.equal(await entry.evaluate(node => node === document.activeElement), true);
+  assert.equal(await returnTarget.evaluate(node => node === document.activeElement), true);
+  assert.equal(await page.locator('.install-entry').count(), 0);
   assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), false);
 });

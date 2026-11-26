@@ -1,4 +1,4 @@
-/* Scoped DOM controls work over Flutter's canvas without altering its footer. */
+/* Scoped compatibility help; no install entry is added over the application. */
 #sanctuary-install-ui {
   --install-mint: #78eed0;
   --install-text: #f5fafa;
@@ -12,34 +12,6 @@
 #sanctuary-install-ui button, #sanctuary-install-ui a { -webkit-tap-highlight-color: transparent; }
 #sanctuary-install-ui button { appearance: none; font: inherit; cursor: pointer; }
 #sanctuary-install-ui :focus-visible { outline: 2px solid #adffe7; outline-offset: 4px; }
-#sanctuary-install-ui .install-entry {
-  position: fixed;
-  top: max(12px, env(safe-area-inset-top));
-  right: max(16px, calc((100vw - 823px) / 2 + 16px), env(safe-area-inset-right));
-  z-index: 100000;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border: 0;
-  border-radius: 100px;
-  color: #d7fff2;
-  background: #122945;
-  box-shadow: none;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-/* The full-screen Flutter player uses this corner for Minimize. Preserve the
-   installer's prompt/installed state; only suppress the overlapping entry. */
-html.sanctuary-player-expanded #sanctuary-install-ui .install-entry,
-html.sanctuary-sound-chooser-open #sanctuary-install-ui .install-entry,
-html.sanctuary-wellbeing-open #sanctuary-install-ui .install-entry { visibility: hidden; pointer-events: none; }
-#sanctuary-install-ui .install-entry svg { width: 18px; height: 18px; flex-shrink: 0; }
-#sanctuary-install-ui .install-entry:hover { background: #223f5c; }
-#sanctuary-install-ui .install-entry:disabled { opacity: .7; cursor: wait; }
 #sanctuary-install-dialog {
   position: fixed;
   inset: 0;
@@ -89,7 +61,6 @@ html.sanctuary-wellbeing-open #sanctuary-install-ui .install-entry { visibility:
 #sanctuary-install-ui .install-feedback { margin: 12px 0 0; color: #adffe7; font-size: 13px; line-height: 1.5; }
 #sanctuary-install-ui .install-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 360px) {
-  #sanctuary-install-ui .install-entry { right: max(12px, env(safe-area-inset-right)); padding: 8px 11px; }
   #sanctuary-install-dialog { padding: 22px; }
   #sanctuary-install-ui .install-title { font-size: 25px; }
 }

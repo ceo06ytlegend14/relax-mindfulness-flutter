@@ -36,7 +36,7 @@ void main() {
       );
       addTearDown(controller.dispose);
       await controller.toggle(bundledRecordings[1]);
-      expect(player.loads, ['assets/sounds/ocean_waves.mp3']);
+      expect(player.loads, ['assets/sounds/loop_ocean_waves.mp3']);
       expect(player.volume, .08);
       expect(player.playCalls, 1);
       expect(controller.isPlaying, isTrue);

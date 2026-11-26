@@ -1,17 +1,19 @@
 # Install Sanctuary as a web app
 
-The Flutter web application has an installable manifest, branded home-screen icons, and a small **Install app** control. Installing keeps the existing Home / Sounds / Meditate / Sleep navigation and opens the site in a standalone app window where the browser supports it.
+The Flutter web application retains its manifest, branded home-screen icons and standalone launch, but the owner-requested **Install app button is removed** from both Flutter web and the shared HTML preview. Home / Sounds / Meditate / Sleep navigation and the approved design remain intact.
 
 ## For users
 
 Open the **deployed Flutter app over HTTPS**, outside an embedded preview:
 
-- **Chrome / Edge (Android or desktop):** choose **Install app**. When the browser provides a native installation prompt, the button opens it. Otherwise it shows browser-menu instructions.
+- **Chrome / Edge (Android or desktop):** use the browser's own menu or address-bar installation command, if available. There is no floating installation control inside Sanctuary.
 - **iPhone / iPad:** open the site in Safari, tap **Share → Add to Home Screen**, keep **Open as Web App** enabled if offered, then tap **Add**.
 - **Safari on macOS Sonoma or later:** choose **File → Add to Dock**.
-- **Embedded Arena preview:** choose **Install app → Open in a new tab**, then install from that browser tab. Browsers generally do not offer app installation inside embedded frames.
+- **Embedded Arena preview:** use the preview viewer to open a separate browser tab, then use the browser's menu. Browsers generally do not offer installation inside embedded frames.
 
-Menu names and availability vary by browser/version. The web page cannot force installation or bypass the browser's confirmation. The install control is hidden when running in standalone mode or after an `appinstalled` event.
+Menu names and availability vary by browser/version. The page cannot force installation or bypass browser confirmation. No install entry is mounted in ordinary, standalone or embedded mode; prompt/install/display-mode events and navigation never recreate it. Browser events do not automatically open a prompt or help dialog.
+
+**Removal checks:** the new source guard failed before removal, then all **326/326 web + 93/93 Python checks** passed. The 40 PWA browser/static checks are a subset, not extra tests. They retain manifest/worker scope, offline fallback, Range requests, storage, synthetic prompts, compatibility help and keyboard-focus coverage. A controlled **418 × 885 Home comparison** changed **5,002 pixels inside the button area and zero outside it**; 24 tab/viewport checks passed with ≥44px navigation targets. [Home](../design/home-no-install-mobile-preview.png) · [Meditate](../design/meditate-no-install-mobile-preview.png). These are HTML/Chromium checks, not compiled Flutter or a real iPhone install. Older verification notes below describe earlier implementations.
 
 ### What installation does not do
 
@@ -39,7 +41,7 @@ No page load unregisters other service workers, clears browser data, or automati
 
 - `web/manifest.json`: stable existing app ID, relative start/scope URLs, standalone launch, navy theme, real 192/512 icons, separate maskable variants. The old icon-as-screenshot placeholders and shortcuts that did not route correctly have been removed rather than advertised as working.
 - `web/icons/`: lotus icons derived from the existing repository artwork, including an opaque 180px Apple touch icon. See the icons README for provenance and safe-area treatment.
-- `web/pwa-install.js` / `.css`: accessible install/help UI; single-use `beforeinstallprompt` handling; accepted/dismissed/error behavior; iOS/macOS/unsupported-browser guidance; top-level-tab guidance for frames; standalone detection. The full-screen player temporarily applies `html.sanctuary-player-expanded` to hide the entry so it cannot cover Minimize, without changing installation state. `lib/services/pwa_player_visibility*.dart` isolates that DOM integration from native builds; compiled Flutter verification is still required.
+- `web/pwa-install.js` / `.css`: **no page-level install entry**. The retained compatibility API can explicitly open accessible manual help or consume a single-use prompt, with accepted/dismissed/error recovery, browser-specific guidance and standalone detection. Existing overlay-visibility integration points remain compatible but cannot recreate a removed button. No native playback or navigation source changed for this removal.
 - `web/install-worker.js` / `offline.html`: network-first navigation with a tiny reconnect fallback. Non-navigation requests, including audio Range requests, are not intercepted. Cache cleanup is restricted to this worker's own versioned, application-scope prefix.
 - `web/flutter_bootstrap.js`: installs no competing Flutter caching worker.
 
@@ -88,7 +90,7 @@ The subsequent Home/footer correction was also checked: **17 Home/navigation bro
 
 The earlier sunrise-lake player / moonlit-blue Sleep update added **31 passing browser tests** covering actual sample playback, pause/resume/seek, timer expiry/fade, retry/loading cancellation, responsive layouts and font-independent icons. The real install selector is tested at all four widths; the install entry hides while the player is expanded and returns on minimize/completion without resetting installed state. All **83 browser/PWA tests passed together** after this update (31 player/Sleep + 17 Home + the 35 PWA checks above). The subsequent release-safety pass adds 7 platform/configuration guards; all **90 tests in `test/web/*.mjs` passed together** using the new locked `npm run test:web` setup. See [updated previews and verification](../design/README.md).
 
-### Current wellbeing / sound-library follow-up (2026-11-19)
+### Earlier wellbeing / sound-library follow-up (2026-11-19)
 
 All **180 repository browser/PWA/source-data/configuration tests passed together**, no failures/skips, including wellbeing routes/timer history, the solid-color Meditate cards and playback of all 18 local chooser sources and 23 individually routed ambient session mixes. [Session-audio verification](SESSION_AUDIO.md) is separate from installer/offline validation. Installer fixtures remain independent of Flutter. The DOM install entry hides over expanded players, sound choosers and wellbeing headers without resetting installed/prompt state. Flutter uses independent visibility classes and visible-page owners; native implementations are no-ops. The preview exercises the same CSS contract, not the compiled-web runtime.
 

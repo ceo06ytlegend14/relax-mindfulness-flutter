@@ -1,13 +1,21 @@
 # Candidate build-check evidence — not launch approval
 
-## Candidate identity
+## Subsequent checkpoint `b2e2a1a` — not a green run
+
+[Run 45782497839](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45782497839) completed for `b2e2a1a8aa5f5cad4604e2520d1ad19862422328`, whose two-parent merge preserved checkpoint `5a65abc` exactly and retained the existing GitHub history. **Browser/PWA/platform, Android debug/unsigned release and unsigned iOS compilation passed. The Flutter job failed: 426 passed, 3 failed, 0 skipped.** This is not all-target approval or device verification.
+
+Failures were one stale audition expectation (the implementation correctly selected `loop_ocean_waves.mp3`) and two inline-Sounds cases that assumed lazy controls/headers were already built or remained in view. Prepared test corrections keep the exact asset assertion, scroll the real vertical lazy list, verify retained scroll position/no full-player expansion, and explicitly reveal the header before checking it. No failure is skipped or suppressed. Both Dart test files pass WASM parse/format only; the corrections had no fresh Flutter execution when this note was prepared.
+
+The accompanying install-entry removal passes **326/326 local web + 93/93 Python** checks. Runtime fingerprint: `133eb131f88b436c7124b496b80f45d388ee78bb5fca17ccfc7838430e53e514`; **202 release reviews/gates remain pending**. Consult the [live branch checks](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/workflows/quality.yml?query=branch%3Aarena%2F6ab3ce1c-relax-mindfulness-flutter) for subsequent exact-source results. Older green candidates below do not certify these later changes.
+
+## Historical verified candidate identity
 
 - Source checkpoint: `ccb302b7cca0e130e04d624f29a34e662b6f607a` on `arena/6ab3ce1c-relax-mindfulness-flutter`.
 - Runtime fingerprint: `8b02ccfdc421379d35232d8e4809a1bdfc4c23396543a603b2f24a45f019bc62`.
 - [Exact-source Quality checks run 45739413274](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45739413274). Later documentation-only commits do not change this runtime fingerprint; their own checks remain visible in the [branch workflow history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/workflows/quality.yml?query=branch%3Aarena%2F6ab3ce1c-relax-mindfulness-flutter).
 - Toolchain: Flutter **3.38.10**, Java **17**, Android API **36** / minimum **24**, Xcode **26.3**. No Flutter/Dart/Xcode SDK is installed in the local coding sandbox; Flutter and native results below come from hosted CI, not WASM parsing.
 
-## Observed checks
+## Historical observed checks for `ccb302b`
 
 | Check | Exact-source result | Boundary |
 | --- | --- | --- |

@@ -92,6 +92,21 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.byKey(const ValueKey('mixer-title')), findsOneWidget);
         expect(find.byType(AmbientPlayerOverlay), findsNothing);
+        final mixerScroll = find
+            .descendant(
+              of: find.byKey(const PageStorageKey('ambient-mixer-scroll')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        // Track cards are lazily built. Scroll the actual vertical mixer, not
+        // the horizontal preset/category trays, before looking for the toggle.
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('toggle-Ocean Waves')),
+          250,
+          scrollable: mixerScroll,
+        );
+        final position = tester.state<ScrollableState>(mixerScroll).position;
+        final offsetBeforeToggle = position.pixels;
         await tapAmbient(tester, 'toggle-Ocean Waves');
         expect(state.app.activeAmbientTracks, {
           'Soft Rain': .3,
@@ -100,6 +115,18 @@ void main() {
         expect(state.app.tab, AppTab.sounds);
         expect(state.app.isAmbientPlayerExpanded, isFalse);
         expect(find.byType(AmbientPlayerOverlay), findsNothing);
+        expect(
+          find.byKey(const PageStorageKey('ambient-mixer-scroll')),
+          findsOneWidget,
+        );
+        expect(position.pixels, closeTo(offsetBeforeToggle, .1));
+        // An offscreen lazy header may be disposed; explicitly scroll back
+        // before asserting that Sounds is still the displayed page.
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('mixer-title')),
+          -250,
+          scrollable: mixerScroll,
+        );
         expect(find.byKey(const ValueKey('mixer-title')), findsOneWidget);
         expect(
           find.byKey(const ValueKey('sanctuary-mini-player')),

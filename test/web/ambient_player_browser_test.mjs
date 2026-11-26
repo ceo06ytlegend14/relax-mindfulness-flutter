@@ -549,7 +549,7 @@ async function assertInlineSoundPlayer(page) {
   assert.equal(await page.locator('#ambient-dialog').isVisible(), false, 'A sound toggle/level edit is not a request to open the full player');
   assert.equal(await page.locator('#session-dialog').isVisible(), false);
   assert.equal(await page.locator('#shared-mini-player').isVisible(), true);
-  assert.equal(await page.locator('#sanctuary-install-ui .install-entry').evaluate(node => getComputedStyle(node).visibility), 'visible');
+  assert.equal(await page.locator('.install-entry').count(), 0, 'Inline playback does not recreate the removed install control');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 }
 for (const width of [320, 390, 823]) {

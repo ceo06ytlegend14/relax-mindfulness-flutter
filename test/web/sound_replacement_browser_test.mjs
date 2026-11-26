@@ -276,21 +276,21 @@ for (const [width, height] of [[320, 640], [390, 844], [823, 1024], [844, 390]])
   });
 }
 
-test('the chooser temporarily hides the real install entry without changing player or install state', async t => {
+test('chooser and player transitions never recreate the removed install entry or change installation state', async t => {
   const { page } = await open(t);
   const entry = page.locator('#sanctuary-install-ui .install-entry');
-  assert.equal(await entry.isVisible(), true);
+  const installState = await page.evaluate(() => window.SanctuaryInstall.state);
+  assert.equal(await entry.count(), 0);
   await chooser(page);
   assert.equal(await page.evaluate(() => document.documentElement.classList.contains('sanctuary-sound-chooser-open')), true);
-  assert.equal(await entry.isVisible(), false);
-  // The player has a separate visibility owner; closing the chooser must not
-  // reveal the entry if a different full-screen overlay still owns the corner.
+  assert.equal(await entry.count(), 0);
   await page.evaluate(() => document.documentElement.classList.add('sanctuary-player-expanded'));
   await page.locator('#replacement-close').click();
   await page.waitForFunction(() => !document.documentElement.classList.contains('sanctuary-sound-chooser-open'));
-  assert.equal(await entry.isVisible(), false);
+  assert.equal(await entry.count(), 0);
   await page.evaluate(() => document.documentElement.classList.remove('sanctuary-player-expanded'));
-  assert.equal(await entry.isVisible(), true);
+  assert.equal(await entry.count(), 0);
+  assert.deepEqual(await page.evaluate(() => window.SanctuaryInstall.state), installState);
   assert.equal(await page.evaluate(() => playing), false);
 });
 

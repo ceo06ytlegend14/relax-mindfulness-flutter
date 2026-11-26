@@ -221,7 +221,7 @@ test('wellbeing has real pushed-page designs and discloses the separate browser 
   assert.equal(await page.locator('#wellbeing-route-title').textContent(), 'Your wellbeing');
   assert.match(await page.locator('.wellbeing-week').innerText(), /0 \/ 7/);
   assert.match(await page.locator('.wellbeing-preview-label').innerText(), /not your Flutter app/);
-  assert.equal(await page.locator('.install-entry').isVisible(), false, 'Install entry does not cover a pushed-page header');
+  assert.equal(await page.locator('.install-entry').count(), 0, 'No install entry is mounted over a pushed-page header');
   await page.locator('[data-wellbeing-route="breathing"]').click();
   assert.equal(await page.locator('#wellbeing-route-title').textContent(), 'Breathing room');
   assert.equal(await page.locator('#meditate-page').isVisible(), false, 'Breathing never aliases to Meditate');
@@ -233,7 +233,7 @@ test('wellbeing has real pushed-page designs and discloses the separate browser 
   assert.equal(await page.getByRole('button', {name:'Copy backup in the Flutter app'}).isDisabled(), true);
   await page.locator('[data-tab="home"]').click();
   assert.equal(await page.locator('#home-page').isVisible(), true);
-  assert.equal(await page.locator('.install-entry').isVisible(), true);
+  assert.equal(await page.locator('.install-entry').count(), 0, 'Returning Home never recreates the removed install entry');
 });
 
 for (const [width, height] of [[320, 640], [390, 844], [823, 1568], [1440, 1000]]) {
