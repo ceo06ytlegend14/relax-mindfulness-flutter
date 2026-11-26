@@ -1,0 +1,55 @@
+/* iPhone-inspired floating tab bar. This is application navigation, not a
+   simulated phone frame: the real system home-indicator area stays untouched. */
+.bottom-nav {
+  position:fixed;
+  left:50%;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:10;
+  width:calc(100% - 32px);
+  max-width:520px;
+  height:auto;
+  min-height:72px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;
+  gap:4px;
+  padding:6px;
+  border:1px solid #d4e4fa18;
+  border-radius:40px;
+  background:#122945ed;
+  box-shadow:0 8px 28px #00000030;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+}
+.bottom-nav .nav-item {
+  min-width:44px;
+  min-height:58px;
+  padding:7px 4px;
+  gap:4px;
+  border-radius:32px;
+  background:transparent;
+  color:#b9c5dd;
+  font-size:max(11px,calc(13px * var(--t)));
+  font-weight:500;
+  line-height:1.2;
+  transition:background-color .18s,color .18s;
+}
+.bottom-nav .nav-item > svg { width:24px; height:24px; filter:none; }
+.bottom-nav .nav-item > span { display:flex; align-items:center; justify-content:center; gap:4px; max-width:100%; overflow-wrap:anywhere; }
+.bottom-nav .nav-item.active { background:#2a4664; color:#9affe6; font-weight:700; }
+/* A visible dot as well as a tonal capsule: selection is not color alone. */
+.bottom-nav .nav-item.active > span::before { content:""; flex-shrink:0; width:3px; height:3px; border-radius:50%; background:currentColor; }
+.bottom-nav .nav-item.active::after { content:none; display:none; }
+.bottom-nav .nav-item:active { transform:none; }
+.bottom-nav .nav-item:focus-visible { outline:2px solid #adffe7; outline-offset:-2px; }
+.shared-mini-player { width:min(calc(100% - 32px),520px); bottom:calc(var(--nav) + 8px + env(safe-area-inset-bottom)); }
+.toast { bottom:calc(var(--nav) + 18px + env(safe-area-inset-bottom)); }
+.has-mini-player .toast { bottom:calc(var(--nav) + 120px + env(safe-area-inset-bottom)); }
+/* Reserve the floating controls once, not on both Home's inner and outer box. */
+.has-mini-player .home-inner { padding-bottom:0; }
+.has-mini-player :is(.home-page,main.content,.retreat-page,.wellbeing-page) { padding-bottom:calc(var(--nav) + 160px + env(safe-area-inset-bottom)); }
+@media (prefers-reduced-transparency:reduce) {
+  .bottom-nav { background:#122945; backdrop-filter:none; -webkit-backdrop-filter:none; }
+}
+@media (prefers-reduced-motion:reduce) { .bottom-nav .nav-item { transition:none; } }

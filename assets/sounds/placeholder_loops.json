@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "prepared_on": "2026-11-19",
+  "rights_status": "legacy-provenance-unresolved",
+  "additional_recordings": 0,
+  "scope": "Six development loop edits of six existing recordings, not additional takes, permission or release clearance. Original inputs are unchanged.",
+  "processing": "Decode 44.1 kHz stereo; equal-power qsin tail/head overlap; rotate past the consumed head; constant attenuation only, targeting -6 dBTP with final encoded guard <= -5.5 dBTP; 128 kbps MP3 with Xing gapless metadata. Output duration is input minus overlap. No extensions, replacement sources or post-edit dynamic normalization.",
+  "evidence": "docs/PLACEHOLDER_AUDIO.md",
+  "encoder": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "loops": [
+    {
+      "name": "Soft Rain",
+      "source_asset": "assets/sounds/soft_rain.mp3",
+      "source_sha256": "9f40e761012c8259e142f6825eb802976850863ee99e4e6f0d2e040f8f9d9833",
+      "asset": "assets/sounds/loop_soft_rain.mp3",
+      "overlap_seconds": 3,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 27.0,
+      "gain_db": -2.59,
+      "sha256": "b96f7083f30f9e2f0620682eefe97c1bd1720c6bd2f1847f36d298d9283749a6",
+      "bytes": 433230,
+      "recipe_sha256": "f45b98d318cd8a6657d30de5500c9ad2057286951e56dc8c34e6edd892d2458e",
+      "measurements": {
+        "sample_peak_dbfs": -6.742,
+        "rms_dbfs": -37.154,
+        "channels": [
+          {
+            "boundary_jump": 0.00679455,
+            "jump_over_rms_step": 1.09952
+          },
+          {
+            "boundary_jump": 0.00373539,
+            "jump_over_rms_step": 0.52823
+          }
+        ],
+        "integrated_lufs": -32.9,
+        "true_peak_dbtp": -6.5
+      }
+    },
+    {
+      "name": "Ocean Waves",
+      "source_asset": "assets/sounds/ocean_waves.mp3",
+      "source_sha256": "69769264ab133e22ed916553794af4ae14e183227f556e7cb9dca6148c973d8c",
+      "asset": "assets/sounds/loop_ocean_waves.mp3",
+      "overlap_seconds": 4,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 26.0,
+      "gain_db": 0.0,
+      "sha256": "852e1a6e84f85a0fac4e88fddf45b22154527cbcc1fd8f1d7603e4e1fc42f9a1",
+      "bytes": 417352,
+      "recipe_sha256": "399f1bdd74429360f33f1838d33d756dbb9d732bdcbff84d9cc9b545476255f4",
+      "measurements": {
+        "sample_peak_dbfs": -8.337,
+        "rms_dbfs": -23.105,
+        "channels": [
+          {
+            "boundary_jump": 0.00060324,
+            "jump_over_rms_step": 0.12786
+          },
+          {
+            "boundary_jump": 0.01533551,
+            "jump_over_rms_step": 3.03388
+          }
+        ],
+        "integrated_lufs": -21.46,
+        "true_peak_dbtp": -8.34
+      }
+    },
+    {
+      "name": "Forest Birds",
+      "source_asset": "assets/sounds/forest_birds.mp3",
+      "source_sha256": "67e5e2bb7c94d6dd58a505f62dfc9ad3a3f5c590bddf3229b532acc3410c75bc",
+      "asset": "assets/sounds/loop_forest_birds.mp3",
+      "overlap_seconds": 6,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 24.0,
+      "gain_db": -2.94,
+      "sha256": "538fa7ecdab86871a239772e1ed61ecf60c7560915e20400a25ed99f84f6c54d",
+      "bytes": 385171,
+      "recipe_sha256": "d8cd39e2572a7b10a0bd129956a4e08de92a173659d838abba0aa1ce0af6a3ee",
+      "measurements": {
+        "sample_peak_dbfs": -6.634,
+        "rms_dbfs": -27.775,
+        "channels": [
+          {
+            "boundary_jump": 0.00239478,
+            "jump_over_rms_step": 0.10625
+          },
+          {
+            "boundary_jump": 0.00239478,
+            "jump_over_rms_step": 0.10625
+          }
+        ],
+        "integrated_lufs": -18.85,
+        "true_peak_dbtp": -6.45
+      }
+    },
+    {
+      "name": "Campfire",
+      "source_asset": "assets/sounds/campfire.mp3",
+      "source_sha256": "e39ffb4d73814b67aae020e84ae9ca4ba8250ac5d6f5ed04f030df14ac3eac14",
+      "asset": "assets/sounds/loop_campfire.mp3",
+      "overlap_seconds": 4,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 26.0,
+      "gain_db": -5.56,
+      "sha256": "9a6ecba45dbe047415ec864e1a82de5398f0845e7719ee7c1030f0e547dd20c7",
+      "bytes": 417346,
+      "recipe_sha256": "2293eabf67e805cf467ee7c9987f519cf1aa20bf1dae1e5227d7718b147d4fe2",
+      "measurements": {
+        "sample_peak_dbfs": -6.442,
+        "rms_dbfs": -30.711,
+        "channels": [
+          {
+            "boundary_jump": 0.00077363,
+            "jump_over_rms_step": 0.68908
+          },
+          {
+            "boundary_jump": 0.00455525,
+            "jump_over_rms_step": 4.09282
+          }
+        ],
+        "integrated_lufs": -38.54,
+        "true_peak_dbtp": -6.44
+      }
+    },
+    {
+      "name": "Bamboo Chimes",
+      "source_asset": "assets/sounds/wind_chimes.mp3",
+      "source_sha256": "66b3a7165cbff1dca1ad5a9edc1050b05dca0435af83ddb97041e8ae4b7e8079",
+      "asset": "assets/sounds/loop_wind_chimes.mp3",
+      "overlap_seconds": 3,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 27.0,
+      "gain_db": 0.0,
+      "sha256": "b48c7ce02624dcf18132a45f1e95aa0799152a3b82f454b6995f3232128f2d78",
+      "bytes": 433238,
+      "recipe_sha256": "b94be440c418ab1d04c2ef9fabb7e963d3a6fbe9ae5d59d6ea908de4b9356005",
+      "measurements": {
+        "sample_peak_dbfs": -9.801,
+        "rms_dbfs": -23.438,
+        "channels": [
+          {
+            "boundary_jump": 0.00730484,
+            "jump_over_rms_step": 1.39142
+          },
+          {
+            "boundary_jump": 0.00491297,
+            "jump_over_rms_step": 0.88825
+          }
+        ],
+        "integrated_lufs": -20.81,
+        "true_peak_dbtp": -9.8
+      }
+    },
+    {
+      "name": "Temple Bowl",
+      "source_asset": "assets/sounds/tibetan_bowls.mp3",
+      "source_sha256": "933c8c4218c0e89d88624db68bb89aa7eda080a41a7a404ee3d6029afaa8d582",
+      "asset": "assets/sounds/loop_tibetan_bowls.mp3",
+      "overlap_seconds": 4,
+      "rights_status": "legacy-provenance-unresolved",
+      "input_seconds": 30.0,
+      "loop_seconds": 26.0,
+      "gain_db": -4.64,
+      "sha256": "410b696c8e04afed5d31c9d7d1a493ad3aa403c7766b55974cbad464f82913ca",
+      "bytes": 417352,
+      "recipe_sha256": "846b3c31c20b23b5fa2230b167286c0332ada8870ad9e7bd48ac3ec8671b0146",
+      "measurements": {
+        "sample_peak_dbfs": -6.41,
+        "rms_dbfs": -18.624,
+        "channels": [
+          {
+            "boundary_jump": 0.00029542,
+            "jump_over_rms_step": 0.06231
+          },
+          {
+            "boundary_jump": 0.01245899,
+            "jump_over_rms_step": 2.36412
+          }
+        ],
+        "integrated_lufs": -16.42,
+        "true_peak_dbtp": -6.41
+      }
+    }
+  ]
+}

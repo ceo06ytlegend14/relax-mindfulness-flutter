@@ -1,4 +1,4 @@
-package com.example.relax_mindfulness
+package com.sanctuary.relax_mindfulness
 
 import io.flutter.embedding.android.FlutterActivity
 

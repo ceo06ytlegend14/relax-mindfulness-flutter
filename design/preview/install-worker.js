@@ -1,0 +1,1 @@
+../../web/install-worker.js

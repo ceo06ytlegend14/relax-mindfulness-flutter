@@ -1,0 +1,78 @@
+category,sound,source_loop_mm_ss_tenths,decoded_seconds,status,source,upstream_revision,sha256
+Rain,Soft Rain,0:27.0,27.000000,Bundled loop edit,assets/sounds/loop_soft_rain.mp3,,b96f7083f30f9e2f0620682eefe97c1bd1720c6bd2f1847f36d298d9283749a6
+Rain,Thunderstorm,1:08.5,68.545306,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/thunder.mp3,11c0be2200116a3635880d600fd6953899cc51a3,c96dde1068d5c96a40ad47cccc767a88d907b3d3fdcb84819e18b81dcd6bd2bd
+Rain,Rain on Window,0:33.1,33.142676,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/rain-on-window.mp3,11c0be2200116a3635880d600fd6953899cc51a3,781add053a83a0a9ac2a6ee2ccc937fed24872d479830c0c98cd70ed03689fe9
+Rain,Rain on Roof,0:10.0,10.015873,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/rain-on-car-roof.mp3,11c0be2200116a3635880d600fd6953899cc51a3,5e16d3e97c97a3a130d13a1300d5ccdd3ed8b7788dc9f76262ead0e4eb8a07d7
+Rain,Rain on Umbrella,0:26.6,26.554921,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/rain-on-umbrella.mp3,11c0be2200116a3635880d600fd6953899cc51a3,f31a565bdf853fbf6baba8495fdfed91f161c55756540819ee13dbbca98ab8c0
+Rain,Rain on Tent,1:22.6,82.570794,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/rain-on-tent.mp3,11c0be2200116a3635880d600fd6953899cc51a3,427d0a06042c5154345ed95de49b2aebf465716766f64891e49f87c3e7cde787
+Rain,Rain on Leaves,0:42.2,42.219320,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/rain-on-leaves.mp3,11c0be2200116a3635880d600fd6953899cc51a3,66669f1e4f90b94016cd3287f7c3b18fd5b76dff7939617b3ba5ec7c92b587ac
+Rain,Urban Rain,,,App stream — length unverified,https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg,,
+Rain,Heavy Rain,0:21.8,21.788163,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/rain/heavy-rain.mp3,11c0be2200116a3635880d600fd6953899cc51a3,6910161b347a4f616bc42d0b3118982c243d149fe45e55fef74c9a9e1aa08560
+Rain,Light Drizzle,,,No recording configured,,,
+Rain,Rain Cave,,,No recording configured,,,
+Rain,Tropical Storm,,,No recording configured,,,
+Nature,Ocean Waves,0:26.0,26.000000,Bundled loop edit,assets/sounds/loop_ocean_waves.mp3,,852e1a6e84f85a0fac4e88fddf45b22154527cbcc1fd8f1d7603e4e1fc42f9a1
+Nature,Mountain Stream,1:00.0,60.000000,Bundled,assets/sounds/woodland_stream.mp3,,6adecfed2c40be36158c3e0588bcb4b998902edf19caf10c5220e9eb4a18c2d8
+Nature,Forest Birds,0:24.0,24.000000,Bundled loop edit,assets/sounds/loop_forest_birds.mp3,,538fa7ecdab86871a239772e1ed61ecf60c7560915e20400a25ed99f84f6c54d
+Nature,Woodland Morning,1:00.0,60.000000,Bundled,assets/sounds/woodland_morning.mp3,,6560be4398eb5257bea2413ae972db881b1cd80fe2fb1b7d7473776b437e0268
+Nature,Campfire,0:26.0,26.000000,Bundled loop edit,assets/sounds/loop_campfire.mp3,,9a6ecba45dbe047415ec864e1a82de5398f0845e7719ee7c1030f0e547dd20c7
+Nature,Fireplace,0:24.5,24.537596,Bundled,assets/sounds/fireplace.mp3,,1639dabf206a799136fc0ea0f6e721b08c0dcddc8e4fc03fa6061752e5d9a46e
+Nature,Wind in Trees,0:57.6,57.555873,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/nature/wind-in-trees.mp3,11c0be2200116a3635880d600fd6953899cc51a3,b29f775dda9789004aaceee392e124eaa35c0386d27f99b93a639185d98f6b4b
+Nature,Crickets,0:48.3,48.320635,Bundled,assets/sounds/night_crickets.mp3,,140edb3ff3f04d25cc35a02c679b061e4c748adf9967f6d7495fa85480539089
+Nature,Waterfall,0:23.5,23.485896,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/nature/waterfall.mp3,11c0be2200116a3635880d600fd6953899cc51a3,46d0848f5876d0f461e8439f812464742710f5f6d236baa977f382d794c60b0a
+Nature,Frogs,1:18.6,78.648027,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/animals/frog.mp3,11c0be2200116a3635880d600fd6953899cc51a3,c41fbbbfbe896a11fd19c0f8dc9185a000462239ff971625ac8eaedd05480b8c
+Nature,Waves on Pebbles,,,No recording configured,,,
+Nature,Underwater,,,No recording configured,,,
+Nature,Meadow Breeze,0:13.8,13.839955,Bundled,assets/sounds/meadow_wind.mp3,,497057b70d733344e15f39d38e4cc91b3680b813840a8f8a172f2449c307a7a7
+Nature,Desert Wind,,,No recording configured,,,
+Nature,Jungle Night,,,No recording configured,,,
+Nature,Leaves Rustling,,,No recording configured,,,
+Nature,Mountain Echo,,,No recording configured,,,
+Places,Coffee Shop,0:15.7,15.662721,Bundled,assets/sounds/cafe_ambience.mp3,,de277c05a5139d4c113501d0fb483a7531df506b61f6778f912bcd2266d828a4
+Places,Library,2:56.5,176.528209,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/places/library.mp3,11c0be2200116a3635880d600fd6953899cc51a3,95095ef77ed7f1d1c2550b6f39d95cde31f72b37d8023c1dfd7c22931d84fe05
+Places,Office Ambience,2:19.7,139.727166,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/places/office.mp3,11c0be2200116a3635880d600fd6953899cc51a3,32691ad3d1f0cd6175a4e648ad15c5fd354ad0e59a3ce0b246fd7cf89d9a4169
+Places,Church Bells,,,No recording configured,,,
+Places,Quiet Park,,,No recording configured,,,
+Places,Street Market,,,No recording configured,,,
+Places,Temple Bowl,0:26.0,26.000000,Bundled loop edit,assets/sounds/loop_tibetan_bowls.mp3,,410b696c8e04afed5d31c9d7d1a493ad3aa403c7766b55974cbad464f82913ca
+Places,Zen Garden,,,No recording configured,,,
+Places,Harbor,,,No recording configured,,,
+Places,Farmyard,,,No recording configured,,,
+Transport,Train Track,,,No recording configured,,,
+Transport,Airplane Cabin,1:00.0,60.031746,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/transport/airplane.mp3,11c0be2200116a3635880d600fd6953899cc51a3,170fcd68d60ebe89ac26425a0c38c437b70071cc4919419bbb0cbc92a3cb5af8
+Transport,Driving Rain Car,,,No recording configured,,,
+Transport,Boat Deck,0:40.6,40.561224,Bundled,assets/sounds/boat_deck.mp3,,5a54d5105c0c3da6ee19e7be95024a73a293bd7596ec54b80577fa16bbeed033
+Transport,Subway Train,,,No recording configured,,,
+Transport,Bicycle Ride,,,No recording configured,,,
+Transport,Sailing Ship,2:40.5,160.520680,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/transport/sailboat.mp3,11c0be2200116a3635880d600fd6953899cc51a3,8701ec1f21561d53c006cf2af4dd540a1b952ed56da4315d382c70a8c01d120f
+Transport,Highway Traffic,2:12.5,132.503220,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/urban/highway.mp3,11c0be2200116a3635880d600fd6953899cc51a3,3de274910ddffa6b1ebfce67875aff87b4b7a4c662e49fbb822e5e39458006b5
+Things,Clock Ticking,0:15.9,15.939637,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/things/clock.mp3,11c0be2200116a3635880d600fd6953899cc51a3,45283d30ccc1ccebab2ddb84dbaaaedf5265275c33cb7c4c8defce9451059160
+Things,Fan Noise,,,No recording configured,,,
+Things,Keyboard Typing,0:12.1,12.146939,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/things/keyboard.mp3,11c0be2200116a3635880d600fd6953899cc51a3,2499954ba838ce1b32b79560a2ab273209ae350bb9988490738ed2e2b23f82ae
+Things,Washing Machine,0:22.5,22.530295,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/things/washing-machine.mp3,11c0be2200116a3635880d600fd6953899cc51a3,f468aaf120141cb618085d33aba190e81f8e85ba6efe5f292ff0a920edabf955
+Things,Vinyl Crackle,1:05.9,65.900726,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/things/vinyl-effect.mp3,11c0be2200116a3635880d600fd6953899cc51a3,037f7a6ac2a78c1378381048b40049b4960801a4f1e2a209991a64f8744fa46d
+Things,Boiling Kettle,,,No recording configured,,,
+Things,Bamboo Chimes,0:27.0,27.000000,Bundled loop edit,assets/sounds/loop_wind_chimes.mp3,,b48c7ce02624dcf18132a45f1e95aa0799152a3b82f454b6995f3232128f2d78
+Things,Page Turning,,,No recording configured,,,
+Things,Pendulum,,,No recording configured,,,
+Things,Wind Generator,,,No recording configured,,,
+Noise,White Noise,1:00.0,60.000000,Bundled,assets/sounds/noise_white.mp3,,047a40b5b66c9b0a1555cb90b9d68ad27a362f4752d1cf7fb6500b5cafae86d4
+Noise,Pink Noise,1:00.0,60.000000,Bundled,assets/sounds/noise_pink.mp3,,bd9e43a749c5ac3e61389a215d22cda17b72de28b0c9a29daeec9d0e9e2fc525
+Noise,Brown Noise,1:00.0,60.000000,Bundled,assets/sounds/noise_brown.mp3,,08952b28e15fa2976336153ea9c48452e0fde04162e35393405ac7e3b02384e6
+Noise,Blue Noise,1:00.0,60.000000,Bundled,assets/sounds/noise_blue.mp3,,9405c09fad6a00b6b24a14b9f6fa9e7cc191b151105035b4e0c6fa0d29fb906c
+Noise,Violet Noise,1:00.0,60.000000,Bundled,assets/sounds/noise_violet.mp3,,e0b832daa5bcc6d5c6356f2b69ed3692c8c1d589faddd913e094335db5af38a5
+Noise,Grey Noise,,,No recording configured,,,
+Solfeggio,432Hz Healing,,,No recording configured,,,
+Solfeggio,528Hz Transformation,,,No recording configured,,,
+Solfeggio,639Hz Harmonics,,,No recording configured,,,
+Solfeggio,108Hz Theta Drone,,,No recording configured,,,
+Solfeggio,Delta Deep Sleep,0:15.0,15.000000,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/binaural/binaural-delta.wav,11c0be2200116a3635880d600fd6953899cc51a3,c784ebc461c36e372a31fac0318faf7fe82301c668185086a98d2de55214a0aa
+Solfeggio,Alpha Focus Flow,0:15.0,15.000000,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/binaural/binaural-alpha.wav,11c0be2200116a3635880d600fd6953899cc51a3,4f4fd98a2a0e8dde09820428ec9767b0137b517fc8f16c267166c797272c5ce6
+Solfeggio,Beta Energy Boost,,,No recording configured,,,
+Solfeggio,Gamma Insight,0:15.0,15.000000,App stream — upstream file measured,https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/public/sounds/binaural/binaural-gamma.wav,11c0be2200116a3635880d600fd6953899cc51a3,7e92631c38aea00d9d876045893916603482bc1304dc1f34c82ec15735f0d0ca
+Solfeggio,174Hz Pain Relief,,,No recording configured,,,
+Solfeggio,285Hz Cellular,,,No recording configured,,,
+Solfeggio,396Hz Liberation,,,No recording configured,,,
+Solfeggio,741Hz Intuition,,,No recording configured,,,
+Solfeggio,852Hz Awakening,,,No recording configured,,,
+Solfeggio,963Hz Crown State,,,No recording configured,,,

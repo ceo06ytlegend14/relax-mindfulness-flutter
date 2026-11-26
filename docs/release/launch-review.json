@@ -1,0 +1,2363 @@
+{
+  "schema_version": 1,
+  "inventoried_on": "2026-11-19",
+  "scope": "118 local media files (48 audio: 18 mixer inputs, 6 loop-edit derivatives, 23 session arrangements and unused legacy sample; 68 artwork/drawables; 2 fonts) plus all 75 effective stream-only native bindings including legacy names, not 75 new catalog sounds. No rights or release approval is recorded.",
+  "review_instructions": "See docs/LAUNCH_HARDENING.md. Source receipts are not owner clearance. Never set approved/passed without named human review, exact subject checksum and a checksum-bound repository-local evidence record. Keep secrets out.",
+  "local_assets": [
+    {
+      "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
+      "kind": "artwork",
+      "sha256": "7ca6d5cec2169c5a98661a119db23a6f3399c8fef2256ff04f3a642831282478",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/drawable/launch_background.xml",
+      "kind": "artwork",
+      "sha256": "94433756fe10005ddd6fc55cc5c0b1e9f3c10b66a08ceac795ece6713d34e28a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "kind": "artwork",
+      "sha256": "6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "kind": "artwork",
+      "sha256": "c7c0c0189145e4e32a401c61c9bdc615754b0264e7afae24e834bb81049eaf81",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "kind": "artwork",
+      "sha256": "e14aa40904929bf313fded22cf7e7ffcbf1d1aac4263b5ef1be8bfce650397aa",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "kind": "artwork",
+      "sha256": "4d470bf22d5c17d84edc5f82516d1ba8a1c09559cd761cefb792f86d9f52b540",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "kind": "artwork",
+      "sha256": "3c34e1f298d0c9ea3455d46db6b7759c8211a49e9ec6e44b635fc5c87dfb4180",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/fonts/editorial/CormorantGaramond.ttf",
+      "kind": "font",
+      "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/fonts/editorial/OFL.txt"
+      ],
+      "note": "Bundled SIL OFL evidence; owner checks attribution/packaging. No automatic approval."
+    },
+    {
+      "path": "assets/fonts/mixer/Roboto.ttf",
+      "kind": "font",
+      "sha256": "d7598e12c5dbef095ff8272cfc55da0250bd07fbdecbac8a530b9b277872a134",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/fonts/mixer/OFL.txt"
+      ],
+      "note": "Bundled SIL OFL evidence; owner checks attribution/packaging. No automatic approval."
+    },
+    {
+      "path": "assets/images/app_icon.jpg",
+      "kind": "artwork",
+      "sha256": "ab7953236166d69d14feb7a4e021b7b4493b286915d7b56aa14979a20a61b5d0",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/LAUNCH_READINESS.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/body_backdrop.webp",
+      "kind": "artwork",
+      "sha256": "a4936a587653a87102f07755d644f58c9943d985dc524f1723756d09767d2d4b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/body_rest.webp",
+      "kind": "artwork",
+      "sha256": "b1ef08fcd9aca2a0058bf3d82cb61b67c3a26b2ed3d8461ecde09aedc859b1e9",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/comfort.webp",
+      "kind": "artwork",
+      "sha256": "b29b8052280cf028f9b62382db2a7d6e46d76ae6e99555477adbfe2e4c1b8539",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/comfort_backdrop.webp",
+      "kind": "artwork",
+      "sha256": "cff21b2e2cdd633042768f40ea83ee9d21a32c2fbe157439672ed21d16692950",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/daily_journey.webp",
+      "kind": "artwork",
+      "sha256": "4461cc4193dbe6ca80ed71282d48dd762228cd486fbad82aa98bcfbe3dafd52f",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/forest_sunrise.webp",
+      "kind": "artwork",
+      "sha256": "c3314da4a4141e4521ee85c536a7e8878413e41d08c91b183428cf90874fd067",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/morning.webp",
+      "kind": "artwork",
+      "sha256": "2d4b30a7cc32be31b5e1e1787789e219162dcda10ca4414991523df6a0915ee3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/morning_backdrop.webp",
+      "kind": "artwork",
+      "sha256": "0bd42404700857c0f353edd432f9a62f49f540c4325bcd73085c78961bbf906f",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/quiet_backdrop.webp",
+      "kind": "artwork",
+      "sha256": "a006137d3d341a593ce4d5906b59d8d39faadaefb8be8e0d02aeb45853a5f441",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/meditate/quiet_mind.webp",
+      "kind": "artwork",
+      "sha256": "6018d3c60ef95d365518a533ff67cfa716efc5a0117186942df39e62601deae9",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/meditate/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/heavy_rain.webp",
+      "kind": "artwork",
+      "sha256": "cd28890bb8e4417adec5be80649e629e38a981d9d32fe3963a7b248adfda794a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/light_drizzle.webp",
+      "kind": "artwork",
+      "sha256": "500a71895122e5ba587b9501c5517cc5568aa46ffe76a459c2215588b339a9a6",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/moonlit_forest.webp",
+      "kind": "artwork",
+      "sha256": "65bcf1d2344898980f43d9d70b904201431c9500079e4d9cd86c528a2295792a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/noise_cover.webp",
+      "kind": "artwork",
+      "sha256": "d859b575af60e99b679bc10f069d1b9fe9990619e4cd96bea2c0664199021e6e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/rain_leaves.webp",
+      "kind": "artwork",
+      "sha256": "85734bddd9073ff73c367e38de416797c310387454bacd1a603ec3fe18e79e0e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/rain_roof.webp",
+      "kind": "artwork",
+      "sha256": "c71ba9d8dda187a80b9ebcd3bb8bc079f419ec9be5781bc96cd5419e091db37d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/rain_tent.webp",
+      "kind": "artwork",
+      "sha256": "c6b105223687d5433c80e91cf65a2108a0f01d80637b89a596619968a9ec643d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/rain_umbrella.webp",
+      "kind": "artwork",
+      "sha256": "0f8c6da6a4bbc61d6d120bfd4f6fcc814b49e7035d8d067124c9c60529cbfc13",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/rain_window.webp",
+      "kind": "artwork",
+      "sha256": "35bb6111c17ccc0984dd85efea7a5ed2a0d27c387f1fdf404554d904fa21f150",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/soft_rain.webp",
+      "kind": "artwork",
+      "sha256": "4fa5e4377acfab88d6a89136b2d0636565c696a56bc2c74c2aa926d2bffbbe59",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/thunderstorm.webp",
+      "kind": "artwork",
+      "sha256": "0a6d37a802c26e644caa216d27d10a31c9fd9e1e870c3547cd8d3e3911926c32",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/tones_cover.webp",
+      "kind": "artwork",
+      "sha256": "ab0ed3993f021a983bf808d47557e63033f6536fbf72d862aa0cbffe053a75bc",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/mixer/urban_rain.webp",
+      "kind": "artwork",
+      "sha256": "8e76cbcf8d6809aaee2be36604249008ca847bca993b0110cea6497902803053",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/mixer/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/player/comfort_art.webp",
+      "kind": "artwork",
+      "sha256": "a8bdcd80c05835596c820875d682f1a973daaba7413f48595dccf414d32d5181",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/player/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/player/lake_dawn.webp",
+      "kind": "artwork",
+      "sha256": "295f57112239a5e616bf5f696fc87019ece9d3711a8068ea74fa6c6472926a46",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/player/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/campfire.webp",
+      "kind": "artwork",
+      "sha256": "57af5e89b6f4c26a53673aa883c942b7a333afb4fe277a0b57177ec44c2d9a73",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/continue_listening.webp",
+      "kind": "artwork",
+      "sha256": "c105fcbc1032cba2deeb5ff956edbd2d78a4652125fe9388535e00264dd2894b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/heavy_rain.webp",
+      "kind": "artwork",
+      "sha256": "e6fde6850778b1ad2d134e07dedb106ef651445e7687120d70790e105ac3a7d7",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/moonlit_ocean.webp",
+      "kind": "artwork",
+      "sha256": "235c588968556dc173acd25b3ac3b8f4dbe9f59d868dc25aa16f2563a0c4b850",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/moonlit_shore.webp",
+      "kind": "artwork",
+      "sha256": "b939659fcca2c16fe6996369e98d4616b35c6643823b80f62276963d3f47eabc",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/night_forest.webp",
+      "kind": "artwork",
+      "sha256": "c25e9df14ce86c6f8c4be33b8119e2b5da2f0968d9b347f53658565ffd85d917",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/night_sky.webp",
+      "kind": "artwork",
+      "sha256": "7e26b9d5686fc6e369ac0013f4e5ba33c51e5c475dbc1e72427339f1f9b2a749",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/ocean_journey.webp",
+      "kind": "artwork",
+      "sha256": "3bf6046ce208a5d655e16cf3b2e1f1413808d91838b3b435c1e518b55bcc35e0",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/ocean_waves.webp",
+      "kind": "artwork",
+      "sha256": "9eeb5d61eb7f7ac1c96a6b076b616659ec2a358eda003ccf3d40dbd91929eac0",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/rain_window.webp",
+      "kind": "artwork",
+      "sha256": "8aee920e6426cbbcd5307603963dcaac22ac0931b89315fcc5da417b3c3da57d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/images/sleep/thunderstorm.webp",
+      "kind": "artwork",
+      "sha256": "efb019ded48f7afdf9d8302bb7143b6bc1d25a7c46bb3579d6b0e67fd347780d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/images/sleep/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "assets/sounds/boat_deck.mp3",
+      "kind": "audio",
+      "sha256": "5a54d5105c0c3da6ee19e7be95024a73a293bd7596ec54b80577fa16bbeed033",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/cafe_ambience.mp3",
+      "kind": "audio",
+      "sha256": "de277c05a5139d4c113501d0fb483a7531df506b61f6778f912bcd2266d828a4",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/calm_guided.mp3",
+      "kind": "audio",
+      "sha256": "91053146e314c1f12f21ad388ac9b2edc038927fc9a1f40deaf8fef1b8789049",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent. Unreferenced by playback, but pubspec still bundles the entire directory; hiding it does not remove shipped bytes."
+    },
+    {
+      "path": "assets/sounds/campfire.mp3",
+      "kind": "audio",
+      "sha256": "e39ffb4d73814b67aae020e84ae9ca4ba8250ac5d6f5ed04f030df14ac3eac14",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/fireplace.mp3",
+      "kind": "audio",
+      "sha256": "1639dabf206a799136fc0ea0f6e721b08c0dcddc8e4fc03fa6061752e5d9a46e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/forest_birds.mp3",
+      "kind": "audio",
+      "sha256": "67e5e2bb7c94d6dd58a505f62dfc9ad3a3f5c590bddf3229b532acc3410c75bc",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/loop_campfire.mp3",
+      "kind": "audio",
+      "sha256": "9a6ecba45dbe047415ec864e1a82de5398f0845e7719ee7c1030f0e547dd20c7",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/campfire.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/loop_forest_birds.mp3",
+      "kind": "audio",
+      "sha256": "538fa7ecdab86871a239772e1ed61ecf60c7560915e20400a25ed99f84f6c54d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/forest_birds.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/loop_ocean_waves.mp3",
+      "kind": "audio",
+      "sha256": "852e1a6e84f85a0fac4e88fddf45b22154527cbcc1fd8f1d7603e4e1fc42f9a1",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/ocean_waves.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/loop_soft_rain.mp3",
+      "kind": "audio",
+      "sha256": "b96f7083f30f9e2f0620682eefe97c1bd1720c6bd2f1847f36d298d9283749a6",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/soft_rain.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/loop_tibetan_bowls.mp3",
+      "kind": "audio",
+      "sha256": "410b696c8e04afed5d31c9d7d1a493ad3aa403c7766b55974cbad464f82913ca",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/tibetan_bowls.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/loop_wind_chimes.mp3",
+      "kind": "audio",
+      "sha256": "b48c7ce02624dcf18132a45f1e95aa0799152a3b82f454b6995f3232128f2d78",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/PLACEHOLDER_AUDIO.md",
+        "assets/sounds/placeholder_loops.json",
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Development loop edit of assets/sounds/wind_chimes.mp3; original and derivative rights unresolved. Processing is not a new recording or permission; replace or clear before distribution."
+    },
+    {
+      "path": "assets/sounds/meadow_wind.mp3",
+      "kind": "audio",
+      "sha256": "497057b70d733344e15f39d38e4cc91b3680b813840a8f8a172f2449c307a7a7",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/night_crickets.mp3",
+      "kind": "audio",
+      "sha256": "140edb3ff3f04d25cc35a02c679b061e4c748adf9967f6d7495fa85480539089",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/noise_blue.mp3",
+      "kind": "audio",
+      "sha256": "9405c09fad6a00b6b24a14b9f6fa9e7cc191b151105035b4e0c6fa0d29fb906c",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/noise_brown.mp3",
+      "kind": "audio",
+      "sha256": "08952b28e15fa2976336153ea9c48452e0fde04162e35393405ac7e3b02384e6",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/noise_pink.mp3",
+      "kind": "audio",
+      "sha256": "bd9e43a749c5ac3e61389a215d22cda17b72de28b0c9a29daeec9d0e9e2fc525",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/noise_violet.mp3",
+      "kind": "audio",
+      "sha256": "e0b832daa5bcc6d5c6356f2b69ed3692c8c1d589faddd913e094335db5af38a5",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/noise_white.mp3",
+      "kind": "audio",
+      "sha256": "047a40b5b66c9b0a1555cb90b9d68ad27a362f4752d1cf7fb6500b5cafae86d4",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "assets/sounds/ocean_waves.mp3",
+      "kind": "audio",
+      "sha256": "69769264ab133e22ed916553794af4ae14e183227f556e7cb9dca6148c973d8c",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/session_bedtime_slumber.mp3",
+      "kind": "audio",
+      "sha256": "55a1f4db71ed0aebc9e39bdee7c6cb19b3842e415a73a1adc07227b41751d78b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_body_rest.mp3",
+      "kind": "audio",
+      "sha256": "c40caf7e73758ef297bf2ec590dcc603a9d8ae6e3de40fa11aa230e2a71ee2ef",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_breeze_rest.mp3",
+      "kind": "audio",
+      "sha256": "8451d59ebf0f2233ab809d52319bda8a4f7f1c0bc6588a6daf1275beb9edce3a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_calm_mountain.mp3",
+      "kind": "audio",
+      "sha256": "591951f5febced3f23ebbfc814a94ac20d9ea006f46b36d98d381bc6546f0b0b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_crystal_chimes.mp3",
+      "kind": "audio",
+      "sha256": "ecff4cc2a96daee717aba8c061ea93049b146591a4b17b64431331c531adacbe",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_dreamland.mp3",
+      "kind": "audio",
+      "sha256": "08c208f265fec789a96a128f378c36b65b78ea11b79f58f8f35f039840ece168",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_forest_bathing.mp3",
+      "kind": "audio",
+      "sha256": "0c1251f557714cdaf41659969a2b3bd4271ef9808cc13215cfdcaeb560641644",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_gentle_relief.mp3",
+      "kind": "audio",
+      "sha256": "65d2cb4bf89393be1746fa9bc36202dd4bfdf7ea3a2e35e738a163831c8ce677",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_hidden_waterfall.mp3",
+      "kind": "audio",
+      "sha256": "1a0141ff96264e0be3a6b9d5dff05ae215b1cc11363130f87553f917772f948c",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_japanese_garden.mp3",
+      "kind": "audio",
+      "sha256": "9aef3d1c727ab8b0888e0be79998102b307414a01ce6d2bfacdae088a60ea200",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_lighthouse.mp3",
+      "kind": "audio",
+      "sha256": "fbc36cb47009bdcad6529b8ec7b92b3853bb6ad414647e19191731bf4b54f041",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_loving_warmth.mp3",
+      "kind": "audio",
+      "sha256": "ea5561baf3bb29fe1cccc1f39a64d2038572367586c3455d71653f5e58e88f7a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_morning_awakening.mp3",
+      "kind": "audio",
+      "sha256": "e2a1dac02720922fe08a503e631f8ecc30a105845589a6fa1f243a4d160b649d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_ocean_horizon.mp3",
+      "kind": "audio",
+      "sha256": "3b922c9f6a5ff6066f3e1064235b60dc81960584a102a44bcfca3ea22c3de93e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_peaceful_haven.mp3",
+      "kind": "audio",
+      "sha256": "3df7cff788d989eb5d209f1f0dece6e3f1d236c66bb3c4f23da3e32f6230942b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_quiet_mind.mp3",
+      "kind": "audio",
+      "sha256": "0d78b05eb3edfa3256e982a425a454fc1abce10ac3e9cdf6200d16a11dd91098",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_release_tension.mp3",
+      "kind": "audio",
+      "sha256": "bfbd157d0aa109e39f9ae732a9bafd9091e04a3f7a5427fab7865010b78c72a6",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_solfeggio.mp3",
+      "kind": "audio",
+      "sha256": "bd04f2829c918ebfc449b91ac409d33c6488c81547f3c006540164a9bfba1117",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_stargazing.mp3",
+      "kind": "audio",
+      "sha256": "7b3764924462d618d2a9161a5a9e63a92d9e99a33478ed773c72586a27b72cea",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_starry_night.mp3",
+      "kind": "audio",
+      "sha256": "2c8c96c0048c62a1eba192c0dd707b9bb3cc5a00cdc4c392f1d740823f86bb71",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_temple_bells.mp3",
+      "kind": "audio",
+      "sha256": "51ddbd43e35b3276ead09ee51ccbe4a511abe2bde6ad86caf54b223f3ef4a2fe",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_warm_heart.mp3",
+      "kind": "audio",
+      "sha256": "87bfcf8824a2b40bd918bad89822d607f1ace9fcf32416419d59f6d279b634c3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/session_whispering_pines.mp3",
+      "kind": "audio",
+      "sha256": "b8039b3d409da68f3302bbdad42bd29ce8dd5ebf8678cd80fc68a7a9d8baff83",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/session_soundscapes.json",
+        "docs/SESSION_AUDIO.md"
+      ],
+      "note": "Derived arrangement; inherits every ingredient recording rights issue. Not new narration."
+    },
+    {
+      "path": "assets/sounds/soft_rain.mp3",
+      "kind": "audio",
+      "sha256": "9f40e761012c8259e142f6825eb802976850863ee99e4e6f0d2e040f8f9d9833",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/tibetan_bowls.mp3",
+      "kind": "audio",
+      "sha256": "933c8c4218c0e89d88624db68bb89aa7eda080a41a7a404ee3d6029afaa8d582",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/wind_chimes.mp3",
+      "kind": "audio",
+      "sha256": "66b3a7165cbff1dca1ad5a9edc1050b05dca0435af83ddb97041e8ae4b7e8079",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Legacy recording-specific redistribution receipt absent."
+    },
+    {
+      "path": "assets/sounds/woodland_morning.mp3",
+      "kind": "audio",
+      "sha256": "6560be4398eb5257bea2413ae972db881b1cd80fe2fb1b7d7473776b437e0268",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending. Resolve the documented wood-thrush Content ID reports."
+    },
+    {
+      "path": "assets/sounds/woodland_stream.mp3",
+      "kind": "audio",
+      "sha256": "6adecfed2c40be36158c3e0588bcb4b998902edf19caf10c5220e9eb4a18c2d8",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "assets/sounds/ambient_pack.json",
+        "docs/audio-licenses/ambient-pack-2026-11-19.md"
+      ],
+      "note": "Source-page/generation evidence exists; owner release review remains pending."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "kind": "artwork",
+      "sha256": "7770183009e914112de7d8ef1d235a6a30c5834424858e0d2f8253f6b8d31926",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "kind": "artwork",
+      "sha256": "cab10a0d391ec5bc09ef50ce49e8ad401cee7ef03707ec0923a222c5c2b3d212",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "kind": "artwork",
+      "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "kind": "artwork",
+      "sha256": "c6e6d3b215ae744a9c391f4c4d44157eff5e739d6ad6c39f9bfa5df66dddd267",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "kind": "artwork",
+      "sha256": "5dee24dc104ac76dc162e42ae0beb163d426bf365562ee28ba7b3ad368559a60",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "kind": "artwork",
+      "sha256": "a9b21eb6f4271385655a8771f76e29eef8c1107d7879cbcfc567e6619d1f716a",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "kind": "artwork",
+      "sha256": "e677d701ffe4af7bc2935098d6b3984cc9ab7ace573e6900955a5535b12410cf",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "kind": "artwork",
+      "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "kind": "artwork",
+      "sha256": "7c61c42fc7b657d9cf314d32a4ec458f0647c3aaf360be1b9377857266ec2499",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "kind": "artwork",
+      "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "kind": "artwork",
+      "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "kind": "artwork",
+      "sha256": "4209a49e44a92ec40a327d3455eb1b1c153ee83d75de1c2be0a12ab18b2ff9de",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "kind": "artwork",
+      "sha256": "836c918cb613249eba0483a6b02fa3df3c1c0a89a315ee4d3b88509b83c7ab73",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "kind": "artwork",
+      "sha256": "41c7d42f6e61f8fe7f30b1ffa2256aecbc9682be06d18c4a3062043e1a2e547c",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "kind": "artwork",
+      "sha256": "5d7e5bdf01b93802bc973345b3a78c038907147625035952a08a115a563b7f81",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "kind": "artwork",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "kind": "artwork",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "kind": "artwork",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/NATIVE_RELEASE.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/favicon.png",
+      "kind": "artwork",
+      "sha256": "cabe95ec99dd3c9b43b893c874675095750c72b72b0732c872505cdfce2d0eb7",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/icons/Icon-192.png",
+      "kind": "artwork",
+      "sha256": "0757d1294a839acb91011670118e720f2ae80434ed5b1ab3d264134f3cf2f22f",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/icons/Icon-512.png",
+      "kind": "artwork",
+      "sha256": "ac37145ad89b787d6065adfd4c7ecd45d46d317ef1a093ef827d9b24f7cd576d",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/icons/Icon-maskable-192.png",
+      "kind": "artwork",
+      "sha256": "e534d7fafc918614cd67f07939569d41d379f893c9866ccf94603dda9a21ab91",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/icons/Icon-maskable-512.png",
+      "kind": "artwork",
+      "sha256": "793934d59e1145c82f41a360a3d8e408b393954c511eebfb7361b64560581b34",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    },
+    {
+      "path": "web/icons/apple-touch-icon.png",
+      "kind": "artwork",
+      "sha256": "883ec8cecfa19009eafb0e19a907833e0177ba7997f3f5b1ae5a2dffb9557ec6",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "web/icons/README.md"
+      ],
+      "note": "Provenance/context only, not a permission receipt. Review generated/reference-derived/legacy branding and terms individually."
+    }
+  ],
+  "stream_bindings": [
+    {
+      "name": "Airplane Cabin",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/airplane.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Airport",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/airport.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Alpha Focus Flow",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-alpha.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Beehive Hum",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/beehive.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Beta Energy",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-beta.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Boiling Water",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/boiling-water.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Bubbles",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/bubbles.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Busy Street",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/urban/busy-street.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Cat Purring",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/cat-purring.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Ceiling Fan",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/ceiling-fan.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Chickens",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/chickens.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Church Interior",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/church.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Clock Ticking",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/clock.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Clothes Dryer",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/dryer.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Cosmic Drone",
+      "url": "https://actions.google.com/sounds/v1/science_fiction/alien_breath.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Cows Mooing",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/cows.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Crowded Bar",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/crowded-bar.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Crows",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/crows.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Deep Space Drone",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-gamma.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Delta Deep Sleep",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-delta.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Desert Howling Wind",
+      "url": "https://actions.google.com/sounds/v1/weather/desert_howling_wind.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Dog Barking",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/dog-barking.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Frogs",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/frog.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Gamma Insight",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-gamma.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Heartbeat",
+      "url": "https://actions.google.com/sounds/v1/human_voices/heartbeat.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Heavy Rain",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/heavy-rain.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Highway Traffic",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/urban/highway.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Horse Galloping",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/horse-gallop.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Howling Wind",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/howling-wind.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Inside a Train",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/inside-a-train.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Jungle Day",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/jungle.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Keyboard Typing",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/keyboard.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Library",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/library.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Morse Code",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/morse-code.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Night Forest",
+      "url": "https://actions.google.com/sounds/v1/nature/night_crickets.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Night Village",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/night-village.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Office Ambience",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/office.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Owl Hooting",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/owl.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Paper Rustling",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/paper.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rain on Leaves",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-leaves.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rain on Roof",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-car-roof.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rain on Tent",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-tent.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rain on Umbrella",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-umbrella.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rain on Window",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/rain-on-window.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Restaurant",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/restaurant.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Rowing Boat",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/rowing-boat.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Sailing Ship",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/sailboat.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Seagulls",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/seagulls.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Sheep Bleating",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/sheep.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Soothing Breeze",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Space Drift",
+      "url": "https://actions.google.com/sounds/v1/science_fiction/space_atmosphere.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Steady Wind",
+      "url": "https://actions.google.com/sounds/v1/weather/wind.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Submarine",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/submarine.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Submarine Ping",
+      "url": "https://actions.google.com/sounds/v1/water/submarine_ping.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Summer Meadow",
+      "url": "https://actions.google.com/sounds/v1/nature/field_insects.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Supermarket",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/supermarket.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Temple",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/places/temple.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Theta Meditation",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/binaural/binaural-theta.wav",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Thunderstorm",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/rain/thunder.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Train Ride",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/transport/train.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Tuning Radio",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/tuning-radio.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Typewriter",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/typewriter.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Urban Rain",
+      "url": "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Vinyl Crackle",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/vinyl-effect.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Walking in Snow",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/walk-in-snow.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Walking on Gravel",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/walk-on-gravel.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Walking on Leaves",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/walk-on-leaves.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Washing Machine",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/washing-machine.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Water Droplets",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/droplets.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Waterfall",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/waterfall.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Whale Song",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/whale.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Wind in Trees",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/nature/wind-in-trees.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Windshield Wipers",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/things/windshield-wipers.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Wolf Howling",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/wolf.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    },
+    {
+      "name": "Woodpecker",
+      "url": "https://raw.githubusercontent.com/remvze/moodist/main/public/sounds/animals/woodpecker.mp3",
+      "review": {
+        "status": "pending"
+      },
+      "provenance": [
+        "docs/SOUND_LIBRARY.md"
+      ],
+      "note": "Configured URL only; no native playback/rights approval. Moving upstream or unpinned sample content must be resolved before distribution."
+    }
+  ],
+  "gates": [
+    {
+      "id": "fresh-native-quality",
+      "requirement": "Current-candidate Flutter analysis/tests/web, Android and iOS release compilation; no historical run substitution.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "android-device-matrix",
+      "requirement": "Signed Android install/upgrade, audio/background/lock/interruption/routes/timers, backup/reminders and TalkBack matrix.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "ios-device-matrix",
+      "requirement": "Signed iOS install/upgrade, audio/background/lock/interruption/routes/timers, backup/reminders and VoiceOver matrix.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "ten-mix-human-listening",
+      "requirement": "Human listening to every exact curated recipe, independent loop joins and gain/fade transitions; short cafe/breeze loops included.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "credential-incident",
+      "requirement": "Owner confirms historical credential revocation/rotation and usage review; no secret values in evidence.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "identity-signing",
+      "requirement": "Owner confirms existing Android/iOS identities, store/customer history, signing and upgrade continuity.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "privacy-support",
+      "requirement": "Owner approves actual support/privacy/terms destinations, SDK/data inventory and store disclosures.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "sales-remain-off",
+      "requirement": "Verify purchases disabled in the actual candidate; restoring existing entitlements remains separate. No new checkout approval.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "id": "owner-beta-decision",
+      "requirement": "Explicit owner authorization for the exact candidate, audience, distribution method and rollback; not a public-launch authorization.",
+      "review": {
+        "status": "pending"
+      }
+    }
+  ]
+}

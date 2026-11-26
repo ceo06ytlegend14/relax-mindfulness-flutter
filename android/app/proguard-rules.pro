@@ -1,8 +1,10 @@
 # Flutter ProGuard rules for Sanctuary: Relax & Mindfulness
 # These rules prevent just_audio, audio_session, and Flutter plugins from being stripped
 
-# Keep Flutter framework classes
--keep class io.flutter.** { *; }
+# Keep registration entry points, not the whole Flutter embedding. Keeping
+# io.flutter.** would retain unused deferred-component / Play SplitInstall
+# classes, which have no dependency in this app and fail release R8 linking.
+# Flutter's and each SDK's consumer rules handle the referenced runtime code.
 -keep class io.flutter.plugins.** { *; }
 
 # Keep just_audio / ExoPlayer classes

@@ -1,0 +1,98 @@
+/* Scoped DOM controls work over Flutter's canvas without altering its footer. */
+#sanctuary-install-ui {
+  --install-mint: #78eed0;
+  --install-text: #f5fafa;
+  --install-muted: #b9c5dd;
+  color: var(--install-text);
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+#sanctuary-install-ui *, #sanctuary-install-ui *::before, #sanctuary-install-ui *::after { box-sizing: border-box; }
+#sanctuary-install-ui [hidden] { display: none !important; }
+#sanctuary-install-ui button, #sanctuary-install-ui a { -webkit-tap-highlight-color: transparent; }
+#sanctuary-install-ui button { appearance: none; font: inherit; cursor: pointer; }
+#sanctuary-install-ui :focus-visible { outline: 2px solid #adffe7; outline-offset: 4px; }
+#sanctuary-install-ui .install-entry {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(16px, calc((100vw - 823px) / 2 + 16px), env(safe-area-inset-right));
+  z-index: 100000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 100px;
+  color: #d7fff2;
+  background: #122945;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+/* The full-screen Flutter player uses this corner for Minimize. Preserve the
+   installer's prompt/installed state; only suppress the overlapping entry. */
+html.sanctuary-player-expanded #sanctuary-install-ui .install-entry,
+html.sanctuary-sound-chooser-open #sanctuary-install-ui .install-entry,
+html.sanctuary-wellbeing-open #sanctuary-install-ui .install-entry { visibility: hidden; pointer-events: none; }
+#sanctuary-install-ui .install-entry svg { width: 18px; height: 18px; flex-shrink: 0; }
+#sanctuary-install-ui .install-entry:hover { background: #223f5c; }
+#sanctuary-install-ui .install-entry:disabled { opacity: .7; cursor: wait; }
+#sanctuary-install-dialog {
+  position: fixed;
+  inset: 0;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 28px;
+  overflow-y: auto;
+  color: #f5fafa;
+  background: #122945;
+  border: 0;
+  border-radius: 26px;
+  box-shadow: none;
+  text-align: left;
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+#sanctuary-install-dialog::backdrop { background: #0009; backdrop-filter: blur(8px); }
+#sanctuary-install-ui .install-dialog-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; }
+#sanctuary-install-ui .install-logo { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; }
+#sanctuary-install-ui .install-close { display: grid; place-items: center; width: 44px; height: 44px; min-width: 44px; padding: 0; margin: -10px -10px 0 0; border: 0; border-radius: 50%; background: #ffffff0b; color: var(--install-muted); font-size: 26px; line-height: 1; }
+#sanctuary-install-ui .install-eyebrow { margin: 0 0 8px; font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--install-mint); }
+#sanctuary-install-ui .install-title { margin: 0; color: var(--install-text); font: 600 28px/1.15 system-ui, sans-serif; letter-spacing: -.7px; outline: none; }
+#sanctuary-install-ui .install-description { margin: 12px 0 0; color: var(--install-muted); font-size: 14px; line-height: 1.6; }
+#sanctuary-install-ui .install-steps { margin: 20px 0 0; padding: 18px 18px 18px 36px; display: grid; gap: 10px; border: 0; border-radius: 16px; background: #0a1d34; color: #e1efed; font-size: 14px; line-height: 1.5; }
+#sanctuary-install-ui .install-steps li { padding-left: 3px; }
+#sanctuary-install-ui .install-steps li::marker { color: var(--install-mint); font-weight: 600; }
+#sanctuary-install-ui .install-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 20px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 100px;
+  color: #002b26;
+  background: #8ce7d0;
+  font: 600 15px/1.3 system-ui, sans-serif;
+  text-align: center;
+  text-decoration: none;
+}
+#sanctuary-install-ui .install-primary:disabled { opacity: .6; cursor: wait; }
+#sanctuary-install-ui .install-note { margin: 18px 0 0; color: var(--install-muted); font-size: 12px; line-height: 1.6; }
+#sanctuary-install-ui .install-feedback { margin: 12px 0 0; color: #adffe7; font-size: 13px; line-height: 1.5; }
+#sanctuary-install-ui .install-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 360px) {
+  #sanctuary-install-ui .install-entry { right: max(12px, env(safe-area-inset-right)); padding: 8px 11px; }
+  #sanctuary-install-dialog { padding: 22px; }
+  #sanctuary-install-ui .install-title { font-size: 25px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #sanctuary-install-ui *, #sanctuary-install-ui *::before, #sanctuary-install-ui *::after { animation: none !important; transition: none !important; }
+}
