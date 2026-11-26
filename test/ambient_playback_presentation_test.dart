@@ -43,6 +43,7 @@ Future<MixerController> mountPlaybackPresentation(
         theme: const CupertinoThemeData(brightness: Brightness.dark),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
+            size: Size(width, height),
             disableAnimations: true,
             textScaler: TextScaler.linear(textScale),
           ),
@@ -341,17 +342,24 @@ void main() {
             child: Center(child: ActivePlayingListModal()),
           ),
           width: viewport.$1,
-          height: 844,
+          height: 600,
           textScale: viewport.$2,
         );
         expect(find.text('Active Soundscapes (1)'), findsOneWidget);
         expect(find.text('Loading · Level: 60%'), findsOneWidget);
         expect(find.text('Playing · Level: 20%'), findsOneWidget);
+        final stop = find.text('Stop All Soundscapes & Clear ✕');
+        await tester.ensureVisible(stop);
+        await tester.pump();
+        expect(stop.hitTestable(), findsOneWidget);
         final remove = find.byKey(
           const ValueKey('remove-active-track-Soft Rain'),
         );
         expect(tester.getSize(remove).width, greaterThanOrEqualTo(44));
         expect(tester.getSize(remove).height, greaterThanOrEqualTo(44));
+        await tester.ensureVisible(remove);
+        await tester.pump();
+        expect(remove.hitTestable(), findsOneWidget);
         await tester.tap(remove);
         await tester.pump();
         expect(app.requestedAmbientTracks, {'Ocean Waves': .2});
@@ -374,9 +382,12 @@ void main() {
           child: Center(child: ActivePlayingListModal()),
         ),
         width: 320,
-        height: 844,
+        height: 600,
         textScale: 1.6,
       );
+      await tester.ensureVisible(find.byType(CupertinoSlider));
+      await tester.pump();
+      expect(find.byType(CupertinoSlider).hitTestable(), findsOneWidget);
       final slider = tester.widget<CupertinoSlider>(
         find.byType(CupertinoSlider),
       );

@@ -14,6 +14,15 @@ Future<void> flushAmbient() async {
   }
 }
 
+Future<void> flushAmbientWidget(WidgetTester tester) async {
+  // Stream cancellation/closure can finish on the real event queue. Drain both
+  // zones without advancing the fake sleep/readiness clock or relaxing asserts.
+  for (var i = 0; i < 6; i++) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late AppState app;
@@ -364,15 +373,22 @@ void main() {
   testWidgets(
     'sleep expiry fences an ambient load that finishes later',
     (tester) async {
+      // Begin loading in the timer's last six seconds. Loading at time zero
+      // would hit the independent 12-second source timeout before sleep expiry.
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 55));
       final gate = Completer<Duration?>();
       factory = () => FakeAmbientAudioPlayer()..loadGate = gate;
       final loading = app.updateSoundTrackVolume('Soft Rain', .5);
       await flushAmbient();
       expect(app.isAmbientTrackLoading('Soft Rain'), isTrue);
-      app.startSleepTimer(1);
-      await tester.pump(const Duration(seconds: 61));
-      await flushAmbient();
+      await tester.pump(const Duration(seconds: 6));
+      await flushAmbientWidget(tester);
+      expect(app.sleepTimerRemainingSec, isNull);
+      expect(app.hasAmbientPlaybackRequest, isFalse);
+      expect(players.single.disposed, isTrue);
       gate.complete(const Duration(seconds: 30));
+      await tester.pump();
       await loading;
       expect(players.single.playCalls, 0);
       expect(players.single.disposed, isTrue);
@@ -697,7 +713,7 @@ void main() {
     factory = () => FakeAmbientAudioPlayer()..holdPlay = true;
     await app.updateSoundTrackVolume('Soft Rain', .7);
     await tester.pump(const Duration(seconds: 13));
-    await flushAmbient();
+    await flushAmbientWidget(tester);
     expect(app.ambientTrackError('Soft Rain'), contains('could not play'));
     expect(players.last.disposed, isTrue);
     expect(app.activeAmbientTracks, {'Ocean Waves': .7});

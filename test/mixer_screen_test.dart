@@ -665,11 +665,11 @@ void main() {
       await tester.pump();
       await tester.tap(button);
       await tester.pump();
+      expect(tester.getSize(button).width, greaterThanOrEqualTo(44));
+      expect(tester.getSize(button).height, greaterThanOrEqualTo(44));
       final recipe = find.byKey(const ValueKey('vibe-set-details'));
       await tester.ensureVisible(recipe);
       await tester.pump();
-      expect(tester.getSize(button).width, greaterThanOrEqualTo(44));
-      expect(tester.getSize(button).height, greaterThanOrEqualTo(44));
       expect(
         find.text(vibeSoundSetForName('Enchanted Forest Morning')!.recipe),
         findsOneWidget,

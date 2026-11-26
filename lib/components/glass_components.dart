@@ -746,7 +746,8 @@ class ActivePlayingListModal extends StatelessWidget {
       builder: (context, state, _) {
         final requestedAmbient = state.requestedAmbientTracks;
         final hasGuided = state.isGuidedPlaying;
-        final totalCount = (hasGuided ? 1 : 0) + state.activeAmbientTracks.length;
+        final totalCount =
+            (hasGuided ? 1 : 0) + state.activeAmbientTracks.length;
 
         return Container(
           height: MediaQuery.of(context).size.height * 0.72,
@@ -755,87 +756,101 @@ class ActivePlayingListModal extends StatelessWidget {
             color: MixerTheme.quiet,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag Notch Handle
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(3),
+          // The complete sheet scrolls when large text or a short viewport
+          // leaves too little room for a fixed header/footer plus track list.
+          child: SingleChildScrollView(
+            key: const ValueKey('active-sound-controls-scroll'),
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Notch Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
-              ),
 
-              // Let the title wrap beside a full-size dismissal target.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SOUND CONTROLS',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: tealPrimary,
-                            letterSpacing: 1.5,
+                // Let the title wrap beside a full-size dismissal target.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'SOUND CONTROLS',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: tealPrimary,
+                              letterSpacing: 1.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Active Soundscapes ($totalCount)',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Active Soundscapes ($totalCount)',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CupertinoButton(
-                    minSize: 44,
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    child: Semantics(
-                      label: 'Dismiss sound controls',
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(CupertinoIcons.chevron_down, color: Colors.white, size: 18),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      minSize: 44,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      child: Semantics(
+                        label: 'Dismiss sound controls',
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.chevron_down,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Active Items List
-              Expanded(
-                child: !hasGuided && requestedAmbient.isEmpty
+                // Active Items List
+                !hasGuided && requestedAmbient.isEmpty
                     ? Center(
                         child: Text(
                           'No soundscape tracks currently playing',
-                          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 14,
+                          ),
                         ),
                       )
                     : ListView(
-                        physics: const BouncingScrollPhysics(),
+                        shrinkWrap: true,
+                        primary: false,
+                        physics: const NeverScrollableScrollPhysics(),
                         children: [
                           // 🧘 Guided Meditation Track (if playing)
-                          if (hasGuided && state.currentGuidedTitle != null) ...[
+                          if (hasGuided &&
+                              state.currentGuidedTitle != null) ...[
                             Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
@@ -852,12 +867,17 @@ class ActivePlayingListModal extends StatelessWidget {
                                       color: tealPrimary.withOpacity(0.25),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.self_improvement_rounded, color: tealPrimary, size: 24),
+                                    child: const Icon(
+                                      Icons.self_improvement_rounded,
+                                      color: tealPrimary,
+                                      size: 24,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Text(
                                           'GUIDED MEDITATION',
@@ -891,7 +911,11 @@ class ActivePlayingListModal extends StatelessWidget {
                                         color: coralAccent.withOpacity(0.2),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(CupertinoIcons.xmark, color: coralAccent, size: 16),
+                                      child: const Icon(
+                                        CupertinoIcons.xmark,
+                                        color: coralAccent,
+                                        size: 16,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -922,12 +946,17 @@ class ActivePlayingListModal extends StatelessWidget {
                                           color: mintAccent.withOpacity(0.18),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(CupertinoIcons.waveform, color: mintAccent, size: 18),
+                                        child: const Icon(
+                                          CupertinoIcons.waveform,
+                                          color: mintAccent,
+                                          size: 18,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               name,
@@ -939,10 +968,14 @@ class ActivePlayingListModal extends StatelessWidget {
                                             ),
                                             Text(
                                               '${state.ambientTrackStatus(name).label} · Level: ${(volume * 100).toInt()}%',
-                                              key: ValueKey('active-track-status-$name'),
+                                              key: ValueKey(
+                                                'active-track-status-$name',
+                                              ),
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.white.withOpacity(0.6),
+                                                color: Colors.white.withOpacity(
+                                                  0.6,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -950,22 +983,33 @@ class ActivePlayingListModal extends StatelessWidget {
                                       ),
                                       // Pending and interrupted layers remain removable.
                                       CupertinoButton(
-                                        key: ValueKey('remove-active-track-$name'),
+                                        key: ValueKey(
+                                          'remove-active-track-$name',
+                                        ),
                                         padding: EdgeInsets.zero,
                                         minSize: 44,
                                         onPressed: () {
                                           HapticFeedback.lightImpact();
-                                          state.updateSoundTrackVolume(name, 0.0);
+                                          state.updateSoundTrackVolume(
+                                            name,
+                                            0.0,
+                                          );
                                         },
                                         child: Semantics(
                                           label: 'Remove $name',
                                           child: Container(
                                             padding: const EdgeInsets.all(7),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.08),
+                                              color: Colors.white.withOpacity(
+                                                0.08,
+                                              ),
                                               shape: BoxShape.circle,
                                             ),
-                                            child: const Icon(CupertinoIcons.xmark, color: Colors.white70, size: 14),
+                                            child: const Icon(
+                                              CupertinoIcons.xmark,
+                                              color: Colors.white70,
+                                              size: 14,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -977,7 +1021,11 @@ class ActivePlayingListModal extends StatelessWidget {
                                     value: volume,
                                     activeColor: tealPrimary,
                                     onChanged: (v) {
-                                      state.updateSoundTrackVolume(name, v, resumePaused: false);
+                                      state.updateSoundTrackVolume(
+                                        name,
+                                        v,
+                                        resumePaused: false,
+                                      );
                                     },
                                   ),
                                 ],
@@ -986,173 +1034,199 @@ class ActivePlayingListModal extends StatelessWidget {
                           }),
                         ],
                       ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // ── Quick Action Buttons: Save & Pin + Zen Screen ──
-              if (requestedAmbient.isNotEmpty) ...[
-                Row(
-                  children: [
-                    // 💾 Save & Pin Mix to Home
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          final textCtrl = TextEditingController(
-                            text: 'My ${requestedAmbient.keys.first} Mix',
-                          );
-                          showCupertinoDialog(
-                            context: context,
-                            builder: (dialogCtx) => CupertinoAlertDialog(
-                              title: const Text('Save & Pin Mix ✨'),
-                              content: Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Column(
-                                  children: [
-                                    const Text('Give your custom sound blend a name to pin it to your Home Screen:'),
-                                    const SizedBox(height: 12),
-                                    CupertinoTextField(
-                                      controller: textCtrl,
-                                      placeholder: 'e.g. Rainy Cabin Hearth',
-                                      autofocus: true,
-                                    ),
-                                  ],
+                // ── Quick Action Buttons: Save & Pin + Zen Screen ──
+                if (requestedAmbient.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      // 💾 Save & Pin Mix to Home
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            final textCtrl = TextEditingController(
+                              text: 'My ${requestedAmbient.keys.first} Mix',
+                            );
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (dialogCtx) => CupertinoAlertDialog(
+                                title: const Text('Save & Pin Mix ✨'),
+                                content: Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Column(
+                                    children: [
+                                      const Text(
+                                        'Give your custom sound blend a name to pin it to your Home Screen:',
+                                      ),
+                                      const SizedBox(height: 12),
+                                      CupertinoTextField(
+                                        controller: textCtrl,
+                                        placeholder: 'e.g. Rainy Cabin Hearth',
+                                        autofocus: true,
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    child: const Text('Cancel'),
+                                    onPressed: () => Navigator.pop(dialogCtx),
+                                  ),
+                                  CupertinoDialogAction(
+                                    isDefaultAction: true,
+                                    child: const Text('Save & Pin'),
+                                    onPressed: () {
+                                      final name = textCtrl.text.trim().isEmpty
+                                          ? 'Custom Sanctuary Mix'
+                                          : textCtrl.text.trim();
+                                      state.savePreset(
+                                        name,
+                                        Map.from(requestedAmbient),
+                                      );
+                                      Navigator.pop(dialogCtx);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
                               ),
-                              actions: [
-                                CupertinoDialogAction(
-                                  child: const Text('Cancel'),
-                                  onPressed: () => Navigator.pop(dialogCtx),
-                                ),
-                                CupertinoDialogAction(
-                                  isDefaultAction: true,
-                                  child: const Text('Save & Pin'),
-                                  onPressed: () {
-                                    final name = textCtrl.text.trim().isEmpty
-                                        ? 'Custom Sanctuary Mix'
-                                        : textCtrl.text.trim();
-                                    state.savePreset(name, Map.from(requestedAmbient));
-                                    Navigator.pop(dialogCtx);
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
+                            );
+                          },
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
                             ),
-                          );
-                        },
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: MixerTheme.primary,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(CupertinoIcons.bookmark_fill, color: Colors.black, size: 14),
-                                SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'Save & Pin Mix 💾',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                            decoration: BoxDecoration(
+                              color: MixerTheme.primary,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.bookmark_fill,
+                                    color: Colors.black,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'Save & Pin Mix 💾',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
+                      const SizedBox(width: 10),
 
-                    // ⛶ Zen Fullscreen Mode
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                          ZenFullscreenModal.show(context);
-                        },
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF504A71),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(CupertinoIcons.fullscreen, color: Colors.white, size: 14),
-                                SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'Zen Screen ⛶',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                      // ⛶ Zen Fullscreen Mode
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            ZenFullscreenModal.show(context);
+                          },
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF504A71),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.fullscreen,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'Zen Screen ⛶',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                // 🛑 Stop All Audio & Dismiss Button
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    state.stopAllAudio();
+                    Navigator.of(context).pop();
+                  },
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: coralAccent,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            CupertinoIcons.stop_fill,
+                            color: Colors.black,
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Stop All Soundscapes & Clear ✕',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 10),
               ],
-
-              // 🛑 Stop All Audio & Dismiss Button
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  state.stopAllAudio();
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: coralAccent,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(CupertinoIcons.stop_fill, color: Colors.black, size: 16),
-                        SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'Stop All Soundscapes & Clear ✕',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
