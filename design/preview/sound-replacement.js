@@ -1,17 +1,19 @@
 'use strict';
-// Existing bundled sounds only. These are not alternative takes of each
-// catalog recording, and this HTML preview is not compiled Flutter.
+// Local-source replacement, not alternative takes of every catalog recording.
+// The twelve additions have per-file provenance; this is not compiled Flutter.
 const replacementDialog = document.createElement('dialog');
 replacementDialog.id = 'sound-replacement-dialog';
 replacementDialog.setAttribute('aria-labelledby', 'replacement-title');
 replacementDialog.innerHTML = `<div class="replacement-scroll">
-  <header class="replacement-heading"><h3 id="replacement-title">Replace sound</h3><button id="replacement-close" aria-label="Close sound chooser">×</button></header>
-  <p>Choose from six bundled sounds. Preview up to 8 seconds; a playing mix becomes quieter underneath. Nothing changes until you tap Use sound.</p>
+  <header class="replacement-heading"><h3 id="replacement-title">Change sound</h3><button id="replacement-close" aria-label="Close sound chooser">×</button></header>
+  <p id="replacement-description"></p>
+  <label class="replacement-search-label" for="replacement-search">Find a local sound</label><input type="search" id="replacement-search" placeholder="Try birds, fire or noise" autocomplete="off">
   <p id="replacement-off-notice" hidden>This layer is off. Its replacement will be selected at 30%. A paused mix stays paused.</p>
   <div class="replacement-list" id="replacement-list"></div><p id="replacement-error" role="status" hidden></p>
 </div><footer><button class="primary" id="replacement-use" disabled>Use sound</button></footer>`;
 document.body.append(replacementDialog);
 let replacementFrom = null;
+let replacementChoices = BUNDLED_RECORDINGS;
 let replacementSelected = null;
 let soundPreviewAudio = null;
 let soundPreviewName = null;
@@ -103,7 +105,10 @@ function renderSoundReplacement() {
   const scroll = replacementDialog.querySelector('.replacement-scroll');
   const scrollTop = scroll.scrollTop;
   list.replaceChildren();
-  for (const recording of BUNDLED_RECORDINGS) {
+  const query = $('replacement-search').value.trim().toLowerCase();
+  const choices = replacementChoices.filter(recording => (recording.name+' '+recording.description).toLowerCase().includes(query));
+  if (!choices.length) { const empty = document.createElement('p'); empty.textContent = 'No local sounds match. Try a different name.'; list.append(empty); }
+  for (const recording of choices) {
     const current = recording.name === replacementFrom?.name;
     const conflict = replacementConflict(recording.name);
     const row = document.createElement('div');
@@ -125,6 +130,12 @@ function renderSoundReplacement() {
     const detail = document.createElement('small');
     detail.textContent = current ? 'Current sound' : conflict ? `Already in mix: ${conflict}` : recording.description;
     copy.append(title, detail);
+    if (recording.credit) {
+      const credit = document.createElement('small');
+      credit.className = 'replacement-credit';
+      credit.textContent = recording.credit;
+      copy.append(credit);
+    }
     choice.append(img, copy);
     choice.onclick = () => {
       replacementSelected = recording.name;
@@ -146,11 +157,20 @@ function renderSoundReplacement() {
   scroll.scrollTop = scrollTop;
 }
 
-function openSoundReplacement(track) {
+function openSoundReplacement(track, {related = false} = {}) {
   stopSoundPreview();
   replacementFrom = track;
   replacementSelected = null;
-  $('replacement-title').textContent = `Replace ${track.name}`;
+  $('replacement-search').value = '';
+  const family = related && Object.entries(RECORDING_FAMILIES).find(([, names]) => names.includes(track.name));
+  replacementChoices = family ? BUNDLED_RECORDINGS.filter(recording => family[1].includes(recording.name)) : BUNDLED_RECORDINGS;
+  $('replacement-search').hidden = !!family;
+  replacementDialog.querySelector('.replacement-search-label').hidden = !!family;
+  $('replacement-title').textContent = family ? `Choose ${family[0].toLowerCase()} recording` : `Change ${track.name}`;
+  $('replacement-description').textContent = family
+    ? `${replacementChoices.length} existing related recordings. Keep this layer’s volume and the rest of your mix. Preview up to 8 seconds; nothing changes until Use recording.`
+    : `Change this layer to a different sound and keep its volume. Choose from ${BUNDLED_RECORDINGS.length} bundled sources. Preview up to 8 seconds; nothing changes until Use sound.`;
+  $('replacement-use').textContent = family ? 'Use recording' : 'Use sound';
   $('replacement-off-notice').hidden = levels[track.name] > 0;
   $('replacement-error').hidden = true;
   renderSoundReplacement();
@@ -159,6 +179,8 @@ function openSoundReplacement(track) {
   replacementDialog.querySelector('.replacement-scroll').scrollTop = 0;
   $('replacement-close').focus({ preventScroll: true });
 }
+
+$('replacement-search').oninput = renderSoundReplacement;
 
 $('replacement-use').onclick = () => {
   if (!replacementFrom || !replacementSelected || replacementConflict(replacementSelected)) return;

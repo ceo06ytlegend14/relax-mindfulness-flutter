@@ -2,10 +2,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// The moonlit teal palette from the supplied visual reference.
+/// Moonlit teal, with the matte surfaces approved in the Home trial.
+/// Keep outlines for inputs/focus/state, not as default card decoration.
 abstract final class MixerTheme {
   static const background = Color(0xFF001B24);
-  static const surface = Color(0xFF042D36);
+  static const surface = Color(0xFF0A3039);
+  static const surfaceActive = Color(0xFF103E42);
+  static const action = Color(0xFF082C35);
+  static const quiet = Color(0xFF062831);
+  static const control = Color(0xFF164D51);
+  static const primary = Color(0xFF8CE7D0);
+  static const onPrimary = Color(0xFF002B26);
+  static const heading = Color(0xFF95BBB7);
   static const mint = Color(0xFF43E9CD);
   static const mintLight = Color(0xFF9AFFE6);
   static const text = Color(0xFFF5FAFA);
@@ -58,43 +66,13 @@ class MixerSurface extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   @override
-  Widget build(BuildContext context) {
-    final s = metrics.scale;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius * s),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: active
-              ? const [Color(0xFF06444A), Color(0xFF00232C), Color(0xFF00212A)]
-              : const [Color(0xFF09343E), Color(0xFF001B25), Color(0xFF01232C)],
-          stops: const [0, 0.55, 1],
-        ),
-        border: Border.all(
-          color: active
-              ? MixerTheme.mint.withOpacity(0.8)
-              : MixerTheme.border.withOpacity(0.6),
-          width: active ? 1.5 * s : 1 * s,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: active
-                ? MixerTheme.mint.withOpacity(0.16)
-                : Colors.black.withOpacity(0.15),
-            blurRadius: (active ? 20 : 12) * s,
-            offset: Offset(0, 4 * s),
-          ),
-          BoxShadow(
-            color: MixerTheme.mint.withOpacity(active ? 0.05 : 0.025),
-            blurRadius: 4 * s,
-            spreadRadius: 1 * s,
-          ),
-        ],
-      ),
-      child: Padding(padding: padding, child: child),
-    );
-  }
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: active ? MixerTheme.surfaceActive : MixerTheme.surface,
+      borderRadius: BorderRadius.circular(radius * metrics.scale),
+    ),
+    child: Padding(padding: padding, child: child),
+  );
 }
 
 class MixerSectionHeading extends StatelessWidget {
@@ -103,28 +81,13 @@ class MixerSectionHeading extends StatelessWidget {
   final MixerMetrics metrics;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Text(
-        label,
-        style: metrics.text(
-          17,
-          color: const Color(0xFF79E4D0),
-          weight: FontWeight.w600,
-          tracking: 2.5 * metrics.scale,
-        ),
-      ),
-      SizedBox(width: metrics.space(14)),
-      Expanded(
-        child: Container(
-          height: 1,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF397F80), Color(0xFF22434C)],
-            ),
-          ),
-        ),
-      ),
-    ],
+  Widget build(BuildContext context) => Text(
+    label,
+    style: metrics.text(
+      17,
+      color: MixerTheme.heading,
+      weight: FontWeight.w600,
+      tracking: 2.5 * metrics.scale,
+    ),
   );
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
 // ─── Theme 1: Luxury Editorial + Neo Minimalism Palette ──────────────────────
 const Color tealPrimary     = Color(0xFF52B788); // Apple Fitness/Health Sage Green (#52b788)
@@ -40,13 +41,13 @@ ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: bgDark,
+    scaffoldBackgroundColor: MixerTheme.background,
     colorScheme: const ColorScheme.dark(
-      primary: tealPrimary,
+      primary: MixerTheme.primary,
       secondary: coralAccent,
       tertiary: mintAccent,
-      surface: bgMid,
-      onPrimary: Colors.black,
+      surface: MixerTheme.surface,
+      onPrimary: MixerTheme.onPrimary,
       onSecondary: Colors.black,
     ),
     textTheme: GoogleFonts.outfitTextTheme(
@@ -88,12 +89,12 @@ ThemeData buildAppTheme() {
 CupertinoThemeData buildCupertinoTheme() {
   return const CupertinoThemeData(
     brightness: Brightness.dark,
-    primaryColor: tealPrimary,
-    primaryContrastingColor: Colors.black,
-    scaffoldBackgroundColor: bgDark,
-    barBackgroundColor: Color(0xE6050D15), // bgDark at ~90% opacity — frosted effect
+    primaryColor: MixerTheme.primary,
+    primaryContrastingColor: MixerTheme.onPrimary,
+    scaffoldBackgroundColor: MixerTheme.background,
+    barBackgroundColor: MixerTheme.background,
     textTheme: CupertinoTextThemeData(
-      primaryColor: tealPrimary,
+      primaryColor: MixerTheme.primary,
       textStyle: TextStyle(
         color: textPrimary,
         fontSize: 17,
@@ -114,7 +115,7 @@ CupertinoThemeData buildCupertinoTheme() {
         decoration: TextDecoration.none,
       ),
       navActionTextStyle: TextStyle(
-        color: tealPrimary,
+        color: MixerTheme.primary,
         fontSize: 17,
         fontWeight: FontWeight.normal,
         decoration: TextDecoration.none,
@@ -125,7 +126,7 @@ CupertinoThemeData buildCupertinoTheme() {
         decoration: TextDecoration.none,
       ),
       actionTextStyle: TextStyle(
-        color: tealPrimary,
+        color: MixerTheme.primary,
         fontSize: 17,
         decoration: TextDecoration.none,
       ),

@@ -1,6 +1,6 @@
 /* Independent browser design preview; mirrors guided_player.dart, not Flutter. */
 body.player-open { overflow: hidden; }
-#session-dialog.immersive-player {
+:is(#session-dialog, #ambient-dialog).immersive-player {
   --p: clamp(.78, calc(var(--s) * 1.914), 1.55);
   --cover: min(48vw, 360px, max(132px, 25dvh));
   position: fixed;
@@ -21,7 +21,7 @@ body.player-open { overflow: hidden; }
   text-align: center;
   font-family: MixerSans, sans-serif;
 }
-#session-dialog::backdrop { background: #00131c; backdrop-filter: none; }
+:is(#session-dialog, #ambient-dialog)::backdrop { background: #00131c; backdrop-filter: none; }
 .player-backdrop {
   position: absolute;
   inset: 0;
@@ -107,7 +107,7 @@ body.player-open { overflow: hidden; }
   box-shadow: 0 17px 35px #05192977;
   overflow: hidden;
 }
-#session-art { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; margin: 0; }
+#session-art, #ambient-art { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; margin: 0; }
 .player-cover-tag {
   position: absolute;
   top: calc(12px * var(--p));
@@ -129,6 +129,7 @@ body.player-open { overflow: hidden; }
   letter-spacing: -.6px;
   text-shadow: 0 1px 12px #05152033;
 }
+#session-sources { font-size: max(12px, calc(14px * var(--p))); color: #9affe6; line-height: 1.4; margin: calc(7px * var(--p)) 0 0; overflow-wrap: anywhere; }
 #session-description { font-size: max(12px, calc(13px * var(--p))); color: #d0dfe5; line-height: 1.4; margin: calc(7px * var(--p)) 0 0; }
 #session-error { color: #ffdcab; font-size: max(12px, calc(13px * var(--p))); line-height: 1.4; margin: calc(12px * var(--p)) 0 0; }
 #session-clock {
@@ -194,10 +195,10 @@ body.player-open { overflow: hidden; }
 .player-complete strong { display: block; font-size: calc(15px * var(--p)); line-height: 1.25; font-weight: 600; }
 .player-complete small { display: block; font-size: max(11px, calc(11.5px * var(--p))); color: #d0dfe5; line-height: 1.35; margin-top: calc(4px * var(--p)); }
 .player-complete > svg { font-size: calc(23px * var(--p)); color: #d0dfe5; }
-#session-dialog .player-preview-note { font-size: 10px; line-height: 1.4; color: #bfd2ddaa; margin: 8px 0 0; }
+.immersive-player .player-preview-note { font-size: 10px; line-height: 1.4; color: #bfd2ddaa; margin: 8px 0 0; }
 
-/* Ambient playback appears on the editorial tabs. A minimized guided session
-   stays reachable on every tab, including while paused. */
+/* Both current players stay reachable on every tab after minimizing, including
+   while paused, preparing or failed. Opening the bar never restarts its audio. */
 .shared-mini-player[hidden] { display: none !important; }
 .shared-mini-player {
   --mp: clamp(.85, calc(var(--s) * 1.914), 1.45);
@@ -228,3 +229,50 @@ body.player-open { overflow: hidden; }
 .shared-mini-player .mini-close { width: 44px; min-width: 44px; height: 44px; display: grid; place-items: center; font-size: calc(19px * var(--mp)); color: #b9d0e3; }
 .has-mini-player .home-inner, .has-mini-player main.content { padding-bottom: calc(var(--nav) + 145px + env(safe-area-inset-bottom)); }
 @media (prefers-reduced-motion: reduce) { .breathing-ring, .player-spinner { animation: none !important; } }
+
+/* The indefinite ambient mix deliberately has no narrated-session scrubber or
+   invented elapsed/completed session. Its real layers are the main content. */
+#ambient-dialog { --cover: min(38vw, 176px, max(112px, 20dvh)); }
+#ambient-dialog .player-scroll { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+#ambient-dialog .breathing-art { margin-top: 14px; height: calc(var(--cover) + 24px); }
+#ambient-title { margin: 10px auto 0; max-width: 600px; font-size: clamp(23px, 5.8vw, 32px); line-height: 1.16; font-weight: 600; letter-spacing: -.5px; overflow-wrap: anywhere; }
+#ambient-status { margin: 9px 0 0; font-size: 13px; color: #9affe6; line-height: 1.45; }
+.ambient-loop-note { margin: 5px 0 0; font-size: 12px; color: #d0dfe5; line-height: 1.4; }
+.ambient-transport { display: flex; justify-content: center; align-items: center; gap: clamp(10px, 4vw, 26px); margin: 18px auto 22px; }
+#ambient-pause { width: 70px; height: 70px; flex-shrink: 0; }
+#ambient-pause > svg { font-size: 30px; }
+#ambient-dialog .ambient-secondary { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 62px; width: 100px; padding: 7px 5px; font-size: 12px; line-height: 1.25; border-radius: 20px; }
+.ambient-secondary > svg { color: #9affe6; font-size: 20px; }
+.ambient-layer-section { max-width: 600px; margin: 0 auto; text-align: left; }
+.ambient-layer-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+#ambient-layers-heading { font-size: 11px; color: #d0dfe5; font-weight: 500; letter-spacing: 1.6px; margin: 0; }
+#ambient-layer-count { color: #b9d0e3; font-size: 12px; }
+#ambient-layers { padding: 0; margin: 0; list-style: none; display: grid; gap: 10px; }
+.ambient-layer { padding: 12px 12px 3px; border-radius: 20px; min-width: 0; }
+.ambient-layer-header { display: flex; gap: 10px; align-items: center; }
+.ambient-layer-header > img { width: 42px; height: 42px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
+.ambient-layer-copy { flex: 1; min-width: 0; }
+.ambient-layer-copy strong { display: block; color: #f7faf5; font-size: 14px; font-weight: 500; line-height: 1.25; overflow-wrap: anywhere; }
+.ambient-layer-status { display: block; color: #b9d0e3; font-size: 11px; line-height: 1.35; margin-top: 4px; }
+.ambient-layer[data-status=playing] .ambient-layer-status { color: #9affe6; }
+.ambient-layer[data-status=error] .ambient-layer-status { color: #ffdcab; }
+.ambient-layer-level { font-variant-numeric: tabular-nums; font-size: 15px; color: #b5ffea; min-width: 35px; text-align: right; }
+#ambient-dialog .ambient-layer-remove { display: grid; place-items: center; width: 44px; height: 44px; min-width: 44px; padding: 0; border: 0; background: transparent; }
+.ambient-layer-remove > svg { font-size: 17px; color: #b9d0e3; }
+#ambient-dialog .ambient-layer-slider { appearance: none; -webkit-appearance: none; display: block; width: 100%; height: 44px; margin: 0; padding: 0 4px; background: transparent; border: 0; cursor: pointer; touch-action: pan-y; }
+.ambient-layer-slider::-webkit-slider-runnable-track { height: 4px; border-radius: 9px; background: linear-gradient(90deg, #8ce7d0 var(--progress), #35515e var(--progress)); }
+.ambient-layer-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; border: 0; background: #f7faf5; margin-top: -7px; }
+.ambient-layer-slider::-moz-range-track { height: 4px; border-radius: 9px; background: linear-gradient(90deg, #8ce7d0 var(--progress), #35515e var(--progress)); }
+.ambient-layer-slider::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: #f7faf5; }
+#ambient-dialog .ambient-layer-retry { min-height: 44px; padding: 0 12px; margin: 0 0 8px; font-size: 13px; color: #ffdcab; background: #123f46; }
+.ambient-layer-retry[hidden] { display: none !important; }
+.ambient-level-note { margin: 12px 4px 0; font-size: 11px; line-height: 1.5; color: #b9d0e3; }
+.ambient-ending { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 18px auto 0; padding: 0; max-width: 600px; }
+#ambient-dialog .ambient-ending > button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; flex: 1 1 160px; padding: 10px 12px; font-size: 13px; border-radius: 18px; }
+.ambient-ending button > svg { font-size: 18px; color: #b9d0e3; }
+.ambient-ending .player-preview-note { width: 100%; margin: 0; }
+@media (max-width: 360px) {
+  .ambient-layer { padding-left: 9px; padding-right: 6px; }
+  .ambient-layer-header { gap: 7px; }
+  .ambient-layer-header > img { width: 34px; height: 38px; }
+}

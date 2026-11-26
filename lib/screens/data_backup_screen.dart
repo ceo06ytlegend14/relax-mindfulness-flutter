@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/wellbeing_components.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/models/user_backup.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 
@@ -156,145 +158,127 @@ class _DataBackupScreenState extends State<DataBackupScreen> {
   @override
   Widget build(BuildContext context) {
     final ready = context.watch<AppState>().isUserDataReady;
-    return CupertinoPageScaffold(
-      backgroundColor: const Color(0xFF061722),
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Backup & restore'),
-        backgroundColor: Color(0xF0061722),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 130),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Keep a private copy',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'This manual backup includes saved mixes, favorites, streaks, '
-                'reminder preferences and up to the latest 500 sessions. It can '
-                'contain personal session titles and mood ratings. Keep it private: '
-                'other apps may be able to read your clipboard.',
-                style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
-              ),
-              const SizedBox(height: 16),
-              CupertinoButton.filled(
-                key: const ValueKey('copy-profile-backup'),
-                onPressed: ready && !_confirming ? _copyBackup : null,
-                child: const Text('Copy backup to clipboard'),
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                'Restore a backup',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Paste your JSON, review the categories, then confirm replacement. '
-                'Nothing is uploaded or played. Maximum import size: 2 MiB.',
-                style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
-              ),
-              const SizedBox(height: 14),
-              CupertinoTextField(
-                key: const ValueKey('backup-json-input'),
-                controller: _input,
-                enabled: ready && !_confirming,
-                placeholder: 'Paste backup JSON here',
-                minLines: 5,
-                maxLines: 8,
-                maxLength: UserBackupData.maxBytes,
-                autocorrect: false,
-                enableSuggestions: false,
-                smartDashesType: SmartDashesType.disabled,
-                smartQuotesType: SmartQuotesType.disabled,
-                style: const TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 13,
-                ),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF102A3B),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              const SizedBox(height: 12),
-              CupertinoButton(
-                key: const ValueKey('review-profile-backup'),
-                onPressed: ready && !_confirming ? _review : null,
-                child: const Text('Review backup'),
-              ),
-              if (_reviewed != null) ...[
-                const Text(
-                  'These categories will be replaced:',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                for (final entry in _reviewed!.values.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 7),
-                    child: Text(
-                      '${_labels[entry.key]}: ${_summary(entry.value)}',
-                      style: const TextStyle(color: Color(0xFFBCD0DC)),
-                    ),
-                  ),
-                const SizedBox(height: 10),
-                CupertinoButton.filled(
-                  key: const ValueKey('apply-profile-backup'),
-                  onPressed: ready && !_confirming ? _restore : null,
-                  child: const Text('Restore reviewed backup'),
-                ),
-              ],
-              if (!ready)
-                const Text(
-                  'Preparing device storage…',
-                  style: TextStyle(color: Color(0xFFBCD0DC)),
-                ),
-              if (_notice != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _notice!,
-                      key: const ValueKey('backup-result'),
-                      style: TextStyle(
-                        height: 1.5,
-                        color: _error
-                            ? const Color(0xFFFFCA9B)
-                            : const Color(0xFF78EED0),
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              const Text(
-                'This is not automatic cloud sync or an encrypted vault. '
-                'Purchases, trial access, API keys, audio downloads and device '
-                'notification permissions are not restored. Keep an independent '
-                'backup: browser/device storage can be cleared.',
-                style: TextStyle(
-                  color: Color(0xFF9BB4C4),
-                  fontSize: 12,
-                  height: 1.5,
-                ),
-              ),
-            ],
+    return WellbeingPage(
+      title: 'Backup & restore',
+      scrollKey: const PageStorageKey('backup-scroll'),
+      builder: (context, m) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const WellbeingEyebrow('YOURS TO KEEP'),
+          const SizedBox(height: 10),
+          Text('Keep a private copy', style: m.serif(60, min: 34)),
+          const SizedBox(height: 12),
+          const Text(
+            'This manual backup includes saved mixes, favorites, streaks, '
+            'reminder preferences and up to the latest 500 sessions. It can '
+            'contain personal session titles and mood ratings. Keep it private: '
+            'other apps may be able to read your clipboard.',
+            style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
           ),
-        ),
+          const SizedBox(height: 20),
+          const WellbeingEyebrow('01 / MAKE A BACKUP'),
+          const SizedBox(height: 10),
+          CupertinoButton.filled(
+            key: const ValueKey('copy-profile-backup'),
+            onPressed: ready && !_confirming ? _copyBackup : null,
+            child: const Text('Copy backup to clipboard'),
+          ),
+          const SizedBox(height: 32),
+          const WellbeingEyebrow('02 / BRING YOUR DATA BACK'),
+          const SizedBox(height: 10),
+          Text('Restore a backup', style: m.serif(41, min: 27)),
+          const SizedBox(height: 10),
+          const Text(
+            'Paste your JSON, review the categories, then confirm replacement. '
+            'Nothing is uploaded or played. Maximum import size: 2 MiB.',
+            style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          CupertinoTextField(
+            key: const ValueKey('backup-json-input'),
+            controller: _input,
+            enabled: ready && !_confirming,
+            placeholder: 'Paste backup JSON here',
+            minLines: 5,
+            maxLines: 8,
+            maxLength: UserBackupData.maxBytes,
+            autocorrect: false,
+            enableSuggestions: false,
+            smartDashesType: SmartDashesType.disabled,
+            smartQuotesType: SmartQuotesType.disabled,
+            style: const TextStyle(color: CupertinoColors.white, fontSize: 13),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: MixerTheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: MixerTheme.border),
+            ),
+          ),
+          const SizedBox(height: 12),
+          CupertinoButton(
+            key: const ValueKey('review-profile-backup'),
+            onPressed: ready && !_confirming ? _review : null,
+            child: const Text('Review backup'),
+          ),
+          if (_reviewed != null) ...[
+            const Text(
+              'These categories will be replaced:',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final entry in _reviewed!.values.entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 7),
+                child: Text(
+                  '${_labels[entry.key]}: ${_summary(entry.value)}',
+                  style: const TextStyle(color: Color(0xFFBCD0DC)),
+                ),
+              ),
+            const SizedBox(height: 10),
+            CupertinoButton.filled(
+              key: const ValueKey('apply-profile-backup'),
+              onPressed: ready && !_confirming ? _restore : null,
+              child: const Text('Restore reviewed backup'),
+            ),
+          ],
+          if (!ready)
+            const Text(
+              'Preparing device storage…',
+              style: TextStyle(color: Color(0xFFBCD0DC)),
+            ),
+          if (_notice != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  _notice!,
+                  key: const ValueKey('backup-result'),
+                  style: TextStyle(
+                    height: 1.5,
+                    color: _error
+                        ? const Color(0xFFFFCA9B)
+                        : const Color(0xFF78EED0),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+          const Text(
+            'This is not automatic cloud sync or an encrypted vault. '
+            'Purchases, trial access, API keys, audio downloads and device '
+            'notification permissions are not restored. Keep an independent '
+            'backup: browser/device storage can be cleared.',
+            style: TextStyle(
+              color: Color(0xFF9BB4C4),
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

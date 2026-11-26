@@ -35,6 +35,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:web
       - run: python3 -m unittest discover -s tool -p 'test_*.py' -v
+      - name: Check release inventory drift (not release approval)
+        run: python3 tool/launch_preflight.py --inventory-only
 
   flutter:
     name: Flutter analysis, tests and web compilation
@@ -69,20 +71,31 @@ jobs:
           test/support/user_backup_fixture.dart
           lib/screens/ai_studio_screen.dart test/reflection_studio_test.dart
           lib/components/guided_player.dart test/guided_player_test.dart
+          lib/components/ambient_player.dart test/ambient_player_test.dart
+          lib/models/session_soundscapes.dart lib/models/sanctuary_catalog.dart
+          lib/screens/home_screen.dart test/guided_session_state_test.dart
+          test/session_soundscapes_test.dart
           lib/services/subscription_controller.dart lib/screens/premium_screen.dart
           test/subscription_controller_test.dart test/premium_screen_test.dart
           test/support/billing_fixtures.dart
           lib/screens/sounds_screen.dart test/mixer_screen_test.dart
           lib/models/bundled_recordings.dart lib/models/mixer_catalog.dart
+          lib/models/vibe_sound_sets.dart test/vibe_sound_sets_test.dart
           lib/components/mixer_artwork.dart lib/components/sound_replacement_sheet.dart
           lib/services/sound_preview_controller.dart lib/providers/mixer_controller.dart
           lib/services/pwa_player_visibility.dart lib/services/pwa_player_visibility_stub.dart
           lib/services/pwa_player_visibility_web.dart
-          test/ambient_audio_state_test.dart test/sound_preview_controller_test.dart
+          test/ambient_audio_state_test.dart test/ambient_playback_presentation_test.dart
+          test/sound_preview_controller_test.dart
           test/mixer_controller_test.dart test/mixer_catalog_test.dart
           test/support/fake_mixer_app_state.dart test/support/fake_ambient_audio_player.dart
           test/support/fake_sound_preview_player.dart
           lib/main.dart test/sanctuary_screen_test.dart
+          lib/components/wellbeing_components.dart lib/components/sanctuary_components.dart
+          lib/theme/mixer_theme.dart test/soft_surfaces_test.dart test/home_navigation_test.dart
+          lib/screens/wellbeing_screen.dart lib/screens/mindfulness_screen.dart
+          lib/screens/breathe_screen.dart lib/screens/meditation_screen.dart
+          lib/screens/sleep_screen.dart test/wellbeing_screen_test.dart
       - name: Run Flutter regressions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         shell: bash

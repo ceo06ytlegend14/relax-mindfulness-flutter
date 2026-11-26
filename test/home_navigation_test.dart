@@ -94,6 +94,70 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Home groups content with matte fills, not borders or glow', (
+    tester,
+  ) async {
+    await mountHome(tester, width: 390);
+    for (final name in [
+      'sounds',
+      'meditate',
+      'sleep',
+      'soundscape',
+      'wellbeing',
+    ]) {
+      final panel = find.descendant(
+        of: find.byKey(ValueKey('home-surface-$name')),
+        matching: find.byType(DecoratedBox),
+      );
+      final decoration =
+          tester.widget<DecoratedBox>(panel.first).decoration as BoxDecoration;
+      expect(decoration.color, isNotNull);
+      expect(decoration.border, isNull);
+      expect(decoration.boxShadow, isNull);
+      expect(decoration.gradient, isNull);
+      expect(decoration.borderRadius, isNotNull);
+    }
+    final playDisc = find.descendant(
+      of: find.byKey(const ValueKey('home-mix-toggle')),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
+      ),
+    );
+    final disc =
+        tester.widget<Container>(playDisc).decoration! as BoxDecoration;
+    expect(disc.color, const Color(0xFF164D51));
+    expect(disc.border, isNull);
+    expect(disc.boxShadow, isNull);
+  });
+
+  testWidgets('soft Home actions retain 44px targets with larger text', (
+    tester,
+  ) async {
+    final state = await mountHome(tester, width: 320, textScale: 1.6);
+    for (final name in [
+      'home-daily',
+      'home-open-sounds',
+      'home-open-meditate',
+      'home-open-sleep',
+      'home-mix-toggle',
+      'home-edit-mix',
+      'home-wellbeing',
+    ]) {
+      final button = find.byKey(ValueKey(name));
+      await tester.ensureVisible(button);
+      await tester.pump();
+      final size = tester.getSize(button);
+      expect(size.width, greaterThanOrEqualTo(44), reason: name);
+      expect(size.height, greaterThanOrEqualTo(44), reason: name);
+    }
+    expect(state.app.active, isEmpty);
+    expect(state.app.guidedRequests, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final target in [AppTab.sounds, AppTab.meditate, AppTab.sleep]) {
     testWidgets(
       'Home quick action opens ${target.name} without starting audio',

@@ -1,5 +1,6 @@
 // Exercises the independent browser preview, not a compiled Flutter application.
 import assert from 'node:assert/strict';
+import { minimizeAmbientForBackgroundControls } from './support/ambient_player_helpers.mjs';
 import { createServer } from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
@@ -78,9 +79,11 @@ async function preview(page, name) {
   await page.waitForFunction(() => soundPreviewAudio && !soundPreviewAudio.paused && !soundPreviewLoading && soundPreviewAudio.readyState >= 2);
 }
 
-test('all 75 familiar sounds have working local images rather than emoji placeholders', async t => {
+test('all 75 familiar sounds plus two new cards have working local images', async t => {
   const { page } = await open(t);
-  assert.equal(await page.evaluate(() => all.length), 75);
+  assert.equal(await page.evaluate(() => all.length), 77);
+  await page.locator('#catalog-review > summary').click();
+  await page.locator('#library-full').click();
   assert.equal(await page.locator('[data-sound-options="Soft Rain"] svg circle').count(), 3, 'Options are actual three-dot vectors on the first render');
   for (const category of await page.evaluate(() => CATALOG.map(c => c.id))) {
     await page.locator(`[data-category="${category}"]`).click();
@@ -114,6 +117,10 @@ test('opening, choosing and canceling do not autoplay or edit selected levels', 
 for (const [name, file] of [
   ['Soft Rain', 'soft_rain'], ['Ocean Waves', 'ocean_waves'], ['Forest Birds', 'forest_birds'],
   ['Campfire', 'campfire'], ['Bamboo Chimes', 'wind_chimes'], ['Temple Bowl', 'tibetan_bowls'],
+  ['Woodland Morning', 'woodland_morning'], ['Boat Deck', 'boat_deck'], ['Mountain Stream', 'woodland_stream'],
+  ['Meadow Breeze', 'meadow_wind'], ['Coffee Shop', 'cafe_ambience'], ['Fireplace', 'fireplace'], ['Crickets', 'night_crickets'],
+  ['White Noise', 'noise_white'], ['Pink Noise', 'noise_pink'], ['Brown Noise', 'noise_brown'],
+  ['Blue Noise', 'noise_blue'], ['Violet Noise', 'noise_violet'],
 ]) {
   test(`explicit ${name} preview decodes and plays its actual bundled clip`, async t => {
     const { page } = await open(t);
@@ -136,6 +143,7 @@ for (const [name, file] of [
 test('Use swaps only one playing layer at its existing level and preserves other players', async t => {
   const { page } = await open(t);
   await page.evaluate(() => applyMix({ 'Soft Rain': .6, 'Forest Birds': .2 }, 'Before'));
+  await minimizeAmbientForBackgroundControls(page);
   await page.waitForFunction(() => [...players.values()].filter(a => !a.paused && a.readyState >= 2).length === 2);
   await chooser(page);
   assert.ok(Math.abs(await page.evaluate(() => players.get('Soft Rain').volume) - .6) < .001);
@@ -186,12 +194,13 @@ test('existing sounds and legacy aliases are not offered as independent duplicat
   assert.equal(await page.locator('[data-select-recording="Campfire"]').isDisabled(), true);
   assert.equal(await page.locator('[data-select-recording="Soft Rain"]').isDisabled(), true);
   assert.match(await page.locator('[data-recording="Campfire"]').innerText(), /Already in mix: Cozy Hearth/);
-  assert.equal(await page.locator('.replacement-row').count(), 6);
+  assert.equal(await page.locator('.replacement-row').count(), 18);
 });
 
 test('preview errors do not change a live mix or expose platform payloads', async t => {
   const { page, context } = await open(t);
   await page.locator('#master-play').click();
+  await minimizeAmbientForBackgroundControls(page);
   await page.waitForFunction(() => !players.get('Soft Rain')?.paused);
   await context.route('**/assets/sounds/ocean_waves.mp3', route => route.abort());
   await chooser(page);
@@ -235,9 +244,11 @@ test('unconfigured names are labelled and cannot silently play generic rain', as
   const { page } = await open(t);
   await page.getByRole('switch', { name: 'Enable Soft Rain', exact: true }).click();
   assert.equal(await page.evaluate(() => players.size), 0);
+  await page.locator('#catalog-review > summary').click();
+  await page.locator('#library-full').click();
   const card = page.locator('[data-track="Rain Cave"]');
-  assert.match(await card.locator('.track-info p').innerText(), /Needs a recording/);
-  await card.getByRole('switch').click();
+  assert.match(await card.locator('.track-info p').innerText(), /No recording configured/);
+  assert.equal(await card.getByRole('switch').isDisabled(), true);
   assert.equal(await page.evaluate(() => players.size), 0);
   assert.equal(await page.evaluate(() => playing), false);
   await chooser(page, 'Rain Cave');
@@ -245,6 +256,8 @@ test('unconfigured names are labelled and cannot silently play generic rain', as
   await page.locator('#replacement-use').click();
   assert.equal(await page.evaluate(() => levels['Rain Cave']), undefined);
   assert.equal(await page.evaluate(() => levels['Ocean Waves']), .3);
+  assert.equal(await page.evaluate(() => playing), false, 'Replacing a selected but unavailable layer does not autoplay');
+  assert.equal(await page.evaluate(() => ambientPlaybackState().active.length), 0);
 });
 
 for (const [width, height] of [[320, 640], [390, 844], [823, 1024], [844, 390]]) {
@@ -279,4 +292,34 @@ test('the chooser temporarily hides the real install entry without changing play
   await page.evaluate(() => document.documentElement.classList.remove('sanctuary-player-expanded'));
   assert.equal(await entry.isVisible(), true);
   assert.equal(await page.evaluate(() => playing), false);
+});
+
+test('new sounds are searchable, attributed and usable without starting a paused mix', async t => {
+  const { page } = await open(t);
+  await chooser(page);
+  await page.locator('#replacement-search').fill('noise');
+  assert.equal(await page.locator('.replacement-row').count(),5);
+  assert.equal(await page.locator('.replacement-credit').count(),5);
+  assert.equal(await page.evaluate(()=>soundPreviewAudio),null);
+  assert.deepEqual(await page.evaluate(()=>levels),{'Soft Rain':.3});
+  await choose(page,'Blue Noise');
+  await page.locator('#replacement-use').click();
+  assert.deepEqual(await page.evaluate(()=>levels),{'Blue Noise':.3});
+  assert.equal(await page.evaluate(()=>playing),false);
+  assert.equal(await page.evaluate(()=>category),'noise');
+  await page.locator('#master-play').click();
+  await minimizeAmbientForBackgroundControls(page);
+  await page.waitForFunction(()=>players.get('Blue Noise')?.readyState>=2&&!players.get('Blue Noise').paused);
+  assert.match(await page.evaluate(()=>players.get('Blue Noise').currentSrc),/noise_blue\.mp3$/);
+});
+
+test('empty sound searches have a useful state and do not alter selections', async t => {
+  const { page } = await open(t);
+  await chooser(page);
+  await page.locator('#replacement-search').fill('no recording with this name');
+  assert.match(await page.locator('#replacement-list').innerText(),/No local sounds match/);
+  assert.equal(await page.locator('#replacement-use').isDisabled(),true);
+  assert.equal(await page.evaluate(()=>soundPreviewAudio),null);
+  await page.locator('#replacement-search').fill('');
+  assert.equal(await page.locator('.replacement-row').count(),18);
 });

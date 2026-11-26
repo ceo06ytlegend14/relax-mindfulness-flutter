@@ -366,6 +366,33 @@ test('install help fits narrow phones, wider layouts and keeps the existing foot
     assert(result.scrollWidth <= result.clientWidth);
     await page.keyboard.press('Escape');
     assert.deepEqual(await page.locator('.nav-item').allTextContents(), ['Home', 'Sounds', 'Meditate', 'Sleep']);
-    assert.equal(await page.locator('nav').evaluate((nav) => nav.getBoundingClientRect().bottom), height);
+    assert.equal(await page.locator('.bottom-nav').evaluate((nav) => nav.getBoundingClientRect().bottom), height);
   }
+});
+
+test('soft pages: installation help uses matte surfaces while retaining targets and keyboard focus', async t => {
+  const { page } = await open(t);
+  await page.keyboard.press('Tab');
+  const entry = page.locator('.install-entry');
+  await entry.focus();
+  const entryStyle = await entry.evaluate(node => ({ border: getComputedStyle(node).borderTopWidth,
+    shadow: getComputedStyle(node).boxShadow, focus: node.matches(':focus-visible'), outline: getComputedStyle(node).outlineWidth,
+    height: node.getBoundingClientRect().height }));
+  assert.deepEqual(entryStyle, { border: '0px', shadow: 'none', focus: true, outline: '2px', height: 44 });
+  await entry.click();
+  for (const selector of ['#sanctuary-install-dialog', '.install-steps']) {
+    const panel = await page.locator(selector).evaluate(node => ({ border: getComputedStyle(node).borderTopWidth,
+      image: getComputedStyle(node).backgroundImage, shadow: getComputedStyle(node).boxShadow }));
+    assert.deepEqual(panel, { border: '0px', image: 'none', shadow: 'none' });
+  }
+  const primary = await page.locator('button.install-primary').evaluate(node => ({
+    fill: getComputedStyle(node).backgroundColor, color: getComputedStyle(node).color, border: getComputedStyle(node).borderTopWidth,
+  }));
+  assert.deepEqual(primary, { fill: 'rgb(140, 231, 208)', color: 'rgb(0, 43, 38)', border: '0px' });
+  await page.keyboard.press('Tab');
+  await page.locator('.install-close').focus();
+  assert.equal(await page.locator('.install-close').evaluate(node => node.matches(':focus-visible')), true);
+  await page.keyboard.press('Escape');
+  assert.equal(await entry.evaluate(node => node === document.activeElement), true);
+  assert.equal(await page.evaluate(() => window.SanctuaryInstall.state.installed), false);
 });

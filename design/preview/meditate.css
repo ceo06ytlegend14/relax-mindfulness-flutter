@@ -1,0 +1,61 @@
+/* Independent HTML rendition of the Flutter Meditate cards. The page itself
+   has a single solid color; imagery is limited to inset, arched card artwork. */
+#meditate-page{background:#001b24;background-image:none;color:#f5fafa}
+#meditate-page .scenery{display:none;background:none}
+#meditate-page .retreat-inner{padding:max(30px,calc(54px*var(--s))) max(18px,calc(32px*var(--s))) 40px}
+#meditate-page .page-heading{font-size:max(40px,calc(72px*var(--t)))}
+#meditate-page .subtitle{font-size:max(15px,calc(25px*var(--t)));max-width:none;color:#a5c0c8;margin-top:12px}
+#meditate-page .med-audio-note{font-size:max(12px,calc(18px*var(--t)));line-height:1.5;color:#a5c0c8;margin-top:8px}
+#meditate-page .daily-journey{display:block;margin-top:26px;padding:max(19px,calc(30px*var(--s)));border:1px solid #426865;background:#123c3f;border-radius:26px max(52px,calc(95px*var(--s))) 26px 26px;box-shadow:none}
+#meditate-page .kicker{font-size:max(10px,calc(16px*var(--t)));font-weight:600;line-height:1.5;color:#b6dccb;letter-spacing:1.3px}
+#meditate-page .daily-heading{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:max(12px,calc(23px*var(--s)));align-items:center;margin-top:16px}
+#meditate-page .daily-heading h2{font-family:SanctuarySerif,serif;font-size:max(31px,calc(55px*var(--t)));font-weight:600;line-height:1.06}
+#meditate-page .daily-description{font-size:max(13px,calc(23px*var(--t)));line-height:1.5;color:#c0d5d1;margin-top:14px}
+#meditate-page .practice-orbit{position:relative;aspect-ratio:.92;min-width:0;--accent:#b9dca1}
+#meditate-page .practice-orbit:before{content:"";position:absolute;inset:0;border:1px solid var(--accent);opacity:.6;border-radius:50%;border-right-color:transparent;transform:rotate(-12deg)}
+#meditate-page .practice-orbit:after{content:"";position:absolute;left:15%;bottom:5%;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+#meditate-page .arched-art{position:absolute;left:10px;top:4px;width:calc(100% - 14px);height:calc(100% - 16px);object-fit:cover;border-radius:140px 140px 16px 16px}
+#meditate-page .daily-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin-top:18px}
+#meditate-page .daily-meta>span{font-size:max(10px,calc(15px*var(--t)));letter-spacing:1px;color:#b6dccb}
+#meditate-page .session-meta{display:flex;align-items:center;gap:7px;color:#a5c0c8;font-size:max(12px,calc(20px*var(--t)));line-height:1.4}
+#meditate-page .session-meta svg{width:16px;height:16px}
+#meditate-page .daily-buttons{display:flex;gap:12px;margin-top:16px}
+#meditate-page .daily-buttons .pill-hit{flex:1}
+#meditate-page .daily-buttons .pill-body{width:100%}
+#meditate-page .pill-body{min-height:44px;gap:8px;padding:13px 17px;background:#43e9cd;border:0;box-shadow:none;color:#001b24;font-size:max(13px,calc(22px*var(--t)));white-space:normal;line-height:1.25}
+#meditate-page .pill-body svg{width:15px;height:15px}
+#meditate-page .med-options{display:grid;place-items:center;padding:12px;width:44px;height:44px;flex-shrink:0;background:none;color:#a5c0c8}
+#meditate-page .med-options svg{width:20px;height:20px}
+#meditate-page .intent-heading{display:block;color:inherit;margin-top:28px;font-weight:400;letter-spacing:0}
+#meditate-page .intent-heading h2{font-family:SanctuarySerif,serif;font-size:max(26px,calc(41px*var(--t)));line-height:1.1;font-weight:600}
+#meditate-page .intent-heading p{font-size:max(13px,calc(21px*var(--t)));color:#a5c0c8;margin-top:7px}
+#meditate-page .intent-tray{gap:9px;margin-top:14px;padding:0 0 3px}
+#meditate-page .intent-chip>span{padding:12px max(14px,calc(20px*var(--s)));background:#042d36;border:1px solid #1d525a;font-size:max(12px,calc(20px*var(--t)));gap:8px;color:#f5fafa}
+#meditate-page .intent-chip svg{width:18px;height:18px;color:#a5c0c8}
+#meditate-page .intent-chip[aria-pressed=true]>span{background:#43e9cd;color:#001b24;border-color:#43e9cd}
+#meditate-page .intent-chip[aria-pressed=true] svg{color:#001b24}
+#meditate-page .practice-count{font-size:max(10px,calc(15px*var(--t)));letter-spacing:1px;color:#a5c0c8;margin-top:18px;line-height:1.5}
+#meditate-page .practice-list{gap:16px;margin-top:15px}
+#meditate-page .practice-card{min-height:0;padding:max(18px,calc(28px*var(--s)));background:#072e37;border:1px solid #24515a;border-radius:26px;isolation:auto}
+#meditate-page .practice-card:before,#meditate-page .practice-card.saved .kicker:after{content:none}
+#meditate-page .practice-card .kicker{display:flex;align-items:center;gap:10px;color:var(--accent);font-size:max(10px,calc(15px*var(--t)))}
+#meditate-page .practice-card .kicker svg{width:17px;height:17px;margin-left:auto}
+#meditate-page .practice-heading{display:grid;grid-template-columns:minmax(0,1fr) max(76px,calc(160px*var(--s)));gap:16px;align-items:center;margin-top:15px}
+#meditate-page .practice-heading h3{font-family:SanctuarySerif,serif;font-size:max(27px,calc(43px*var(--t)));font-weight:600;line-height:1.06;letter-spacing:-.3px}
+#meditate-page .practice-heading .practice-orbit{--accent:inherit}
+#meditate-page .practice-card .description{font-size:max(13px,calc(22px*var(--t)));line-height:1.5;color:#a5c0c8;margin-top:14px}
+#meditate-page .session-ingredients{font-size:max(12px,calc(19px*var(--t)));line-height:1.5;color:var(--accent,#9affe6);margin-top:9px;overflow-wrap:anywhere}
+#meditate-page .daily-journey .session-ingredients{margin-top:14px}
+#meditate-page .practice-actions{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;margin-top:17px}
+#meditate-page .practice-actions .session-meta{margin-right:auto;min-width:0}
+#meditate-page .closing-note{margin-top:28px;font-size:max(14px,calc(21px*var(--t)));color:#c4d8d3}
+#meditate-page .preview-disclosure{font-size:12px;color:#a5c0c8;line-height:1.6;margin-top:15px}
+
+/* Small first view: real source labels, one primary action, visible saving. */
+#meditate-page .practice-heading { margin-top:0; }
+#meditate-page .practice-actions { flex-wrap:wrap; }
+#meditate-page .practice-save { display:grid; place-items:center; flex-shrink:0; width:44px; min-height:44px; padding:10px; color:#a5c0c8; background:none; }
+#meditate-page .practice-save svg { width:21px; height:21px; }
+#meditate-page .practice-save[aria-pressed=true] { color:#9affe6; }
+#meditate-page .browse-practices { display:block; min-height:44px; padding:12px 18px; margin:22px auto 0; border-radius:100px; background:#164d51; color:#f5fafa; font-size:max(13px,calc(22px * var(--t))); text-align:center; }
+#meditate-page .practice-empty { color:#a5c0c8; font-size:max(13px,calc(21px * var(--t))); line-height:1.5; padding:18px 0; }

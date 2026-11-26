@@ -74,6 +74,16 @@ test('quality automation has no repository-write or deployment capability', asyn
   assert.match(workflow, /npm run test:web/);
 });
 
+test('the native ambient player and its regressions are included in the pinned format gate', async () => {
+  const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
+  const formatStep = workflow.match(/dart format --output=none --set-exit-if-changed([\s\S]*?)(?=\n      -)/)?.[1];
+  assert(formatStep, 'The actual format command is present');
+  const files = new Set(formatStep.trim().split(/\s+/));
+  for (const file of ['lib/components/guided_player.dart', 'lib/components/ambient_player.dart', 'test/ambient_player_test.dart', 'lib/providers/mixer_controller.dart', 'test/mixer_controller_test.dart', 'test/ambient_audio_state_test.dart', 'test/support/fake_mixer_app_state.dart']) {
+    assert(files.has(file), `${file} must not silently bypass format checking`);
+  }
+});
+
 test('the unconnected feedback UI no longer claims a message was received', async () => {
   const wellbeing = await readFile(path.join(root, 'lib/screens/wellbeing_screen.dart'), 'utf8');
   assert.doesNotMatch(wellbeing, /Your feedback has been received/);

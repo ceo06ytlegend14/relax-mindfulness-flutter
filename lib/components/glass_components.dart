@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -10,6 +9,7 @@ import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/theme/responsive.dart';
 
 // ─── GlassCard ───────────────────────────────────────────────────────────────
@@ -49,18 +49,6 @@ class GlassCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor ?? neuSurface,
           borderRadius: BorderRadius.circular(effectiveRadius),
-          boxShadow: const [
-            BoxShadow(
-              color: neuDarkShadow,
-              offset: Offset(9, 9),
-              blurRadius: 16,
-            ),
-            BoxShadow(
-              color: neuLightShadow,
-              offset: Offset(-9, -9),
-              blurRadius: 16,
-            ),
-          ],
         ),
         child: DefaultTextStyle.merge(
           style: const TextStyle(color: neuText),
@@ -76,18 +64,6 @@ class GlassCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor ?? clayCardBg,
           borderRadius: BorderRadius.circular(effectiveRadius),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33B89679),
-              offset: Offset(8, 8),
-              blurRadius: 16,
-            ),
-            BoxShadow(
-              color: Colors.white,
-              offset: Offset(-6, -6),
-              blurRadius: 12,
-            ),
-          ],
         ),
         child: child,
       );
@@ -97,15 +73,8 @@ class GlassCard extends StatelessWidget {
       margin: margin,
       padding: effectivePadding,
       decoration: BoxDecoration(
-        color: backgroundColor ?? const Color(0xFF111722),
+        color: backgroundColor ?? MixerTheme.surface,
         borderRadius: BorderRadius.circular(effectiveRadius),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            offset: Offset(0, 4),
-            blurRadius: 14,
-          ),
-        ],
       ),
       child: child,
     );
@@ -153,11 +122,9 @@ class _GlassPillButtonState extends State<GlassPillButton>
 
   @override
   Widget build(BuildContext context) {
-    // Generate soft dual-tint gradient from containerColor
-    final isTeal = widget.containerColor == tealPrimary;
-    final gradientColors = isTeal
-        ? [const Color(0xFF64DFDF), const Color(0xFF48CAE4)]
-        : [widget.containerColor.withOpacity(0.9), widget.containerColor.withOpacity(0.7)];
+    final fill = widget.containerColor == tealPrimary
+        ? MixerTheme.primary
+        : widget.containerColor;
     // Padding scales with screen size — compact 20/11, medium 22/12, expanded 24/13
     final hPad = isCompact(context) ? 20.0 : (isMedium(context) ? 22.0 : 24.0);
     final vPad = isCompact(context) ? 11.0 : (isMedium(context) ? 12.0 : 13.0);
@@ -177,22 +144,11 @@ class _GlassPillButtonState extends State<GlassPillButton>
         scale: _scale,
         child: Container(
           width: widget.width,
+          constraints: const BoxConstraints(minHeight: 44),
           padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradientColors,
-            ),
+            color: fill,
             borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: widget.containerColor.withOpacity(0.35),
-                blurRadius: 16,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -248,6 +204,7 @@ class GlassChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: 44),
           padding: EdgeInsets.symmetric(
             horizontal: isCompact(context) ? 16.0 : (isMedium(context) ? 18.0 : 20.0),
             vertical:   isCompact(context) ? 10.0 : (isMedium(context) ? 11.0 : 12.0),
@@ -255,23 +212,16 @@ class GlassChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected ? clayAccent : clayDarkCardBg,
             borderRadius: BorderRadius.circular(26),
-            boxShadow: isSelected
-                ? const [
-                    BoxShadow(color: Color(0x40D4A574), blurRadius: 10, offset: Offset(3, 3)),
-                    BoxShadow(color: Colors.white, blurRadius: 8, offset: Offset(-3, -3)),
-                  ]
-                : const [
-                    BoxShadow(color: Color(0x20B89679), blurRadius: 6, offset: Offset(4, 4)),
-                    BoxShadow(color: Colors.white, blurRadius: 6, offset: Offset(-3, -3)),
-                  ],
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : clayText,
+              color: clayText,
               fontSize: isCompact(context) ? 12.5 : 13.0,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               letterSpacing: -0.2,
+              decoration: isSelected ? TextDecoration.underline : TextDecoration.none,
+              decorationThickness: 2,
             ),
           ),
         ),
@@ -286,32 +236,30 @@ class GlassChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: 44),
         padding: EdgeInsets.symmetric(
           horizontal: isCompact(context) ? 16.0 : (isMedium(context) ? 18.0 : 20.0),
           vertical:   isCompact(context) ? 10.0 : (isMedium(context) ? 11.0 : 12.0),
         ),
         decoration: BoxDecoration(
-          color: isSelected ? selectedColor : const Color(0xFF111722),
+          color: isSelected
+              ? (selectedColor == tealPrimary ? MixerTheme.primary : selectedColor)
+              : MixerTheme.action,
           borderRadius: BorderRadius.circular(26),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: selectedColor.withOpacity(0.35),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected
-                ? (selectedColor.computeLuminance() > 0.45 ? Colors.black : Colors.white)
+                ? (selectedColor == tealPrimary
+                    ? MixerTheme.onPrimary
+                    : selectedColor.computeLuminance() > 0.179 ? Colors.black : Colors.white)
                 : Colors.white.withOpacity(0.9),
             fontSize: isCompact(context) ? 12.5 : 13.0,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             letterSpacing: -0.2,
+              decoration: isSelected ? TextDecoration.underline : TextDecoration.none,
+              decorationThickness: 2,
           ),
         ),
       ),
@@ -387,8 +335,7 @@ class StreakBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-            colors: [Color(0xFFFF6B35), Color(0xFFFFB74D)]),
+        color: const Color(0xFF704135),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -606,9 +553,11 @@ class SanctuaryMiniPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Consumer2<AppState, MixerController>(
     builder: (context, app, mixer, _) {
-      final ambient = app.activeAmbientTracks.entries.toList()
+      final hasAmbient = app.hasAmbientSession || app.hasAmbientPlaybackRequest;
+      final ambient = (hasAmbient ? mixer.levels : <String, double>{}).entries
+          .where((entry) => entry.value > 0).toList()
         ..sort((a, b) => b.value.compareTo(a.value));
-      final guided = app.hasGuidedSession && ambient.isEmpty;
+      final guided = app.hasGuidedSession && !hasAmbient;
       if (!guided && ambient.isEmpty) return const SizedBox.shrink();
       final width = MediaQuery.sizeOf(context).width;
       final s = (width / 430).clamp(0.85, 1.45).toDouble();
@@ -623,24 +572,24 @@ class SanctuaryMiniPlayer extends StatelessWidget {
           : ambient.any((entry) => entry.key == 'Ocean Waves')
           ? oceanSleepJourney.artwork
           : sleepArtworkForTrack(ambient.first.key);
-      final playing = guided ? app.isGuidedPlaying : ambient.isNotEmpty;
+      final playing = guided ? app.isGuidedPlaying : mixer.isPlaying;
+      final preparing = !guided && mixer.isPreparing;
       final subtitle = guided
           ? app.isGuidedLoading
                 ? 'Preparing calming audio…'
                 : app.guidedPlaybackError != null
                 ? 'Audio unavailable · tap to retry'
                 : '${app.isGuidedPlaying ? 'A moment of calm' : 'Session paused'} · ${(app.guidedRemainingSec / 60).ceil()} min left'
-          : app.isSleepTimerRunning
-          ? 'Auto-fade · ${(app.sleepTimerRemainingSec! / 60).ceil()} min left'
-          : '${ambient.length} ${ambient.length == 1 ? 'sound' : 'sounds'} · Your quiet space';
+          : [
+              mixer.playbackStatusLabel,
+              if (app.isSleepTimerRunning)
+                'Auto-fade · ${(app.sleepTimerRemainingSec! / 60).ceil()} min left',
+            ].join(' · ');
       void openPlayer() {
         if (guided) {
           app.showGuidedPlayer();
         } else {
-          showCupertinoModalPopup<void>(
-            context: context,
-            builder: (_) => const ActivePlayingListModal(),
-          );
+          app.showAmbientPlayer();
         }
       }
 
@@ -650,18 +599,8 @@ class SanctuaryMiniPlayer extends StatelessWidget {
           key: const ValueKey('sanctuary-mini-player'),
           padding: EdgeInsets.all(9 * s),
           decoration: BoxDecoration(
+            color: MixerTheme.surface,
             borderRadius: BorderRadius.circular(30 * s),
-            gradient: const LinearGradient(
-              colors: [Color(0xF0204264), Color(0xF0071A32)],
-            ),
-            border: Border.all(color: const Color(0x9964EBD6)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x77031321),
-                blurRadius: 25,
-                offset: Offset(0, 6),
-              ),
-            ],
           ),
           child: Row(
             children: [
@@ -669,7 +608,7 @@ class SanctuaryMiniPlayer extends StatelessWidget {
                 child: Semantics(
                   label: guided
                       ? 'Open $title session player'
-                      : 'Open active sound controls',
+                      : 'Open $title soundscape player',
                   button: true,
                   child: CupertinoButton(
                     key: const ValueKey('open-mini-player'),
@@ -727,13 +666,15 @@ class SanctuaryMiniPlayer extends StatelessWidget {
               ),
               SizedBox(width: 6 * s),
               Semantics(
-                label: playing ? 'Pause audio' : 'Resume session',
+                label: guided
+                    ? playing ? 'Pause audio' : 'Resume session'
+                    : mixer.transportLabel,
                 button: true,
                 child: CupertinoButton(
                   key: const ValueKey('mini-player-play-pause'),
                   padding: EdgeInsets.zero,
                   minSize: 44,
-                  onPressed: app.isGuidedLoading
+                  onPressed: guided && app.isGuidedLoading
                       ? null
                       : () {
                           HapticFeedback.lightImpact();
@@ -744,8 +685,7 @@ class SanctuaryMiniPlayer extends StatelessWidget {
                               app.resumeGuidedSession();
                             }
                           } else {
-                            app.saveCachedVolumes(Map.fromEntries(ambient));
-                            app.stopAllAudio();
+                            mixer.togglePlayback(expandPlayer: false);
                           }
                         },
                   child: Container(
@@ -753,22 +693,17 @@ class SanctuaryMiniPlayer extends StatelessWidget {
                     height: max(40.0, 42 * s),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0x660B646C),
-                      border: Border.all(
-                        color: const Color(0xFF56EBCB),
-                        width: 1.4,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0x3356EBCB), blurRadius: 14),
-                      ],
+                      color: MixerTheme.control,
                     ),
                     child: Center(
-                      child: app.isGuidedLoading
+                      child: guided && app.isGuidedLoading
                           ? const CupertinoActivityIndicator(
                               color: Color(0xFF9BFFE6),
                             )
                           : SanctuaryIcon(
-                              playing
+                              preparing
+                                  ? SanctuarySymbol.close
+                                  : playing
                                   ? SanctuarySymbol.pause
                                   : SanctuarySymbol.play,
                               color: const Color(0xFFB5FFEA),
@@ -809,31 +744,16 @@ class ActivePlayingListModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) {
-        final activeAmbient = state.activeAmbientTracks;
+        final requestedAmbient = state.requestedAmbientTracks;
         final hasGuided = state.isGuidedPlaying;
-        final totalCount = (hasGuided ? 1 : 0) + activeAmbient.length;
+        final totalCount = (hasGuided ? 1 : 0) + state.activeAmbientTracks.length;
 
         return Container(
           height: MediaQuery.of(context).size.height * 0.72,
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 30),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF101B27),
-                Color(0xFF070E15),
-              ],
-            ),
+            color: MixerTheme.quiet,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border.all(color: tealPrimary.withOpacity(0.4), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.7),
-                blurRadius: 30,
-                offset: const Offset(0, -6),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,7 +779,7 @@ class ActivePlayingListModal extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'CURRENTLY PLAYING',
+                        'SOUND CONTROLS',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -896,7 +816,7 @@ class ActivePlayingListModal extends StatelessWidget {
 
               // Active Items List
               Expanded(
-                child: totalCount == 0
+                child: !hasGuided && requestedAmbient.isEmpty
                     ? Center(
                         child: Text(
                           'No soundscape tracks currently playing',
@@ -912,14 +832,8 @@ class ActivePlayingListModal extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    tealPrimary.withOpacity(0.18),
-                                    const Color(0xFF0C1722).withOpacity(0.85),
-                                  ],
-                                ),
+                                color: MixerTheme.surfaceActive,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: tealPrimary.withOpacity(0.4)),
                               ),
                               child: Row(
                                 children: [
@@ -978,7 +892,7 @@ class ActivePlayingListModal extends StatelessWidget {
                           ],
 
                           // 🌧️ Ambient Sound Tracks with Real-time Volume Sliders
-                          ...activeAmbient.entries.map((entry) {
+                          ...requestedAmbient.entries.map((entry) {
                             final name = entry.key;
                             final volume = entry.value;
 
@@ -986,14 +900,8 @@ class ActivePlayingListModal extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.white.withOpacity(0.06),
-                                    const Color(0xFF09141F).withOpacity(0.9),
-                                  ],
-                                ),
+                                color: MixerTheme.surface,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withOpacity(0.12)),
                               ),
                               child: Column(
                                 children: [
@@ -1022,7 +930,8 @@ class ActivePlayingListModal extends StatelessWidget {
                                               ),
                                             ),
                                             Text(
-                                              'Volume: ${(volume * 100).toInt()}%',
+                                              '${state.ambientTrackStatus(name).label} · Level: ${(volume * 100).toInt()}%',
+                                              key: ValueKey('active-track-status-$name'),
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 color: Colors.white.withOpacity(0.6),
@@ -1031,19 +940,25 @@ class ActivePlayingListModal extends StatelessWidget {
                                           ],
                                         ),
                                       ),
-                                      // Remove / Mute this track
-                                      GestureDetector(
-                                        onTap: () {
+                                      // Pending and interrupted layers remain removable.
+                                      CupertinoButton(
+                                        key: ValueKey('remove-active-track-$name'),
+                                        padding: EdgeInsets.zero,
+                                        minSize: 44,
+                                        onPressed: () {
                                           HapticFeedback.lightImpact();
-                                          state.setTrackVolume(name, 0.0);
+                                          state.updateSoundTrackVolume(name, 0.0);
                                         },
-                                        child: Container(
-                                          padding: const EdgeInsets.all(7),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.08),
-                                            shape: BoxShape.circle,
+                                        child: Semantics(
+                                          label: 'Remove $name',
+                                          child: Container(
+                                            padding: const EdgeInsets.all(7),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.08),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(CupertinoIcons.xmark, color: Colors.white70, size: 14),
                                           ),
-                                          child: const Icon(CupertinoIcons.xmark, color: Colors.white70, size: 14),
                                         ),
                                       ),
                                     ],
@@ -1054,7 +969,7 @@ class ActivePlayingListModal extends StatelessWidget {
                                     value: volume,
                                     activeColor: tealPrimary,
                                     onChanged: (v) {
-                                      state.setTrackVolume(name, v);
+                                      state.updateSoundTrackVolume(name, v);
                                     },
                                   ),
                                 ],
@@ -1068,7 +983,7 @@ class ActivePlayingListModal extends StatelessWidget {
               const SizedBox(height: 12),
 
               // ── Quick Action Buttons: Save & Pin + Zen Screen ──
-              if (activeAmbient.isNotEmpty) ...[
+              if (requestedAmbient.isNotEmpty) ...[
                 Row(
                   children: [
                     // 💾 Save & Pin Mix to Home
@@ -1077,7 +992,7 @@ class ActivePlayingListModal extends StatelessWidget {
                         onTap: () {
                           HapticFeedback.lightImpact();
                           final textCtrl = TextEditingController(
-                            text: 'My ${activeAmbient.keys.first} Mix',
+                            text: 'My ${requestedAmbient.keys.first} Mix',
                           );
                           showCupertinoDialog(
                             context: context,
@@ -1109,7 +1024,7 @@ class ActivePlayingListModal extends StatelessWidget {
                                     final name = textCtrl.text.trim().isEmpty
                                         ? 'Custom Sanctuary Mix'
                                         : textCtrl.text.trim();
-                                    state.savePreset(name, Map.from(activeAmbient));
+                                    state.savePreset(name, Map.from(requestedAmbient));
                                     Navigator.pop(dialogCtx);
                                     Navigator.pop(context);
                                   },
@@ -1121,17 +1036,8 @@ class ActivePlayingListModal extends StatelessWidget {
                         child: Container(
                           height: 44,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF2DD4BF), Color(0xFF0D9488)],
-                            ),
+                            color: MixerTheme.primary,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: tealPrimary.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: const Center(
                             child: Row(
@@ -1166,17 +1072,8 @@ class ActivePlayingListModal extends StatelessWidget {
                         child: Container(
                           height: 44,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFA855F7), Color(0xFF6D28D9)],
-                            ),
+                            color: const Color(0xFF504A71),
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFA855F7).withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: const Center(
                             child: Row(
@@ -1213,17 +1110,8 @@ class ActivePlayingListModal extends StatelessWidget {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE29578), Color(0xFFF43F5E)],
-                    ),
+                    color: coralAccent,
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: coralAccent.withOpacity(0.35),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: const Center(
                     child: Row(
@@ -1311,8 +1199,9 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final activeCount = state.activeAmbientTracks.length;
-    final trackNames = state.activeAmbientTracks.keys.join(' + ');
+    final mixer = context.watch<MixerController>();
+    final requested = state.requestedAmbientTracks;
+    final trackNames = requested.keys.join(' + ');
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -1384,8 +1273,6 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.15)),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1455,8 +1342,6 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(24),
-                      border:
-                          Border.all(color: Colors.white.withOpacity(0.14)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1474,7 +1359,7 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
                                       letterSpacing: 1.4)),
                               const SizedBox(height: 2),
                               Text(
-                                activeCount > 0
+                                requested.isNotEmpty
                                     ? trackNames
                                     : (state.currentGuidedTitle ??
                                         'Tranquil Silence'),
@@ -1489,13 +1374,20 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
                           ),
                         ),
                         IconButton(
+                          tooltip: state.isAmbientPlaybackPending
+                              ? 'Cancel pending soundscape'
+                              : state.isAnyAudioPlaying ? 'Pause audio' : 'Play audio',
                           icon: Icon(
-                              state.isPlayingAny
+                              state.isAmbientPlaybackPending
+                                  ? CupertinoIcons.xmark
+                                  : state.isAnyAudioPlaying
                                   ? CupertinoIcons.pause_fill
                                   : CupertinoIcons.play_fill,
                               color: Colors.white),
                           onPressed: () {
-                            if (state.isPlayingAny) {
+                            if (requested.isNotEmpty) {
+                              mixer.togglePlayback();
+                            } else if (state.isAnyAudioPlaying) {
                               state.stopAllAudio();
                             } else {
                               state.updateSoundTrackVolume('Soft Rain', 0.6);

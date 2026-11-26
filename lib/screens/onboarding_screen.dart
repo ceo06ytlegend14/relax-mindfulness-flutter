@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -138,19 +139,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [tealPrimary, mintAccent],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
+                                color: MixerTheme.primary,
                                 borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: tealPrimary.withOpacity(0.35),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
                               ),
                               child: const Center(
                                 child: Text(
@@ -189,21 +179,13 @@ class _Slide1 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero Glowing Lotus Badge
+          // Calm tonal lotus badge
           Container(
             width: 110,
             height: 110,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: tealPrimary.withOpacity(0.12),
-              border: Border.all(color: tealPrimary.withOpacity(0.3), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: tealPrimary.withOpacity(0.2),
-                  blurRadius: 30,
-                  spreadRadius: 4,
-                ),
-              ],
             ),
             child: const Icon(
               Icons.spa_rounded,
@@ -241,7 +223,6 @@ class _Slide1 extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.06),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -270,10 +251,10 @@ class _Slide2 extends StatelessWidget {
   const _Slide2();
 
   static const _features = [
-    (Icons.self_improvement_rounded, 'Guided Meditation', 'Sessions for stress relief, focus & clarity', tealPrimary),
+    (Icons.self_improvement_rounded, 'Ambient Meditation', 'Timed practices with distinct mixes, no narration', tealPrimary),
     (Icons.air_rounded, 'Breathing Exercises', 'Box, 4-7-8, and resonance breathing patterns', mintAccent),
-    (Icons.equalizer_rounded, 'Ambient Sound Mixer', '11 customizable continuous audio tracks', coralAccent),
-    (Icons.nightlight_round, 'Bedtime Sleep Stories', 'Narrated journeys with auto-fade sleep timer', purpleAccent),
+    (Icons.equalizer_rounded, 'Ambient Sound Mixer', 'Layer bundled recordings and available online sounds', coralAccent),
+    (Icons.nightlight_round, 'Nighttime Journeys', 'Ambient mixes and sleep auto-fade controls', purpleAccent),
   ];
 
   @override
@@ -361,21 +342,13 @@ class _Slide3 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Hero Frosted Glass Checkmark Badge (Replaces generic green box emoji)
+          // A checkmark keeps the completion cue independent of color.
           Container(
             width: 96,
             height: 96,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: mintAccent.withOpacity(0.12),
-              border: Border.all(color: mintAccent.withOpacity(0.35), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: mintAccent.withOpacity(0.2),
-                  blurRadius: 30,
-                  spreadRadius: 4,
-                ),
-              ],
             ),
             child: const Icon(
               Icons.check_rounded,
@@ -408,7 +381,7 @@ class _Slide3 extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // Apple-style Glass Highlights Card
+          // Matte highlights card
           const GlassCard(
             cornerRadius: 20,
             padding: EdgeInsets.symmetric(vertical: 18, horizontal: 12),

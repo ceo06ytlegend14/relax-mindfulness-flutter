@@ -36,7 +36,7 @@ class HomeScreen extends StatelessWidget {
 
   void _toggleSoundscape(AppState app, MixerController mixer) {
     HapticFeedback.lightImpact();
-    if (app.activeAmbientTracks.isNotEmpty) {
+    if (app.hasAmbientPlaybackRequest) {
       mixer.togglePlayback();
     } else {
       final selected = Map<String, double>.of(mixer.levels)
@@ -79,7 +79,11 @@ class HomeScreen extends StatelessWidget {
                     m.space(36),
                     m.space(29),
                     MediaQuery.paddingOf(context).bottom +
-                        (app.hasGuidedSession ? 130 : 36),
+                        (app.hasGuidedSession ||
+                                app.hasAmbientSession ||
+                                app.hasAmbientPlaybackRequest
+                            ? 130
+                            : 36),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +119,7 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () => _dailySession(app),
                       ),
                       SizedBox(height: m.space(30)),
-                      MixerSectionHeading('MAKE IT YOUR MOMENT', metrics: m),
+                      _HomeSectionHeading('MAKE IT YOUR MOMENT', metrics: m),
                       SizedBox(height: m.space(16)),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +159,7 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: m.space(30)),
-                      MixerSectionHeading('YOUR SOUNDSCAPE', metrics: m),
+                      _HomeSectionHeading('YOUR SOUNDSCAPE', metrics: m),
                       SizedBox(height: m.space(16)),
                       _HomeSoundscape(
                         app: app,
@@ -173,8 +177,10 @@ class HomeScreen extends StatelessWidget {
                             builder: (_) => const WellbeingScreen(),
                           ),
                         ),
-                        child: MixerSurface(
+                        child: _HomeSurface(
+                          key: const ValueKey('home-surface-wellbeing'),
                           metrics: m,
+                          color: _HomeStyle.quiet,
                           padding: EdgeInsets.all(m.space(22)),
                           child: Row(
                             children: [
@@ -235,6 +241,61 @@ class HomeScreen extends StatelessWidget {
   );
 }
 
+// Home-only matte surfaces. The outlined MixerSurface and the preferred Sleep
+// controls deliberately keep their own styling; these tokens match home.css.
+abstract final class _HomeStyle {
+  static const surface = Color(0xFF0A3039);
+  static const action = Color(0xFF082C35);
+  static const quiet = Color(0xFF062831);
+  static const control = Color(0xFF164D51);
+  static const primary = Color(0xFF8CE7D0);
+  static const section = Color(0xFF95BBB7);
+}
+
+class _HomeSurface extends StatelessWidget {
+  const _HomeSurface({
+    required this.child,
+    required this.metrics,
+    required this.padding,
+    this.color = _HomeStyle.surface,
+    super.key,
+  });
+
+  final Widget child;
+  final MixerMetrics metrics;
+  final EdgeInsetsGeometry padding;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(metrics.space(26)),
+    ),
+    child: Padding(padding: padding, child: child),
+  );
+}
+
+class _HomeSectionHeading extends StatelessWidget {
+  const _HomeSectionHeading(this.label, {required this.metrics});
+  final String label;
+  final MixerMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      label,
+      style: metrics.text(
+        17,
+        color: _HomeStyle.section,
+        weight: FontWeight.w600,
+        tracking: metrics.space(2.5),
+      ),
+    ),
+  );
+}
+
 class _DailyHomeCard extends StatelessWidget {
   const _DailyHomeCard({
     required this.metrics,
@@ -284,7 +345,7 @@ class _DailyHomeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TODAY’S GUIDED JOURNEY',
+                    'TODAY’S AMBIENT PRACTICE',
                     style: m.text(
                       16,
                       weight: FontWeight.w600,
@@ -315,6 +376,16 @@ class _DailyHomeCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  SizedBox(height: m.space(10)),
+                  Text(
+                    '${dailyMeditation.sourceLabel}\nAmbient mix · No narration',
+                    key: const ValueKey('home-daily-sources'),
+                    style: m.text(
+                      19,
+                      color: const Color(0xFFC6DEDC),
+                      height: 1.5,
+                    ),
                   ),
                   SizedBox(height: m.space(16)),
                   _HomePill(
@@ -363,8 +434,10 @@ class _HomeAction extends StatelessWidget {
         HapticFeedback.selectionClick();
         onPressed();
       },
-      child: MixerSurface(
+      child: _HomeSurface(
+        key: ValueKey('home-surface-${label.toLowerCase()}'),
         metrics: m,
+        color: _HomeStyle.action,
         padding: EdgeInsets.symmetric(
           horizontal: m.space(8),
           vertical: m.space(23),
@@ -421,10 +494,12 @@ class _HomeSoundscape extends StatelessWidget {
             : selected.length == 1
             ? first
             : '$first + ${selected.length - 1} more');
-    final active = app.activeAmbientTracks.isNotEmpty;
+    final active = mixer.isPlaying;
+    final preparing = mixer.isPreparing;
     final track = allMixerTracks.where((track) => track.name == first);
     final artwork = track.isEmpty ? null : track.first.artwork;
-    return MixerSurface(
+    return _HomeSurface(
+      key: const ValueKey('home-surface-soundscape'),
       metrics: m,
       padding: EdgeInsets.all(m.space(22)),
       child: Column(
@@ -455,9 +530,7 @@ class _HomeSoundscape extends StatelessWidget {
                     ),
                     SizedBox(height: m.space(6)),
                     Text(
-                      active
-                          ? 'Playing · ${selected.length} ${selected.length == 1 ? 'layer' : 'layers'}'
-                          : 'Ready when you are · Not playing',
+                      mixer.playbackStatusLabel,
                       key: const ValueKey('home-mix-status'),
                       style: m.text(21, color: MixerTheme.muted),
                     ),
@@ -470,20 +543,21 @@ class _HomeSoundscape extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 onPressed: onToggle,
                 child: Semantics(
-                  label: active ? 'Pause soundscape' : 'Play soundscape',
+                  label: mixer.transportLabel,
                   child: Container(
                     width: math.max(44.0, m.space(64)),
                     height: math.max(44.0, m.space(64)),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: MixerTheme.mint.withOpacity(0.13),
-                      border: Border.all(
-                        color: MixerTheme.mint.withOpacity(0.6),
-                      ),
+                      color: _HomeStyle.control,
                     ),
                     alignment: Alignment.center,
                     child: SanctuaryIcon(
-                      active ? SanctuarySymbol.pause : SanctuarySymbol.play,
+                      preparing
+                          ? SanctuarySymbol.close
+                          : active
+                          ? SanctuarySymbol.pause
+                          : SanctuarySymbol.play,
                       size: m.font(31),
                       color: MixerTheme.mintLight,
                     ),
@@ -552,9 +626,7 @@ class _HomePill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(100),
-        gradient: const LinearGradient(
-          colors: [MixerTheme.mintLight, MixerTheme.mint],
-        ),
+        color: _HomeStyle.primary,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

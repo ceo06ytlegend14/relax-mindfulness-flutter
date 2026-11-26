@@ -11,8 +11,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="pwa-install.css">
-<script src="pwa-install.js" defer></script>
+<link rel="stylesheet" href="pwa-install.css?v=be2d43d5ba2a">
+<script src="pwa-install.js?v=d408dbdce2b8" defer></script>
 <title>Sanctuary · Home, Sounds, Meditate &amp; Sleep Preview</title>
 <style>
 @font-face{font-family:MixerSans;src:url('assets/fonts/mixer/Roboto.ttf') format('truetype');font-weight:100 900;font-display:swap}
@@ -20,16 +20,19 @@
 *{box-sizing:border-box}html{min-height:100%;background:#00131c}body{margin:0;color:#f5fafa;background:radial-gradient(ellipse at 50% 15%,#07343d,#00131c 70%);font-family:MixerSans,sans-serif}button,input{font:inherit}button{color:inherit;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible,input:focus-visible{outline:2px solid #a0ffe7;outline-offset:5px}button:disabled{opacity:.4;cursor:default}svg{width:1em;height:1em;display:block;flex-shrink:0}button{transition:filter .15s,transform .15s}button:active{transform:scale(.97)}.app{position:relative;width:100%;max-width:823px;margin:0 auto;min-height:100vh;background:#001b24;isolation:isolate}.backdrop{position:absolute;top:0;left:0;width:100%;z-index:-1;pointer-events:none}.content{padding:calc(36px*var(--s)) calc(29px*var(--s)) calc(var(--nav) + 50px + env(safe-area-inset-bottom))}h1,h2,p{margin:0}h1{font-size:calc(53px*var(--t));font-weight:700;line-height:1.2;letter-spacing:calc(-1.5px*var(--s))}.eyebrow{margin-top:calc(8px*var(--s));font-size:calc(17px*var(--t));font-weight:600;letter-spacing:calc(2.8px*var(--s));line-height:1.2;color:#80e5d2;display:flex;gap:calc(14px*var(--s));align-items:center}.eyebrow:after{content:"";width:calc(60px*var(--s));height:1px;background:#43e9cd80}h2{margin-top:calc(8px*var(--s));font-size:calc(44px*var(--t));font-weight:700;letter-spacing:calc(-.7px*var(--s));line-height:1.15}.intro{margin-top:calc(8px*var(--s));font-size:calc(22px*var(--t));line-height:1.2;color:#b9d0d5}.surface{background:linear-gradient(135deg,#09343e,#001b25 55%,#01232c);border:1px solid #1d525a99;border-radius:calc(26px*var(--s));box-shadow:inset 0 1px 8px #5defd511,0 5px 16px #0002}.master{margin-top:calc(24px*var(--s));padding:calc(22px*var(--s)) calc(24px*var(--s));display:flex;align-items:center;gap:calc(14px*var(--s))}.play-hit{background:none;padding:0;width:max(44px,calc(70px*var(--s)));height:max(44px,calc(70px*var(--s)));display:grid;place-items:center;flex-shrink:0;margin-right:calc(10px*var(--s))}.play-dial{display:grid;place-items:center;width:calc(70px*var(--s));height:calc(70px*var(--s));border-radius:50%;border:calc(2.5px*var(--s)) solid var(--mint);background:radial-gradient(#0d645f,#02373d);box-shadow:0 0 calc(20px*var(--s)) #43e9cd66;color:#9affe6;font-size:calc(34px*var(--s))}.status{flex:1;min-width:0;line-height:1.2}.status strong{font-size:calc(26px*var(--t));font-weight:600;letter-spacing:calc(-.6px*var(--s));display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.status p{margin-top:calc(3px*var(--s));font-size:calc(20px*var(--t));color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tools{display:flex;align-items:center;gap:calc(8px*var(--s))}.round{width:max(32px,calc(48px*var(--s)));height:max(44px,calc(48px*var(--s)));display:grid;place-items:center;background:none;padding:0}.round span{width:calc(48px*var(--s));height:calc(48px*var(--s));display:grid;place-items:center;border-radius:50%;background:#43e9cd1c;color:#a5c0c8;font-size:calc(21px*var(--s))}.save{display:flex;align-items:center;gap:calc(8px*var(--s));padding:calc(13px*var(--s)) calc(22px*var(--s));border:1px solid #9affe6b3;border-radius:99px;box-shadow:0 0 calc(23px*var(--s)) #43e9cd80;background:linear-gradient(#acffe6,#45eacb 48%,#23d7bc);font-size:calc(22px*var(--t));font-weight:600;line-height:1.2;color:#004d48;white-space:nowrap}.save svg{font-size:calc(24px*var(--s))}.wave{height:calc(44px*var(--s));width:100%;display:block}.section-heading{display:flex;align-items:center;gap:calc(14px*var(--s));color:#79e4d0;font-size:calc(17px*var(--t));line-height:1.2;font-weight:600;letter-spacing:calc(2.5px*var(--s));white-space:nowrap}.section-heading:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,#397f80,#22434c)}.hscroll{display:flex;overflow:auto;gap:calc(12px*var(--s));scrollbar-width:none}.hscroll::-webkit-scrollbar{display:none}.presets{margin:calc(12px*var(--s)) calc(-9px*var(--s)) 0;padding:calc(1px*var(--s)) 0;overflow-y:hidden}.mix-chip{padding:calc(12px*var(--s)) calc(14px*var(--s));border:1px solid #1d525a33;border-radius:99px;display:flex;align-items:center;gap:calc(6px*var(--s));font-size:calc(19px*var(--t));font-weight:500;line-height:1.2;white-space:nowrap;background:#001821d0;flex-shrink:0}.mix-chip svg{font-size:calc(28px*var(--s))}.mix-chip.selected{background:#0a4145;border-color:#43e9cd99;box-shadow:inset 0 0 14px #43e9cd15}.category-title{margin-top:calc(18px*var(--s));margin-bottom:calc(14px*var(--s))}.categories{gap:calc(10px*var(--s));padding:calc(1px*var(--s)) 0;overflow-y:hidden}.category{width:calc(184px*var(--s));flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:calc(6px*var(--s));padding:calc(12px*var(--s)) 0;line-height:1.2;font-size:calc(21px*var(--t));white-space:nowrap;border-radius:calc(17px*var(--s));border:1px solid #1d525a66;background:linear-gradient(#07363f,#02242e)}.category svg{font-size:calc(27px*var(--s))}.category[aria-selected=true]{color:#00544d;font-weight:600;border-color:#9affe699;background:linear-gradient(#6ceccf,#25c9b2);box-shadow:0 0 calc(18px*var(--s)) #43e9cd59}.list{display:flex;flex-direction:column;gap:calc(16px*var(--s));margin-top:calc(18px*var(--s))}.track{padding:calc(12px*var(--s)) calc(14px*var(--s));position:relative;transition:border-color .2s,box-shadow .2s}.track.selected{padding:calc(14px*var(--s));border-color:#43e9cdcc;background:linear-gradient(135deg,#06444a,#00232c 55%,#00212a);box-shadow:inset 0 0 12px #43e9cd16,0 0 calc(20px*var(--s)) #43e9cd29}.track-row{display:flex;align-items:center;gap:calc(24px*var(--s))}.art{width:max(40px,calc(104px*var(--s)));height:max(40px,calc(88px*var(--s)));border-radius:calc(16px*var(--s));flex-shrink:0;object-fit:cover;display:grid;place-items:center;font-size:calc(38px*var(--s));overflow:hidden}.selected .art{width:max(40px,calc(104px*var(--s)));height:max(40px,calc(100px*var(--s)))}.art img{width:100%;height:100%;object-fit:cover}.track-info{flex:1;min-width:0}.track-info h3{font-size:calc(28px*var(--t));line-height:1.2;font-weight:600;letter-spacing:calc(-.7px*var(--s));margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.selected .track-info h3{font-size:calc(30px*var(--t))}.track-info p{margin-top:calc(3px*var(--s));font-size:calc(20px*var(--t));color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.volume-badge{width:max(38px,calc(96px*var(--s)));flex-shrink:0;padding:calc(10px*var(--s)) 0;background:#12333e;border-radius:99px;font-size:calc(24px*var(--t));color:var(--muted);line-height:1.2;text-align:center;margin-left:calc(-12px*var(--s))}.selected .volume-badge{color:#74f9da;background:#00514f;font-weight:600}.toggle-hit{width:max(38px,calc(80px*var(--s)));height:max(40px,calc(48px*var(--s)));padding:0;background:none;display:grid;place-items:center;flex-shrink:0;margin-right:calc(10px*var(--s))}.toggle{display:block;width:calc(80px*var(--s));height:calc(48px*var(--s));border-radius:99px;background:#3b5660;box-shadow:inset 0 1px 3px #ffffff20;position:relative;transition:background .2s}.toggle:after{content:"";display:block;position:absolute;left:calc(3px*var(--s));top:calc(3px*var(--s));width:calc(42px*var(--s));height:calc(42px*var(--s));background:#fff;border-radius:50%;box-shadow:0 0 7px #fff3;transition:transform .2s}[aria-checked=true] .toggle{background:var(--mint);box-shadow:0 0 calc(20px*var(--s)) #43e9cd66}[aria-checked=true] .toggle:after{transform:translateX(calc(32px*var(--s)))}.slider-row{margin-left:calc(128px*var(--s));padding:calc(1px*var(--s)) calc(14px*var(--s)) 0 0;display:flex;align-items:center;gap:calc(14px*var(--s));height:max(32px,calc(35px*var(--s)))}.slider-row svg{color:#3fadaa;font-size:calc(26px*var(--s))}.slider{--progress:30%;appearance:none;-webkit-appearance:none;display:block;min-width:0;flex:1;margin:0;height:calc(6px*var(--s));border-radius:99px;background:linear-gradient(90deg,var(--mint) var(--progress),#20404a var(--progress));cursor:pointer;touch-action:pan-y}.slider::-webkit-slider-thumb{-webkit-appearance:none;width:max(16px,calc(36px*var(--s)));height:max(16px,calc(36px*var(--s)));border-radius:50%;background:white;box-shadow:0 0 12px #a5ffe633}.slider::-moz-range-thumb{width:calc(36px*var(--s));height:calc(36px*var(--s));border-radius:50%;background:white;border:0}.help{text-align:center;font-size:calc(18px*var(--t));line-height:1.5;color:var(--muted);margin-top:24px}.help small{font-size:12px;color:#6d949e;display:block;margin-top:12px}.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:823px;z-index:10;background:#001d26f2;border-top:1px solid #21565e;box-shadow:0 -3px 14px #43e9cd0b;backdrop-filter:blur(20px);height:calc(var(--nav) + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);padding:calc(18px*var(--s)) 0 calc(8px*var(--s) + env(safe-area-inset-bottom))}.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(8px*var(--s));background:none;position:relative;color:#7e9aa5;font-size:max(12px,calc(24px*var(--s)));line-height:1.2;padding:0}.nav-item>svg{width:max(24px,calc(46px*var(--s)));height:max(24px,calc(46px*var(--s)))}.nav-item.active{color:var(--mint)}.nav-item.active>svg{filter:drop-shadow(0 0 9px #43e9cdaa)}.nav-item.active:after{content:"";position:absolute;bottom:calc(-5px*var(--s));height:max(2px,calc(3px*var(--s)));width:48%;border-radius:9px;background:var(--mint);box-shadow:0 0 16px var(--mint)}dialog{background:linear-gradient(135deg,#0c3d45,#001a25);border:1px solid #37877f;color:#f5fafa;border-radius:24px;padding:28px;width:calc(100% - 32px);max-width:380px;box-shadow:0 0 80px #000a}dialog::backdrop{background:#000a;backdrop-filter:blur(7px)}dialog h3{margin:0 0 8px;font-size:24px}dialog p{font-size:16px;color:var(--muted);line-height:1.45}dialog input{width:100%;border:1px solid #2b6266;border-radius:12px;padding:12px;background:#001f2a;color:white;font-size:17px;margin:18px 0}dialog footer{display:flex;justify-content:flex-end;gap:12px;margin-top:20px}dialog button{border-radius:12px;padding:10px 16px;background:#15424a;font-size:17px}dialog button.primary{background:var(--mint);color:#003c39;font-weight:600}.saved-list{display:grid;gap:10px;margin-top:16px}.saved-list button{text-align:left;display:flex;justify-content:space-between;align-items:center}.saved-list span{overflow:hidden;text-overflow:ellipsis}.empty{text-align:center;padding:35px 20px}.empty h3{font-size:24px;margin:12px 0}.empty p{color:var(--muted);font-size:16px}.empty button{background:transparent;color:var(--mint);font-size:16px;margin-top:18px}.toast{position:fixed;z-index:40;bottom:calc(var(--nav) + 18px);left:50%;transform:translateX(-50%);background:#0a4048f5;color:#e9fff9;border:1px solid #43e9cd66;box-shadow:0 4px 30px #0007;border-radius:16px;padding:14px 20px;max-width:calc(100% - 32px);width:max-content;font-size:15px;line-height:1.4;pointer-events:none;text-align:center;opacity:0;transition:opacity .2s}.toast.visible{opacity:1}.equalizer{fill:currentColor;stroke:none}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}@media(max-width:360px){.master{gap:3px}.tools{gap:0}.save{padding-left:8px;padding-right:8px}.track-row{gap:8px}.volume-badge{margin-left:0}.toggle-hit{margin-right:0}}
 </style>
-<link rel="stylesheet" href="sanctuary.css">
-<link rel="stylesheet" href="home.css">
-<link rel="stylesheet" href="sleep.css">
-<link rel="stylesheet" href="player.css">
-<link rel="stylesheet" href="sound-replacement.css">
+<link rel="stylesheet" href="sanctuary.css?v=0b01a38ddf26">
+<link rel="stylesheet" href="home.css?v=bc8598a095ab">
+<link rel="stylesheet" href="sleep.css?v=0a77ecc8281f">
+<link rel="stylesheet" href="player.css?v=978908586a2f">
+<link rel="stylesheet" href="sound-replacement.css?v=b3d677976d3e">
+<link rel="stylesheet" href="meditate.css?v=9ab1be8a9f56">
+<link rel="stylesheet" href="wellbeing.css?v=ecf2949fcabc">
+<link rel="stylesheet" href="soft-surfaces.css?v=e1c6dbcd9670">
 </head>
 <body>
 <div class="app"><img class="backdrop" src="assets/images/mixer/moonlit_forest.webp" alt="" aria-hidden="true">
 <main class="content">
-<header><h1>Sounds</h1><p class="eyebrow">AMBIENT SOUND MIXER</p><h2>Build Your Environment</h2><p class="intro">Layer natural sounds &amp; healing frequencies for work, study, or sleep</p></header>
+<header><h1>Sounds</h1><p class="eyebrow">AMBIENT SOUND MIXER</p><h2>Build Your Environment</h2><p class="intro">Layer natural sounds for work, study, or sleep</p></header>
 <section class="master surface" aria-label="Sound mixer controls">
 <button class="play-hit" id="master-play" aria-label="Play sound mixer"><span class="play-dial" id="play-icon"></span></button>
 <div class="status"><strong id="play-status">Mixer Paused</strong><p id="play-description">Tap play to start audio</p></div>
@@ -37,8 +40,14 @@
 <button class="save" id="save" aria-label="Save sound mix"><span data-icon="bookmark"></span>Save</button>
 </section>
 <canvas class="wave" id="waveform" aria-hidden="true"></canvas>
+<div class="library-scope" role="group" aria-label="Sound library view"><button class="mix-chip" id="library-available" aria-pressed="true">Available (18)</button></div>
+<details id="catalog-review"><summary>Review unfinished catalog</summary><p id="catalog-review-description">18 bundled sounds, 23 stream-only entries and 36 entries without recordings. Streams are not playable in this browser preview. This view preserves older selections; it is not a 77-playable-sound library.</p><button class="mix-chip" id="library-full" aria-pressed="false">Full catalog (77)</button></details>
+<p class="library-notice" id="library-notice"></p><div class="library-notice" id="library-selection-notice" role="status" hidden><span id="library-selection-description"></span><button id="library-review-selected">Review in Full catalog</button></div>
 <h3 class="section-heading" style="margin:0">CURATED ONE-TAP MIXES</h3>
 <div class="hscroll presets" id="presets" aria-label="Curated mixes"></div>
+<section class="vibe-set-details surface" id="vibe-set-details" aria-labelledby="vibe-set-name" aria-live="polite" hidden>
+<h3 id="vibe-set-name"></h3><p id="vibe-set-purpose"></p><p id="vibe-set-vibe"></p><p id="vibe-set-levels"></p><p id="vibe-set-notice"></p>
+</section>
 <h3 class="section-heading category-title">SOUND CATEGORY TRAY</h3>
 <div class="hscroll categories" id="categories" role="tablist" aria-label="Sound categories"></div>
 <section class="list" id="tracks" aria-label="Ambient sounds"></section>
@@ -53,8 +62,16 @@
 <dialog id="save-dialog" aria-labelledby="save-title"><form id="save-form"><h3 id="save-title">Save your soundscape</h3><p>A little calm, ready whenever you need it.</p><input id="mix-name" name="name" placeholder="e.g. Rainy study night" required maxlength="60" autocomplete="off"><footer><button type="button" data-close="save-dialog">Cancel</button><button class="primary" type="submit">Save mix</button></footer></form></dialog>
 <dialog id="saved-dialog" aria-labelledby="saved-title"><h3 id="saved-title">Your saved soundscapes</h3><div class="saved-list" id="saved-list"></div><footer><button data-close="saved-dialog">Done</button></footer></dialog>
 <dialog id="share-dialog" aria-labelledby="share-title"><h3 id="share-title">Your mix link</h3><p>Copy this link to share your soundscape.</p><input id="share-url" readonly><footer><button data-close="share-dialog">Done</button></footer></dialog>
+<dialog id="preview-availability-dialog" aria-labelledby="preview-availability-title" aria-describedby="preview-availability-description">
+<h3 id="preview-availability-title">Not available in this preview</h3>
+<p id="preview-availability-context"></p>
+<ul id="preview-unavailable-sources"></ul>
+<p id="preview-availability-description">Your current audio, timer and saved mixes have not changed. No different recording will be substituted.</p>
+<footer><button id="preview-unavailable-keep" autofocus>Keep current mix</button><button id="preview-unavailable-review" class="primary">Review in Sounds</button><button id="preview-unavailable-available">Browse available sounds</button></footer>
+</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="data.js"></script>
+<script src="ambient-loop.js?v=e725c948081b"></script>
+<script src="data.js?v=4a1c772812ca"></script>
 <script>
 'use strict';
 const icons={
@@ -67,36 +84,456 @@ icons.dots='<circle cx="5" cy="16" r="2" fill="currentColor"/><circle cx="16" cy
 function svg(key){return '<svg viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(icons[key]||icons.noise)+'</svg>'}
 function setIcon(node,key){node.innerHTML=svg(key)}
 document.querySelectorAll('[data-icon]').forEach(n=>{setIcon(n,n.dataset.icon);if(n.parentElement.classList.contains('nav-item')){const icon=n.firstElementChild;icon.classList.add('nav-icon');n.replaceWith(icon)}});
-const $=id=>document.getElementById(id);const all=CATALOG.flatMap(c=>c.tracks);let levels={'Soft Rain':.3},category='rain',playing=false,selectedPreset=null,favorites=new Set(['Soft Rain','Ocean Waves','Campfire']),saved=[];const players=new Map();let toastTimer;let soundPreviewDuck=1;
+const $=id=>document.getElementById(id);const all=CATALOG.flatMap(c=>c.tracks);let levels={'Soft Rain':.3},category='all',playing=false,selectedPreset=null,favorites=new Set(['Soft Rain','Ocean Waves','Campfire']),saved=[];let availableOnly=true;const players=new Map();let toastTimer;let soundPreviewDuck=1;
 try{const stored=JSON.parse(localStorage.getItem('sanctuary.designPreview.v1')||'null');if(stored){levels=stored.levels||levels;favorites=new Set(stored.favorites||[...favorites]);saved=stored.saved||[]}}catch{}
 function persist(){try{localStorage.setItem('sanctuary.designPreview.v1',JSON.stringify({levels,favorites:[...favorites],saved}))}catch{}}
 function toast(text){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3400)}
 function resize(){const s=Math.min(innerWidth,823)/823;document.documentElement.style.setProperty('--s',s);document.documentElement.style.setProperty('--t',Math.max(.53,s));document.documentElement.style.setProperty('--nav',Math.max(68,132*s)+'px');drawWave(0)}addEventListener('resize',resize);
-function renderMaster(){setIcon($('play-icon'),playing?'pause':'play');$('master-play').setAttribute('aria-label',playing?'Pause sound mixer':'Play sound mixer');$('play-status').textContent=playing?'Soundscape Active':'Mixer Paused';$('play-description').textContent=playing?Object.values(levels).filter(v=>v>0).length+' active layers':'Tap play to start audio';if(!playing)drawWave(0)}
-function syncAudio(){const sum=Object.values(levels).reduce((a,b)=>a+b,0),gain=Math.min(1,1/(sum||1));for(const [name,audio] of players){if(!playing||!(levels[name]>0))audio.pause()}
-if(!playing)return;let missing=false;for(const [name,level]of Object.entries(levels)){if(!level)continue;const path=LOCAL_AUDIO[name];if(!path){missing=true;continue}let audio=players.get(name);if(!audio){audio=new Audio(path);audio.loop=true;audio.preload='none';players.set(name,audio)}audio.volume=Math.min(.85,level*gain*soundPreviewDuck);audio.play().catch(error=>{if(error.name!=='AbortError')toast('Audio could not start. Try the play button again.')})}if(missing)toast('Some selected sounds cannot play in this browser preview. Tap ⋯ to choose a bundled sound.')}
-function start(){if(!Object.values(levels).some(v=>v>0))levels={'Soft Rain':.3};playing=!playing;syncAudio();renderMaster();persist();if(playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(animateWave)}
-function applyMix(mix,name){levels={...mix};selectedPreset=name;playing=Object.values(levels).some(v=>v>0);syncAudio();persist();render();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(animateWave)}
-function renderPresets(){const parent=$('presets');parent.replaceChildren();PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='mix-chip'+(selectedPreset===p.name?' selected':'');const symbol=document.createElement('span');setIcon(symbol,['rain','beach','space','nature','thunder','places','thunder','space'][i]);const label=document.createElement('span');label.textContent=p.name.replace(/^\S+\s/,'');b.append(symbol,label);b.onclick=()=>applyMix(p.levels,p.name);parent.append(b)});if(saved.length){const b=document.createElement('button');b.className='mix-chip';b.textContent='Saved mixes ('+saved.length+')';b.onclick=openSaved;parent.append(b)}}
-function renderCategories(){const parent=$('categories');parent.replaceChildren();for(const c of [{id:'favorites',label:'Favorites',count:favorites.size},...CATALOG.map(c=>({...c,count:c.tracks.length}))]){const b=document.createElement('button');b.className='category';b.dataset.category=c.id;b.setAttribute('role','tab');b.setAttribute('aria-selected',category===c.id);const symbol=document.createElement('span');setIcon(symbol,c.id==='favorites'?'heart':c.id);const label=document.createElement('span');label.textContent=c.label+' ('+c.count+')';b.append(symbol,label);b.onclick=()=>{category=c.id;renderCategories();renderTracks()};parent.append(b)}}
-function changeTrack(name){levels[name]=levels[name]>0?0:.3;selectedPreset=null;playing=Object.entries(levels).some(([name,v])=>v>0&&CONFIGURED_AUDIO.has(name));syncAudio();persist();render();if(playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(animateWave)}
-function renderTracks(){const parent=$('tracks');parent.replaceChildren();const tracks=category==='favorites'?all.filter(t=>favorites.has(t.name)):CATALOG.find(c=>c.id===category).tracks;if(!tracks.length){const empty=document.createElement('div');empty.className='surface empty';const h=document.createElement('h3');h.textContent='Your quiet favorites live here';const p=document.createElement('p');p.textContent='Double-click any sound artwork to add it to Favorites.';const b=document.createElement('button');b.textContent='Explore rain sounds';b.onclick=()=>{category='rain';render()};empty.append(h,p,b);parent.append(empty);return}
-for(const t of tracks){const vol=levels[t.name]||0,active=vol>0;const card=document.createElement('article');card.className='track surface'+(active?' selected':'');card.dataset.track=t.name;const row=document.createElement('div');row.className='track-row';const art=document.createElement('div');art.className='art';art.style.background='linear-gradient(135deg,'+t.color+',#073039)';art.title='Double-click to favorite';const img=document.createElement('img');img.src=t.artwork;img.alt='';img.onerror=()=>{img.remove();setIcon(art,'equalizer')};art.append(img);art.ondblclick=()=>{favorites.has(t.name)?favorites.delete(t.name):favorites.add(t.name);persist();renderCategories();if(category==='favorites')renderTracks();toast(favorites.has(t.name)?t.name+' added to Favorites':t.name+' removed from Favorites')};const info=document.createElement('div');info.className='track-info';const h=document.createElement('h3');h.textContent=t.name;const p=document.createElement('p');p.textContent=CONFIGURED_AUDIO.has(t.name)?t.description:'Needs a recording · tap ⋯ to replace';info.append(h,p);const badge=document.createElement('div');badge.className='volume-badge';badge.textContent=Math.round(vol*100)+'%';const toggle=document.createElement('button');toggle.className='toggle-hit';toggle.setAttribute('role','switch');toggle.setAttribute('aria-label','Enable '+t.name);toggle.setAttribute('aria-checked',active);const knob=document.createElement('span');knob.className='toggle';toggle.append(knob);toggle.onclick=()=>changeTrack(t.name);const options=document.createElement('button');options.className='sound-options';options.dataset.soundOptions=t.name;options.setAttribute('aria-label','Replace '+t.name);setIcon(options,'dots');options.onclick=()=>openSoundReplacement(t);row.append(art,info,badge,options,toggle);card.append(row);
-if(active){const sr=document.createElement('div');sr.className='slider-row';const speaker=document.createElement('span');setIcon(speaker,'speaker');const slider=document.createElement('input');slider.type='range';slider.min=0;slider.max=100;slider.step=1;slider.value=Math.round(vol*100);slider.className='slider';slider.style.setProperty('--progress',slider.value+'%');slider.setAttribute('aria-label',t.name+' volume');slider.oninput=()=>{levels[t.name]=slider.value/100;badge.textContent=slider.value+'%';slider.style.setProperty('--progress',slider.value+'%');selectedPreset=null;playing=Object.entries(levels).some(([name,v])=>v>0&&CONFIGURED_AUDIO.has(name));syncAudio();persist();renderMaster()};slider.onchange=()=>{if(!+slider.value)renderTracks();renderPresets()};sr.append(speaker,slider);card.append(sr)}parent.append(card)}}
-function render(){renderMaster();renderPresets();renderCategories();renderTracks()}
-function openSaved(){$('saved-list').replaceChildren();saved.forEach((mix,index)=>{const row=document.createElement('button');const label=document.createElement('span');label.textContent=mix.name;row.append(label);row.onclick=()=>{applyMix(mix.levels,mix.name);$('saved-dialog').close()};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','Delete '+mix.name);del.onclick=e=>{e.stopPropagation();saved.splice(index,1);persist();renderPresets();$('saved-dialog').close();if(saved.length)openSaved()};const wrapper=document.createElement('div');wrapper.style.display='flex';row.style.flex='1';wrapper.append(row,del);$('saved-list').append(wrapper)});$('saved-dialog').showModal()}
-$('master-play').onclick=start;$('shuffle').onclick=()=>{const shuffled=[...all];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}applyMix(Object.fromEntries(shuffled.slice(0,3).map(t=>[t.name,.3+Math.floor(Math.random()*4)/10])),null)};
+// Availability is a preview capability, not a paid entitlement. Preflight UI
+// actions before pausing another mode, selecting a recipe or changing its timer.
+function previewUnavailableNames(mix = levels) {
+  return Object.entries(mix).filter(([name, value]) => value > 0 && !localAmbientPath(name)).map(([name]) => name);
+}
+function previewAvailabilityLabel(mix) {
+  const names = previewUnavailableNames(mix);
+  return names.length ? names.every(name => CONFIGURED_AUDIO.has(name)) ? 'App stream' : 'Unavailable' : '';
+}
+let previewUnavailableSources = [];
+function showPreviewUnavailable(mix, title = 'This mix') {
+  previewUnavailableSources = previewUnavailableNames(mix);
+  $('preview-availability-description').textContent = 'Your current audio, timer and saved mixes have not changed. No different recording will be substituted.';
+  $('preview-availability-context').textContent = `${title} needs sources that are not included in the browser preview:`;
+  const list = $('preview-unavailable-sources');
+  list.replaceChildren();
+  for (const name of previewUnavailableSources) {
+    const row = document.createElement('li');
+    row.dataset.unavailableSource = name;
+    const source = document.createElement('strong');
+    source.textContent = name;
+    const reason = document.createElement('span');
+    reason.textContent = CONFIGURED_AUDIO.has(name) ? 'App stream · not in this preview' : 'No recording configured';
+    row.append(source, reason);
+    if ((levels[name] || 0) > 0) {
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = 'Remove from current mix';
+      remove.setAttribute('aria-label', `Remove ${name} from current mix`);
+      remove.onclick = () => {
+        if (!updatePreviewLevel(name, 0)) return;
+        render();
+        remove.disabled = true;
+        remove.textContent = 'Removed from current mix';
+        $('preview-availability-description').textContent = 'Only this current layer was removed. Other selected levels, your timer and saved mixes are kept. Nothing was started automatically.';
+        $('preview-unavailable-keep').focus();
+      };
+      row.append(remove);
+    }
+    list.append(row);
+  }
+  if (!$('preview-availability-dialog').open) $('preview-availability-dialog').showModal();
+}
+function canPreviewMix(mix, title) {
+  if (!previewUnavailableNames(mix).length) return true;
+  showPreviewUnavailable(mix, title);
+  return false;
+}
+function reviewPreviewSources(names, available = false) {
+  $('preview-availability-dialog').close();
+  for (const id of ['saved-dialog', 'library-dialog']) if ($(id)?.open) $(id).close();
+  availableOnly = available;
+  $('catalog-review').open = !available;
+  category = 'all';
+  render();
+  selectRetreatTab('sounds');
+  const name = names.find(name => all.some(track => track.name === name));
+  const card = !available && name ? [...$('tracks').children].find(node => node.dataset.track === name) : null;
+  if (card) {
+    card.scrollIntoView({block:'center'});
+    card.querySelector('[data-sound-options]')?.focus({preventScroll:true});
+  } else $('library-available').focus();
+}
+$('preview-unavailable-keep').onclick = () => $('preview-availability-dialog').close();
+$('preview-unavailable-review').onclick = () => reviewPreviewSources(previewUnavailableSources);
+$('preview-unavailable-available').onclick = () => reviewPreviewSources([], true);
+$('library-review-selected').onclick = () => reviewPreviewSources(previewUnavailableNames());
+// `playing` is the user's playback request, not evidence of audible media.
+// Selection survives failures; only confirmed, current media may light a control.
+const ambientStates = new Map();
+let ambientRequest = 0;
+let waveFrame = null;
+let waveOnscreen = true;
+let ambientHasSession = false;
+function localAmbientPath(name) {
+  return Object.hasOwn(LOCAL_AUDIO, name) ? LOCAL_AUDIO[name] : null;
+}
+function ownsAmbientPlayer(name, state) {
+  return ambientStates.get(name) === state && players.get(name) === state.audio
+    && playing && levels[name] > 0;
+}
+function ambientTrackStatus(name) {
+  if (!playing || !(levels[name] > 0)) return 'paused';
+  const state = ambientStates.get(name);
+  if (!localAmbientPath(name) || state?.phase === 'error') return 'error';
+  if (state?.phase === 'loading') return 'loading';
+  const audio = players.get(name);
+  return state?.phase === 'playing' && audio === state.audio && !audio.paused
+    && !audio.ended && !audio.error && audio.readyState >= 2 ? 'playing' : 'paused';
+}
+function ambientPlaybackState() {
+  const selected = Object.entries(levels).filter(([, value]) => value > 0);
+  const active = selected.filter(([name]) => ambientTrackStatus(name) === 'playing');
+  const pending = selected.filter(([name]) => ambientTrackStatus(name) === 'loading');
+  const failed = selected.filter(([name]) => ambientTrackStatus(name) === 'error');
+  return { selected, active, pending, failed, canPause: active.length > 0 || pending.length > 0 };
+}
+function ambientStatusSuffix(state) {
+  return [state.pending.length ? `${state.pending.length} loading` : '',
+    state.failed.length ? `${state.failed.length} unavailable` : ''].filter(Boolean).join(' · ');
+}
+function refreshAmbientPlayback() {
+  renderMaster();
+  if (typeof updateSleepState === 'function') updateSleepState();
+}
+function releaseAmbientPlayer(name, state, keepError = false) {
+  clearTimeout(state.loadTimer);
+  state.request = ++ambientRequest;
+  if (players.get(name) === state.audio) players.delete(name);
+  if (!keepError && ambientStates.get(name) === state) ambientStates.delete(name);
+  if (state.audio) {
+    state.audio.pause();
+    state.audio.removeAttribute('src');
+    state.audio.load(); // Cancel the old request, never fetch a substitute.
+  }
+}
+function failAmbientPlayer(name, state) {
+  if (!ownsAmbientPlayer(name, state)) return;
+  state.phase = 'error';
+  releaseAmbientPlayer(name, state, true);
+  refreshAmbientPlayback();
+  toast(`${name} could not play. Retry the soundscape or choose a bundled sound with ⋯.`);
+}
+function armAmbientTimeout(name, state) {
+  clearTimeout(state.loadTimer);
+  const request = state.request;
+  state.loadTimer = setTimeout(() => {
+    if (state.request === request) failAmbientPlayer(name, state);
+  }, Math.max(0, Math.min(20000, 180000 - (Date.now() - state.loadStartedAt))));
+}
+function createAmbientPlayer(name, path) {
+  const audio = createAmbientLoopAudio(path);
+  audio.loop = true;
+  audio.preload = 'none';
+  const state = { audio, phase: 'paused', request: 0, loadTimer: null, loadStartedAt: 0, progressPercent: -1 };
+  ambientStates.set(name, state);
+  players.set(name, audio);
+  audio.addEventListener('playing', () => {
+    if (!ownsAmbientPlayer(name, state)) { audio.pause(); return; }
+    clearTimeout(state.loadTimer);
+    state.phase = 'playing';
+    refreshAmbientPlayback();
+  });
+  audio.addEventListener('waiting', () => {
+    if (!ownsAmbientPlayer(name, state)) return;
+    if (state.phase !== 'loading') {
+      state.loadStartedAt = Date.now();
+      armAmbientTimeout(name, state);
+    }
+    state.phase = 'loading';
+    refreshAmbientPlayback();
+  });
+  audio.addEventListener('pause', () => {
+    // A queued pause from a previous request must not stop a newer resume.
+    if (!ownsAmbientPlayer(name, state) || !audio.paused) return;
+    clearTimeout(state.loadTimer);
+    state.phase = 'paused';
+    refreshAmbientPlayback();
+  });
+  audio.addEventListener('progress', () => {
+    if (!ownsAmbientPlayer(name, state) || state.phase !== 'loading') return;
+    // Full-file decode needs more than ten seconds on a slow connection. Keep
+    // progressing downloads alive; a 20s stall or 3min total still fails closed.
+    armAmbientTimeout(name, state);
+    const percent = Math.floor((audio.downloadProgress || 0) * 100);
+    if (state.progressPercent !== percent) {
+      state.progressPercent = percent;
+      if (typeof updateAmbientPlayer === 'function') updateAmbientPlayer();
+    }
+  });
+  audio.addEventListener('error', () => failAmbientPlayer(name, state));
+  return state;
+}
+function renderMaster() {
+  const state = ambientPlaybackState();
+  const suffix = ambientStatusSuffix(state);
+  const unavailable = previewUnavailableNames();
+  setIcon($('play-icon'), state.canPause ? 'pause' : 'play');
+  $('master-play').setAttribute('aria-label', state.canPause
+    ? state.active.length ? 'Pause sound mixer' : 'Cancel sound loading'
+    : unavailable.length ? 'Review unavailable sounds' : state.failed.length ? 'Retry sound mixer' : 'Play sound mixer');
+  $('master-play').setAttribute('aria-busy', String(state.pending.length > 0));
+  $('play-status').textContent = state.active.length ? 'Soundscape Active'
+    : state.pending.length ? 'Preparing soundscape' : state.failed.length ? 'Audio unavailable' : 'Mixer Paused';
+  $('play-description').textContent = state.active.length
+    ? `${state.active.length} active ${state.active.length === 1 ? 'layer' : 'layers'}${suffix ? ' · ' + suffix : ''}`
+    : state.pending.length ? 'Loading selected audio · Tap pause to cancel'
+      : unavailable.length ? `${unavailable.length} not in this preview · Review before playing`
+        : state.failed.length ? 'Retry this recording with Play' : 'Tap play to start audio';
+  if (!state.active.length || !shouldAnimateWave()) {
+    if (waveFrame !== null) cancelAnimationFrame(waveFrame);
+    waveFrame = null;
+    drawWave(0);
+  } else if (waveFrame === null) {
+    waveFrame = requestAnimationFrame(animateWave);
+  }
+}
+function syncAudio({ retryFailed = false, resumePaused = false } = {}) {
+  if (playing && Object.values(levels).some(value => value > 0) && typeof pauseGuided === 'function') pauseGuided();
+  const sum = Object.values(levels).reduce((a, b) => a + b, 0);
+  const gain = Math.min(1, 1 / (sum || 1));
+  for (const [name, state] of ambientStates) {
+    if (playing && levels[name] > 0) continue;
+    clearTimeout(state.loadTimer);
+    if (state.phase === 'loading') releaseAmbientPlayer(name, state);
+    else if (state.audio) {
+      state.request = ++ambientRequest;
+      state.phase = 'paused';
+      state.audio.pause(); // Keep a ready source's position for resume.
+    }
+  }
+  let missing = false;
+  if (playing) for (const [name, level] of Object.entries(levels)) {
+    if (!(level > 0)) continue;
+    const path = localAmbientPath(name);
+    let state = ambientStates.get(name);
+    if (!path) {
+      if (state?.phase !== 'error' || retryFailed) missing = true;
+      ambientStates.set(name, { audio: null, phase: 'error' });
+      continue;
+    }
+    if (state?.phase === 'error' && !retryFailed) continue;
+    // Gain/timer/ducking updates are not a transport command. Keep an owned
+    // interrupted source paused; only an explicit Play/mix start unlocks it.
+    // New layers still load, and pending loads keep their original request.
+    const keepPaused = !resumePaused && state?.audio && players.get(name) === state.audio
+      && !state.audio.error && state.phase !== 'loading' && state.audio.paused;
+    if (!state?.audio || players.get(name) !== state.audio || state.audio.error) {
+      if (state?.audio) releaseAmbientPlayer(name, state);
+      state = createAmbientPlayer(name, path);
+    }
+    const audio = state.audio;
+    audio.volume = Math.min(.85, level * gain * soundPreviewDuck);
+    if (keepPaused || state.phase === 'loading' || (state.phase === 'playing' && !audio.paused)) continue;
+    state.phase = 'loading';
+    state.loadStartedAt = Date.now();
+    const request = state.request = ++ambientRequest;
+    armAmbientTimeout(name, state);
+    try {
+      Promise.resolve(audio.play()).then(() => {
+        if (!ownsAmbientPlayer(name, state) || state.request !== request) {
+          // Never let an old result pause the newer request for this same source.
+          if (players.get(name) !== audio || !playing || !(levels[name] > 0)) audio.pause();
+          return;
+        }
+        if (!audio.paused && audio.readyState >= 2) {
+          clearTimeout(state.loadTimer);
+          state.phase = 'playing';
+          refreshAmbientPlayback();
+        }
+      }).catch(() => {
+        if (state.request === request) failAmbientPlayer(name, state);
+      });
+    } catch (_) { failAmbientPlayer(name, state); }
+  }
+  if (missing) toast(`Not playable in this preview: ${previewUnavailableNames().join(', ')}. Open Sounds → Full catalog to review. Your selected levels are kept.`);
+  refreshAmbientPlayback();
+}
+function start({ expand = true } = {}) {
+  const canPause = ambientPlaybackState().canPause;
+  const selection = Object.values(levels).some(value => value > 0) ? levels : { 'Soft Rain': .3 };
+  if (!canPause && !canPreviewMix(selection, selectedPreset || 'Your selected mix')) return;
+  levels = selection;
+  playing = !canPause;
+  syncAudio({ retryFailed: true, resumePaused: true });
+  persist();
+  if (playing && expand && typeof openAmbientPlayer === 'function') openAmbientPlayer();
+}
+function applyMix(mix, name) {
+  if (!canPreviewMix(mix, name || 'This mix')) return false;
+  levels = { ...mix };
+  selectedPreset = name;
+  playing = Object.values(levels).some(value => value > 0);
+  syncAudio({ retryFailed: true, resumePaused: true });
+  persist();
+  render();
+  if (playing && typeof openAmbientPlayer === 'function') openAmbientPlayer();
+  else if (!playing && typeof dismissAmbientPlayer === 'function') dismissAmbientPlayer();
+  return true;
+}
+function vibeSetForSelection() {
+  const set = VIBE_SETS.find(set => set.name === selectedPreset);
+  if (!set) return null;
+  const selected = Object.entries(levels).filter(([, value]) => value > 0);
+  return selected.length === Object.keys(set.levels).length && selected.every(([name, value]) =>
+    Number.isFinite(value) && Object.hasOwn(set.levels, name) && Math.abs(set.levels[name] - value) < .000001) ? set : null;
+}
+function renderVibeSetDetails() {
+  const set = vibeSetForSelection();
+  const panel = $('vibe-set-details');
+  panel.hidden = !set;
+  for (const chip of $('presets').querySelectorAll('[data-vibe-set]')) {
+    const selected = chip.dataset.vibeSet === set?.id;
+    chip.classList.toggle('selected', selected);
+    chip.setAttribute('aria-pressed', String(selected));
+  }
+  if (!set) return;
+  $('vibe-set-name').textContent = set.name;
+  $('vibe-set-purpose').textContent = set.purpose;
+  $('vibe-set-vibe').textContent = set.vibe;
+  $('vibe-set-levels').textContent = Object.entries(set.levels).map(([name, volume]) => `${name} ${Math.round(volume * 100)}%`).join(' · ');
+  $('vibe-set-notice').textContent = `${Object.keys(set.levels).length} bundled layers · Individual levels need not total 100%. Overall output is gain-limited. Starting volumes, not a loudness guarantee.`;
+}
+function renderPresets() {
+  const parent = $('presets');
+  parent.replaceChildren();
+  for (const preset of PRESETS.filter(preset => !availableOnly || Object.keys(preset.levels).every(name => localAmbientPath(name)))) {
+    const button = document.createElement('button');
+    const selected = selectedPreset === preset.name;
+    button.className = 'mix-chip' + (selected ? ' selected' : '');
+    button.dataset.preset = preset.name;
+    button.setAttribute('aria-pressed', String(selected));
+    const symbol = document.createElement('span');
+    setIcon(symbol, preset.icon || 'noise');
+    const label = document.createElement('span');
+    label.textContent = preset.name.replace(/^[^\p{L}\p{N}]+\s*/u, '');
+    if (preset.id) {
+      button.dataset.vibeSet = preset.id;
+      const recipe = Object.entries(preset.levels).map(([name, volume]) => `${name} ${Math.round(volume * 100)}%`).join(' · ');
+      button.title = `${preset.purpose} · ${preset.vibe} ${recipe}`;
+      button.setAttribute('aria-label', `${preset.name}. ${preset.purpose}. ${recipe}. Play mix.`);
+    }
+    button.append(symbol, label);
+    const availability = previewAvailabilityLabel(preset.levels);
+    if (availability) {
+      const badge = document.createElement('small');
+      badge.className = 'preview-only-badge';
+      badge.textContent = availability;
+      button.append(badge);
+      button.setAttribute('aria-label', `${preset.name}. Not available in this preview; view source details.`);
+      button.title = `Not in this preview: ${previewUnavailableNames(preset.levels).join(', ')}`;
+    }
+    button.onclick = () => applyMix(preset.levels, preset.name);
+    parent.append(button);
+  }
+  if (saved.length) {
+    const button = document.createElement('button');
+    button.className = 'mix-chip';
+    button.textContent = 'Saved mixes (' + saved.length + ')';
+    button.onclick = openSaved;
+    parent.append(button);
+  }
+  renderVibeSetDetails();
+}
+function visibleLibraryTracks() {
+  return all.filter(track => !availableOnly || localAmbientPath(track.name));
+}
+function renderLibraryState() {
+  for (const [id, selected] of [['library-available', availableOnly], ['library-full', !availableOnly]]) {
+    $(id).setAttribute('aria-pressed', String(selected));
+    $(id).classList.toggle('selected', selected);
+  }
+  $('library-notice').textContent = availableOnly
+    ? '18 bundled sounds, ready for your mix.'
+    : 'Catalog review — not 77 playable sounds. App streams and missing recordings are labeled.';
+  const unavailable = Object.entries(levels).filter(([name, value]) => value > 0 && !localAmbientPath(name)).map(([name]) => name);
+  $('library-selection-notice').hidden = !unavailable.length;
+  $('library-selection-description').textContent = unavailable.length
+    ? `Not playable in this preview: ${unavailable.join(', ')}. Your selected levels are kept. Open Full catalog to review or change these sounds.` : '';
+}
+function setLibraryScope(available) {
+  availableOnly = available;
+  $('catalog-review').open = !available;
+  if (category !== 'all' && category !== 'favorites' && !CATALOG.find(c => c.id === category)?.tracks.some(track => !available || localAmbientPath(track.name))) category = 'all';
+  render();
+  if (available) $('library-available').focus({preventScroll:true});
+}
+$('library-available').onclick = () => setLibraryScope(true);
+$('library-full').onclick = () => setLibraryScope(false);
+$('catalog-review').addEventListener('toggle', () => {
+  if (!$('catalog-review').open && !availableOnly) setLibraryScope(true);
+});
+function renderCategories() {
+  const parent = $('categories'); parent.replaceChildren();
+  const tracks = visibleLibraryTracks();
+  const categories = [
+    {id:'all',label:'All',count:tracks.length},
+    {id:'favorites',label:'Favorites',count:tracks.filter(track => favorites.has(track.name)).length},
+    ...CATALOG.map(c => ({...c,count:c.tracks.filter(track => !availableOnly || localAmbientPath(track.name)).length})).filter(c => c.count > 0),
+  ];
+  for (const c of categories) {
+    const button = document.createElement('button');button.className='category';button.dataset.category=c.id;
+    button.setAttribute('role','tab');button.setAttribute('aria-selected',String(category===c.id));
+    const symbol=document.createElement('span');setIcon(symbol,c.id==='favorites'?'heart':c.id==='all'?'equalizer':c.id);
+    const label=document.createElement('span');label.textContent=`${c.label} (${c.count})`;
+    button.append(symbol,label);button.onclick=()=>{category=c.id;renderCategories();renderTracks();};parent.append(button);
+  }
+}
+function updatePreviewLevel(name, value, { preservePaused = false } = {}) {
+  if (!Number.isFinite(value)) return false;
+  const level = Math.max(0, Math.min(1, value));
+  const next = {...levels, [name]:level};
+  if (level > 0 && !canPreviewMix(next, selectedPreset || 'Your selected mix')) return false;
+  // Removing a legacy unavailable layer must not start a paused mix. The
+  // original names/other levels remain editable and are never silently erased.
+  const keepPaused = level === 0 && (!localAmbientPath(name) || previewUnavailableNames(next).length > 0);
+  // Preserve the existing deliberate start from Sounds after a user pause.
+  // An interrupted clock still has playing intent and must not be unlocked.
+  const resumePaused = !playing && !preservePaused && !keepPaused;
+  levels = next;
+  selectedPreset = null;
+  const playable = Object.entries(levels).some(([source, value]) => value > 0 && localAmbientPath(source));
+  playing = keepPaused || preservePaused ? playing && playable : playable;
+  syncAudio({ resumePaused });
+  persist();
+  if (playing && !ambientHasSession && typeof openAmbientPlayer === 'function') openAmbientPlayer();
+  else if (!playable && typeof dismissAmbientPlayer === 'function') dismissAmbientPlayer();
+  return true;
+}
+function changeTrack(name){if(updatePreviewLevel(name,levels[name]>0?0:.3))render()}
+function renderTracks(){const parent=$('tracks');parent.replaceChildren();const tracks=visibleLibraryTracks().filter(t=>category==='all'||(category==='favorites'?favorites.has(t.name):CATALOG.find(c=>c.id===category).tracks.includes(t)));if(!tracks.length){const empty=document.createElement('div');empty.className='surface empty';const h=document.createElement('h3');h.textContent='Your quiet favorites live here';const p=document.createElement('p');p.textContent='Double-click any sound artwork to add it to Favorites.';const b=document.createElement('button');b.textContent='Explore rain sounds';b.onclick=()=>{category='rain';render()};empty.append(h,p,b);parent.append(empty);return}
+for(const t of tracks){const vol=levels[t.name]||0,active=vol>0;const card=document.createElement('article');card.className='track surface'+(active?' selected':'');card.dataset.track=t.name;const row=document.createElement('div');row.className='track-row';const art=document.createElement('div');art.className='art';art.style.background='linear-gradient(135deg,'+t.color+',#073039)';art.title='Double-click to favorite';const img=document.createElement('img');img.src=t.artwork;img.alt='';img.onerror=()=>{img.remove();setIcon(art,'equalizer')};art.append(img);art.ondblclick=()=>{favorites.has(t.name)?favorites.delete(t.name):favorites.add(t.name);persist();renderCategories();if(category==='favorites')renderTracks();toast(favorites.has(t.name)?t.name+' added to Favorites':t.name+' removed from Favorites')};const info=document.createElement('div');info.className='track-info';const h=document.createElement('h3');h.textContent=t.name;const p=document.createElement('p');p.textContent=localAmbientPath(t.name)?t.description:CONFIGURED_AUDIO.has(t.name)?'Streaming in app · not in this preview':'No recording configured · unavailable';info.append(h,p);const family=Object.entries(RECORDING_FAMILIES).find(([,names])=>names.includes(t.name));if(family){const choice=document.createElement('button');choice.className='recording-choice-link';choice.dataset.chooseRecording=t.name;choice.textContent='Choose recording (2)';choice.setAttribute('aria-label',`Choose recording for ${t.name}`);choice.onclick=()=>openSoundReplacement(t,{related:true});info.append(choice)}const badge=document.createElement('div');badge.className='volume-badge';badge.textContent=Math.round(vol*100)+'%';const toggle=document.createElement('button');toggle.className='toggle-hit';toggle.setAttribute('role','switch');toggle.setAttribute('aria-label','Enable '+t.name);toggle.setAttribute('aria-checked',active);toggle.disabled=!localAmbientPath(t.name)&&!active;const knob=document.createElement('span');knob.className='toggle';toggle.append(knob);toggle.onclick=()=>changeTrack(t.name);const options=document.createElement('button');options.className='sound-options';options.dataset.soundOptions=t.name;options.setAttribute('aria-label','Change '+t.name);setIcon(options,'dots');options.onclick=()=>openSoundReplacement(t);row.append(art,info,badge,options,toggle);card.append(row);
+if(active){const sr=document.createElement('div');sr.className='slider-row';const speaker=document.createElement('span');setIcon(speaker,'speaker');const slider=document.createElement('input');slider.type='range';slider.min=0;slider.max=100;slider.step=1;slider.value=Math.round(vol*100);slider.className='slider';slider.style.setProperty('--progress',slider.value+'%');slider.setAttribute('aria-label',t.name+' volume');slider.oninput=()=>{if(!updatePreviewLevel(t.name,slider.value/100)){slider.value=Math.round((levels[t.name]||0)*100);slider.style.setProperty('--progress',slider.value+'%');return}badge.textContent=slider.value+'%';slider.style.setProperty('--progress',slider.value+'%');renderVibeSetDetails()};slider.onchange=()=>{if(!+slider.value)renderTracks();renderPresets()};sr.append(speaker,slider);card.append(sr)}parent.append(card)}}
+function render(){renderLibraryState();renderMaster();renderPresets();renderCategories();renderTracks()}
+function openSaved(){$('saved-list').replaceChildren();saved.forEach((mix,index)=>{const row=document.createElement('button');const label=document.createElement('span');label.textContent=mix.name;row.append(label);row.onclick=()=>{if(applyMix(mix.levels,mix.name))$('saved-dialog').close()};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','Delete '+mix.name);del.onclick=e=>{e.stopPropagation();saved.splice(index,1);persist();renderPresets();$('saved-dialog').close();if(saved.length)openSaved()};const wrapper=document.createElement('div');wrapper.style.display='flex';row.style.flex='1';wrapper.append(row,del);$('saved-list').append(wrapper)});$('saved-dialog').showModal()}
+$('master-play').onclick=start;$('shuffle').onclick=()=>{const shuffled=[...BUNDLED_RECORDINGS];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}applyMix(Object.fromEntries(shuffled.slice(0,3).map(t=>[t.name,.3+Math.floor(Math.random()*4)/10])),null)};
 $('save').onclick=()=>{if(!Object.values(levels).some(v=>v>0)){toast('Choose a sound first.');return}$('mix-name').value='';$('save-dialog').showModal();$('mix-name').focus()};$('save-form').onsubmit=e=>{e.preventDefault();const name=$('mix-name').value.trim();if(!name)return;saved.unshift({name,levels:{...levels}});persist();renderPresets();$('save-dialog').close();toast('Soundscape saved')};document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 $('share').onclick=async()=>{const uri=new URL(location.href);uri.searchParams.set('mix',Object.entries(levels).filter(([,v])=>v>0).map(([n,v])=>n+':'+Math.round(v*100)).join(','));try{await navigator.clipboard.writeText(uri.href);toast('Mix link copied')}catch{$('share-url').value=uri.href;$('share-dialog').showModal();$('share-url').select()}};
 function drawWave(time){const c=$('waveform'),rect=c.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!rect.width||!rect.height)return;if(c.width!==Math.round(rect.width*dpr)||c.height!==Math.round(rect.height*dpr)){c.width=Math.round(rect.width*dpr);c.height=Math.round(rect.height*dpr)}const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,rect.width,rect.height);const gradient=ctx.createLinearGradient(0,0,rect.width,0);[[0,'#43e9cd00'],[.2,'#43e9cdcc'],[.5,'#43e9cd'],[.8,'#43e9cd99'],[1,'#43e9cd00']].forEach(([p,c])=>gradient.addColorStop(p,c));ctx.strokeStyle=gradient;ctx.lineWidth=Math.max(1,rect.width/520);ctx.lineCap='round';ctx.shadowColor='#43e9cd';ctx.shadowBlur=5;ctx.beginPath();for(let i=0;i<155;i++){const x=i/154,envelope=Math.exp(-Math.pow((x-.51)*5,2)),detail=.3+.7*Math.abs(Math.sin(i*1.73+time)),h=rect.height*(.025+envelope*detail*.45);ctx.moveTo(x*rect.width,rect.height/2-h);ctx.lineTo(x*rect.width,rect.height/2+h)}ctx.stroke()}
-function animateWave(time){if(!playing||document.hidden)return;drawWave(time/800);requestAnimationFrame(animateWave)}document.addEventListener('visibilitychange',()=>{if(playing&&!document.hidden&&!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(animateWave)});
+function shouldAnimateWave() {
+  return waveOnscreen && !document.hidden && !document.querySelector('main.content').hidden
+    && !document.querySelector('dialog[open]') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function animateWave(time) {
+  waveFrame = null;
+  if (!ambientPlaybackState().active.length || !shouldAnimateWave()) return;
+  drawWave(time / 800);
+  waveFrame = requestAnimationFrame(animateWave);
+}
+if ('IntersectionObserver' in window) new IntersectionObserver(entries => {
+  waveOnscreen = entries[0].isIntersecting;
+  renderMaster();
+}).observe($('waveform'));
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', renderMaster);
+document.addEventListener('visibilitychange', renderMaster);
 try{const mix=new URL(location.href).searchParams.get('mix');if(mix){const parsed={};for(const pair of mix.split(',')){const split=pair.lastIndexOf(':'),name=pair.slice(0,split),v=Number(pair.slice(split+1));if(all.some(t=>t.name===name)&&Number.isFinite(v))parsed[name]=Math.max(0,Math.min(1,v/100))}if(Object.keys(parsed).length)levels=parsed}}catch{}
 render();resize();document.fonts.ready.then(()=>drawWave(0));
 </script>
-<script src="sanctuary-data.js"></script>
-<script src="sanctuary.js"></script>
-<script src="player.js"></script>
-<script src="home.js"></script>
-<script src="sound-replacement.js"></script>
+<script src="sanctuary-data.js?v=8416b38d31f3"></script>
+<script src="session-audio.js?v=fc5ba25a9591"></script>
+<script src="sanctuary.js?v=b0614940d25d"></script>
+<script src="player.js?v=834b76e2d120"></script>
+<script src="ambient-player.js?v=7e1b056a2b41"></script>
+<script src="home.js?v=92f37c836b4a"></script>
+<script src="sound-replacement.js?v=cf86e1b4042c"></script>
+<script src="wellbeing.js?v=1cac4ce80115"></script>
 </body>
 </html>

@@ -26,3 +26,7 @@
 #replacement-use{width:100%;min-height:48px}
 #replacement-error{color:#ffc9a0;margin:12px 4px}
 @media(max-width:360px){.track-row{gap:6px}.sound-options{padding:10px}.replacement-choice img{width:40px;height:40px}}
+.replacement-search-label{display:block;margin-top:14px;color:#a5c0c8;font-size:12px}
+.replacement-search-label[hidden]{display:none}
+#replacement-search{width:100%;min-height:44px;padding:10px 12px;margin-top:6px;border:1px solid #24505a;border-radius:12px;background:#001b24;color:#f5fafa}
+.replacement-copy .replacement-credit{color:#8fd6c5;font-size:11px;line-height:1.3}

@@ -58,23 +58,45 @@ class _SleepScreenState extends State<SleepScreen> {
         );
   }
 
+  bool _isSoundscapeRequested(AppState app, SleepSoundscape soundscape) {
+    final requested = app.requestedAmbientTracks;
+    return requested.length == soundscape.levels.length &&
+        soundscape.levels.entries.every(
+          (entry) => ((requested[entry.key] ?? 0) - entry.value).abs() < 0.01,
+        );
+  }
+
+  String? _pendingLabel(AppState app) {
+    if (!app.isAmbientPlaybackPending) return null;
+    return app.requestedAmbientTracks.keys.any(
+          (name) =>
+              app.ambientTrackStatus(name) == AmbientPlaybackStatus.buffering,
+        )
+        ? 'Buffering…'
+        : 'Loading…';
+  }
+
   void _toggleQuickTrack(String name) {
     HapticFeedback.selectionClick();
     final app = context.read<AppState>();
-    final levels = Map<String, double>.of(app.activeAmbientTracks);
+    final mixer = context.read<MixerController>();
+    // An unavailable selected layer is a retry, not a fresh 60% selection.
+    // Do not restart healthy layers or discard other failed selected levels.
+    if (mixer.retryTrack(name)) return;
+    final levels = Map<String, double>.of(app.requestedAmbientTracks);
     if (app.getTrackVolume(name) > 0) {
       levels.remove(name);
     } else {
       levels[name] = 0.6;
     }
     // Start only the actual quick selection, not an unrelated paused preset.
-    context.read<MixerController>().applyMix(levels);
+    mixer.applyMix(levels);
   }
 
   void _toggleLastMix() {
     final app = context.read<AppState>();
     final mixer = context.read<MixerController>();
-    if (app.activeAmbientTracks.isNotEmpty) {
+    if (app.hasAmbientPlaybackRequest) {
       mixer.togglePlayback();
     } else {
       final selected = Map<String, double>.of(mixer.levels)
@@ -147,12 +169,16 @@ class _SleepScreenState extends State<SleepScreen> {
     builder: (context, app, mixer, _) => LayoutBuilder(
       builder: (context, constraints) {
         final m = SanctuaryMetrics(constraints.maxWidth);
-        final oceanPlaying =
+        final oceanRequested =
             app.getTrackVolume('Ocean Waves') > 0 &&
             app.getTrackVolume('Soft Rain') > 0 &&
-            app.activeAmbientTracks.keys.every(
+            app.requestedAmbientTracks.keys.every(
               (name) => oceanSleepJourney.levels.containsKey(name),
             );
+        final oceanPlaying =
+            oceanRequested &&
+            app.isAmbientTrackPlaying('Ocean Waves') &&
+            app.isAmbientTrackPlaying('Soft Rain');
         final stories = sleepStories
             .where(
               (story) =>
@@ -182,9 +208,9 @@ class _SleepScreenState extends State<SleepScreen> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                          m.space(29),
+                          math.max(14.0, m.space(29)),
                           m.space(32),
-                          m.space(29),
+                          math.max(14.0, m.space(29)),
                           MediaQuery.paddingOf(context).bottom + 150,
                         ),
                         child: Column(
@@ -235,7 +261,10 @@ class _SleepScreenState extends State<SleepScreen> {
                             _OceanJourney(
                               metrics: m,
                               playing: oceanPlaying,
-                              onPressed: () => oceanPlaying
+                              pendingLabel: oceanRequested
+                                  ? _pendingLabel(app)
+                                  : null,
+                              onPressed: () => oceanRequested && mixer.canPause
                                   ? mixer.togglePlayback()
                                   : _playSoundscape(oceanSleepJourney),
                             ),
@@ -264,6 +293,7 @@ class _SleepScreenState extends State<SleepScreen> {
                             ),
                             SizedBox(height: m.space(10)),
                             SingleChildScrollView(
+                              key: const ValueKey('sleep-winddown-tray'),
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
                               child: Row(
@@ -281,11 +311,19 @@ class _SleepScreenState extends State<SleepScreen> {
                                           app,
                                           soundscape,
                                         ),
-                                        onPressed: () =>
-                                            _isSoundscapePlaying(
+                                        pendingLabel:
+                                            _isSoundscapeRequested(
                                               app,
                                               soundscape,
                                             )
+                                            ? _pendingLabel(app)
+                                            : null,
+                                        onPressed: () =>
+                                            _isSoundscapeRequested(
+                                                  app,
+                                                  soundscape,
+                                                ) &&
+                                                mixer.canPause
                                             ? mixer.togglePlayback()
                                             : _playSoundscape(soundscape),
                                       ),
@@ -303,34 +341,75 @@ class _SleepScreenState extends State<SleepScreen> {
                             ),
                             SizedBox(height: m.space(8)),
                             Container(
+                              key: const ValueKey('sleep-quick-mixer'),
                               padding: EdgeInsets.symmetric(
                                 horizontal: m.space(13),
                                 vertical: m.space(17),
                               ),
                               decoration: sleepSurface(
-                                radius: m.space(28),
+                                radius: math.max(17.0, m.space(28)),
                                 glow: true,
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Column(
                                 children: [
-                                  for (final track in _quickTracks)
-                                    Expanded(
-                                      child: _QuickTrack(
-                                        label: track.$1,
-                                        icon: track.$2,
-                                        volume: app.getTrackVolume(track.$3),
-                                        metrics: m,
-                                        onPressed: () =>
-                                            _toggleQuickTrack(track.$3),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      for (final track in _quickTracks)
+                                        Expanded(
+                                          child: Semantics(
+                                            label:
+                                                '${track.$1} sleep sound, ${app.ambientTrackStatus(track.$3).label}',
+                                            value:
+                                                '${(app.getTrackVolume(track.$3) * 100).round()} percent requested',
+                                            toggled:
+                                                app.getTrackVolume(track.$3) >
+                                                0,
+                                            button: true,
+                                            onTap: () =>
+                                                _toggleQuickTrack(track.$3),
+                                            excludeSemantics: true,
+                                            child: _QuickTrack(
+                                              label: track.$1,
+                                              icon: track.$2,
+                                              volume:
+                                                  app.activeAmbientTracks[track
+                                                      .$3] ??
+                                                  0,
+                                              metrics: m,
+                                              onPressed: () =>
+                                                  _toggleQuickTrack(track.$3),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  if (mixer.isPreparing ||
+                                      mixer.hasPlaybackError ||
+                                      (mixer.hasPlaybackRequest &&
+                                          !mixer.isPlaying)) ...[
+                                    SizedBox(height: m.space(12)),
+                                    Semantics(
+                                      liveRegion: true,
+                                      child: Text(
+                                        mixer.playbackStatusLabel,
+                                        key: const ValueKey('sleep-mix-status'),
+                                        textAlign: TextAlign.center,
+                                        style: m.sans(
+                                          18,
+                                          min: 11,
+                                          color: SanctuaryPalette.mist,
+                                        ),
                                       ),
                                     ),
+                                  ],
                                 ],
                               ),
                             ),
                             SizedBox(height: m.space(32)),
                             Text(
-                              'Sleep Stories',
+                              'Nighttime Journeys',
                               style: m.sans(
                                 32,
                                 min: 22,
@@ -350,7 +429,7 @@ class _SleepScreenState extends State<SleepScreen> {
                                 ),
                                 SizedBox(width: m.space(10)),
                                 _StoryFilter(
-                                  label: 'My Stories',
+                                  label: 'My Journeys',
                                   selected: _savedStoriesOnly,
                                   metrics: m,
                                   onPressed: () =>
@@ -394,7 +473,7 @@ class _SleepScreenState extends State<SleepScreen> {
                               ),
                             SizedBox(height: m.space(12)),
                             Text(
-                              'Story sessions currently use the app’s calming audio. Individual story narration and downloads are not included.',
+                              'Different ambient mixes made from existing library recordings, repeating about every 30 seconds. No spoken stories or individual downloads.',
                               style: m.sans(
                                 16,
                                 min: 11,
@@ -560,10 +639,12 @@ class _OceanJourney extends StatelessWidget {
   const _OceanJourney({
     required this.metrics,
     required this.playing,
+    required this.pendingLabel,
     required this.onPressed,
   });
   final SanctuaryMetrics metrics;
   final bool playing;
+  final String? pendingLabel;
   final VoidCallback onPressed;
 
   @override
@@ -630,14 +711,8 @@ class _OceanJourney extends StatelessWidget {
                           vertical: m.space(8),
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0x55091B36),
+                          color: const Color(0xE80D223C),
                           borderRadius: BorderRadius.circular(100),
-                          border: Border.all(
-                            color: SanctuaryPalette.gold.withOpacity(0.8),
-                          ),
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x22F5C96D), blurRadius: 15),
-                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -663,7 +738,9 @@ class _OceanJourney extends StatelessWidget {
                       ),
                       const Spacer(),
                       Semantics(
-                        label: playing
+                        label: pendingLabel != null
+                            ? 'Cancel pending Ocean Sleep'
+                            : playing
                             ? 'Pause Ocean Sleep'
                             : 'Start Ocean Sleep',
                         button: true,
@@ -675,15 +752,14 @@ class _OceanJourney extends StatelessWidget {
                             width: math.max(36.0, m.space(46)),
                             height: math.max(36.0, m.space(46)),
                             decoration: BoxDecoration(
-                              color: const Color(0x99012745),
+                              color: const Color(0xF20D223C),
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: SanctuaryPalette.mint.withOpacity(0.3),
-                              ),
                             ),
                             child: Center(
                               child: SanctuaryIcon(
-                                playing
+                                pendingLabel != null
+                                    ? SanctuarySymbol.close
+                                    : playing
                                     ? SanctuarySymbol.pause
                                     : SanctuarySymbol.chevronRight,
                                 size: m.font(26, min: 19),
@@ -708,7 +784,7 @@ class _OceanJourney extends StatelessWidget {
                   ),
                   SizedBox(height: m.space(5)),
                   Text(
-                    'Deep Relaxation',
+                    pendingLabel ?? 'Deep Relaxation',
                     style: m.sans(28, min: 16, color: const Color(0xFFD3E0FF)),
                   ),
                   SizedBox(height: m.space(23)),
@@ -742,8 +818,14 @@ class _OceanJourney extends StatelessWidget {
                   SizedBox(height: m.space(23)),
                   SanctuaryPillButton(
                     buttonKey: const ValueKey('begin-ocean-sleep'),
-                    label: playing ? 'Pause Sleep' : 'Begin Sleep',
-                    symbol: playing
+                    label: pendingLabel != null
+                        ? 'Cancel Sleep'
+                        : playing
+                        ? 'Pause Sleep'
+                        : 'Begin Sleep',
+                    symbol: pendingLabel != null
+                        ? SanctuarySymbol.close
+                        : playing
                         ? SanctuarySymbol.pause
                         : SanctuarySymbol.play,
                     metrics: m,
@@ -779,7 +861,8 @@ class _ContinueListening extends StatelessWidget {
         mixer.levels.entries.where((entry) => entry.value > 0).toList()
           ..sort((a, b) => b.value.compareTo(a.value));
     final mainTrack = selected.isEmpty ? 'Soft Rain' : selected.first.key;
-    final playing = app.activeAmbientTracks.isNotEmpty;
+    final playing = mixer.isPlaying;
+    final preparing = mixer.isPreparing;
     final hasTimer =
         app.isSleepTimerRunning && (app.sleepTimerTotalSec ?? 0) > 0;
     final progress = hasTimer
@@ -831,7 +914,11 @@ class _ContinueListening extends StatelessWidget {
                 ),
                 SizedBox(height: m.space(5)),
                 Text(
-                  hasTimer
+                  preparing ||
+                          mixer.hasPlaybackError ||
+                          (mixer.hasPlaybackRequest && !playing)
+                      ? mixer.playbackStatusLabel
+                      : hasTimer
                       ? '${((app.sleepTimerRemainingSec ?? 0) / 60).ceil()} min remaining'
                       : playing
                       ? 'Your nighttime soundscape'
@@ -878,13 +965,19 @@ class _ContinueListening extends StatelessWidget {
           SizedBox(width: m.space(16)),
           SanctuaryPillButton(
             buttonKey: const ValueKey('resume-sleep-mix'),
-            label: playing
+            label: preparing
+                ? 'Cancel'
+                : playing
                 ? 'Pause'
-                : app.cachedVolumes.isNotEmpty
+                : app.cachedVolumes.isNotEmpty || mixer.hasPlaybackRequest
                 ? 'Resume'
                 : 'Play',
             metrics: m,
-            symbol: playing ? SanctuarySymbol.pause : SanctuarySymbol.play,
+            symbol: preparing
+                ? SanctuarySymbol.close
+                : playing
+                ? SanctuarySymbol.pause
+                : SanctuarySymbol.play,
             quiet: true,
             onPressed: onPressed,
           ),
@@ -899,20 +992,29 @@ class _SoundscapeCard extends StatelessWidget {
     required this.soundscape,
     required this.metrics,
     required this.playing,
+    required this.pendingLabel,
     required this.onPressed,
   });
   final SleepSoundscape soundscape;
   final SanctuaryMetrics metrics;
   final bool playing;
+  final String? pendingLabel;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final m = metrics;
-    final size = math.max(98.0, m.space(174));
+    // Four compact covers fit an ordinary phone, as in the preferred design.
+    // Larger accessibility text may use wider cards; the tray still scrolls.
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final size = math.max(84.0, m.space(174)) * math.max(1.0, textScale);
     return Semantics(
       label:
-          '${playing ? 'Pause' : 'Play'} ${soundscape.title}, ${soundscape.minutes} minutes',
+          '${pendingLabel != null
+              ? 'Cancel pending'
+              : playing
+              ? 'Pause'
+              : 'Play'} ${soundscape.title}, ${soundscape.minutes} minutes',
       button: true,
       onTap: onPressed,
       excludeSemantics: true,
@@ -961,14 +1063,13 @@ class _SoundscapeCard extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.all(math.max(7.0, m.space(8))),
                         decoration: BoxDecoration(
-                          color: const Color(0xA0082039),
+                          color: const Color(0xF20D223C),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFFC5E3F9).withOpacity(0.8),
-                          ),
                         ),
                         child: SanctuaryIcon(
-                          playing
+                          pendingLabel != null
+                              ? SanctuarySymbol.close
+                              : playing
                               ? SanctuarySymbol.pause
                               : SanctuarySymbol.play,
                           size: m.font(24, min: 17),
@@ -1005,7 +1106,7 @@ class _SoundscapeCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${soundscape.minutes} min',
+                            pendingLabel ?? '${soundscape.minutes} min',
                             style: m.sans(
                               17,
                               min: 10.5,
@@ -1049,6 +1150,7 @@ class _QuickTrack extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = metrics;
     final active = volume > 0;
+    final orbSize = math.max(44.0, m.space(72));
     return Semantics(
       label: '$label sleep sound',
       toggled: active,
@@ -1063,8 +1165,9 @@ class _QuickTrack extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: math.max(44.0, m.space(72)),
-              height: math.max(44.0, m.space(72)),
+              key: ValueKey('sleep-orb-$label'),
+              width: orbSize,
+              height: orbSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -1083,14 +1186,19 @@ class _QuickTrack extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: SanctuaryIcon(
-                icon,
-                size: m.font(37, min: 23),
-                color: active
-                    ? SanctuaryPalette.mint
-                    : label == 'Thunder'
-                    ? SanctuaryPalette.gold
-                    : const Color(0xFFD7E6FF),
+              // Keep the large outline symbols from the preferred Sleep look,
+              // instead of a tiny glyph floating inside a much larger disc.
+              child: Center(
+                child: SanctuaryIcon(
+                  icon,
+                  size: orbSize * 0.9,
+                  glow: active,
+                  color: active
+                      ? SanctuaryPalette.mint
+                      : label == 'Thunder'
+                      ? SanctuaryPalette.gold
+                      : const Color(0xFFD7E6FF),
+                ),
               ),
             ),
             SizedBox(height: m.space(9)),
@@ -1152,23 +1260,25 @@ class _StoryFilter extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: selected
-              ? SanctuaryPalette.lavender.withOpacity(0.22)
-              : Colors.white.withOpacity(0.04),
+              ? SanctuaryPalette.navyControl
+              : SanctuaryPalette.navySurface,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: selected
-                ? SanctuaryPalette.lavender.withOpacity(0.7)
-                : Colors.white.withOpacity(0.1),
-          ),
         ),
         child: Text(
           label,
-          style: metrics.sans(
-            20,
-            min: 12,
-            color: selected ? Colors.white : SanctuaryPalette.mist,
-            weight: selected ? FontWeight.w600 : FontWeight.w400,
-          ),
+          style: metrics
+              .sans(
+                20,
+                min: 12,
+                color: selected ? Colors.white : SanctuaryPalette.mist,
+                weight: selected ? FontWeight.w600 : FontWeight.w400,
+              )
+              .copyWith(
+                decoration: selected
+                    ? TextDecoration.underline
+                    : TextDecoration.none,
+                decorationThickness: 2,
+              ),
         ),
       ),
     ),
@@ -1219,8 +1329,19 @@ class _StoryCard extends StatelessWidget {
                 ),
                 SizedBox(height: m.space(5)),
                 Text(
-                  '${story.minutes} min · Calming audio',
+                  '${story.minutes} min · Ambient mix',
                   style: m.sans(17, min: 11, color: SanctuaryPalette.mist),
+                ),
+                SizedBox(height: m.space(5)),
+                Text(
+                  story.sourceLabel,
+                  key: ValueKey('story-sources-${story.id}'),
+                  style: m.sans(
+                    17,
+                    min: 11,
+                    color: SanctuaryPalette.mint,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -1252,9 +1373,7 @@ class _StoryCard extends StatelessWidget {
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: SanctuaryPalette.mint.withOpacity(0.6),
-                  ),
+                  color: SanctuaryPalette.navyControl,
                 ),
                 child: SanctuaryIcon(
                   playing ? SanctuarySymbol.pause : SanctuarySymbol.play,
@@ -1289,19 +1408,19 @@ class _EmptyStories extends StatelessWidget {
         ),
         SizedBox(height: metrics.space(14)),
         Text(
-          'Your bedtime bookshelf',
+          'Your quiet collection',
           style: metrics.sans(25, min: 17, weight: FontWeight.w600),
         ),
         SizedBox(height: metrics.space(7)),
         Text(
-          'Tap the heart on a story to keep it close.',
+          'Tap the heart on a journey to keep it close.',
           style: metrics.sans(19, min: 12, color: SanctuaryPalette.mist),
           textAlign: TextAlign.center,
         ),
         CupertinoButton(
           onPressed: onBrowse,
           child: Text(
-            'Browse all stories',
+            'Browse all journeys',
             style: metrics.sans(20, min: 13, color: SanctuaryPalette.gold),
           ),
         ),

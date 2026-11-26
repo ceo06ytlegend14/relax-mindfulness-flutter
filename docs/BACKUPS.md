@@ -2,7 +2,7 @@
 
 ## User flow
 
-Open **Home → Wellbeing → backup icon**. This leads to the native **Backup & restore** page:
+Open **Home → Your wellbeing → Backup & restore**. This leads to the native, solid-color backup page; the redesign does not change its schema or confirmation safeguards:
 
 1. **Copy backup to clipboard** and save the text somewhere private. Success is shown only after the clipboard call succeeds.
 2. Paste JSON and choose **Review backup**. Review does not change the profile.

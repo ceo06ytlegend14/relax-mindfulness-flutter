@@ -5,9 +5,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
+import 'package:relax_mindfulness/models/session_soundscapes.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/services/pwa_player_visibility.dart';
+import 'package:relax_mindfulness/models/mixer_catalog.dart';
+import 'package:relax_mindfulness/providers/mixer_controller.dart';
+
+part 'ambient_player.dart';
 
 const _mint = Color(0xFF56EBCB);
 const _pearl = Color(0xFFF7FAF5);
@@ -37,12 +43,12 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
   @override
   void initState() {
     super.initState();
-    setPwaPlayerExpanded(true);
+    setPwaPlayerExpanded(true, owner: this);
   }
 
   @override
   void dispose() {
-    setPwaPlayerExpanded(false);
+    setPwaPlayerExpanded(false, owner: this);
     _breath.dispose();
     super.dispose();
   }
@@ -154,7 +160,7 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                                 ),
                                                 SizedBox(width: 9 * s),
                                                 Text(
-                                                  'SOOTHING AUDIO',
+                                                  'AMBIENT AUDIO',
                                                   style: _type(
                                                     11 * s,
                                                     weight: FontWeight.w600,
@@ -217,9 +223,22 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                     ),
                                     SizedBox(height: 7 * s),
                                     Text(
+                                      sessionSourceLabel(title),
+                                      key: const ValueKey(
+                                        'guided-session-sources',
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      style: _type(
+                                        math.max(12, 14 * s),
+                                        color: _mint,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                    SizedBox(height: 6 * s),
+                                    Text(
                                       app.isGuidedLooping
-                                          ? 'Calming audio · A little space to breathe.'
-                                          : 'Calming audio · Stops when this audio ends.',
+                                          ? 'Ambient mix · Repeats about every 30 sec · No narration'
+                                          : 'Ambient mix · Ends after this ~30 sec recording · No narration',
                                       textAlign: TextAlign.center,
                                       style: _type(
                                         math.max(12, 13 * s),
@@ -264,6 +283,8 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                     Text(
                                       loading
                                           ? 'PREPARING YOUR SOUNDSCAPE'
+                                          : app.guidedPlaybackError != null
+                                          ? 'SOUNDSCAPE UNAVAILABLE'
                                           : app.isGuidedPlaying
                                           ? 'TIME TO UNWIND'
                                           : 'PAUSED · STAY A LITTLE LONGER',
@@ -388,7 +409,7 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                         SizedBox(width: 27 * s),
                                         Semantics(
                                           label: loading
-                                              ? 'Loading calming audio'
+                                              ? 'Loading ambient soundscape'
                                               : app.isGuidedPlaying
                                               ? 'Pause session'
                                               : app.guidedPlaybackError != null
@@ -414,37 +435,13 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                               height: 78 * s,
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                gradient: const RadialGradient(
-                                                  center: Alignment(-0.3, -0.5),
-                                                  colors: [
-                                                    Color(0xFF65E8CC),
-                                                    Color(0xFF15A991),
-                                                    Color(0xFF087B78),
-                                                  ],
-                                                ),
-                                                border: Border.all(
-                                                  color: const Color(
-                                                    0xFFB8FFEB,
-                                                  ),
-                                                  width: 1.3,
-                                                ),
-                                                boxShadow: const [
-                                                  BoxShadow(
-                                                    color: Color(0x6635E4C5),
-                                                    blurRadius: 26,
-                                                    spreadRadius: 2,
-                                                  ),
-                                                  BoxShadow(
-                                                    color: Color(0x33000000),
-                                                    blurRadius: 15,
-                                                    offset: Offset(0, 6),
-                                                  ),
-                                                ],
+                                                color: MixerTheme.primary,
                                               ),
                                               child: Center(
                                                 child: loading
                                                     ? const CupertinoActivityIndicator(
-                                                        color: _pearl,
+                                                        color: MixerTheme
+                                                            .onPrimary,
                                                       )
                                                     : SanctuaryIcon(
                                                         app.isGuidedPlaying
@@ -453,7 +450,8 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                                             : SanctuarySymbol
                                                                   .play,
                                                         size: 37 * s,
-                                                        color: _pearl,
+                                                        color: MixerTheme
+                                                            .onPrimary,
                                                       ),
                                               ),
                                             ),
@@ -678,14 +676,6 @@ class _BreathingArtwork extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28 * scale),
-            border: Border.all(color: const Color(0xB3F3FFF8), width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x77051929),
-                blurRadius: 35,
-                offset: Offset(0, 17),
-              ),
-            ],
           ),
           child: Stack(
             fit: StackFit.expand,
@@ -731,6 +721,7 @@ class _BreathingArtwork extends StatelessWidget {
   );
 }
 
+/// Matte control group; the immersive backdrop and breathing artwork stay separate.
 class _PlayerGlass extends StatelessWidget {
   const _PlayerGlass({
     required this.child,
@@ -744,32 +735,10 @@ class _PlayerGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
+      color: selected ? MixerTheme.control : const Color(0xFF0B2E3A),
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(
-        color: selected ? _mint.withOpacity(0.7) : const Color(0x66C8E0E8),
-      ),
-      boxShadow: selected
-          ? const [BoxShadow(color: Color(0x333BEAC8), blurRadius: 18)]
-          : null,
     ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: selected
-                  ? const [Color(0x99257575), Color(0xA80B484F)]
-                  : const [Color(0x774C6478), Color(0x9910253B)],
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    ),
+    child: child,
   );
 }
 
@@ -885,7 +854,15 @@ class _PlayerOption extends StatelessWidget {
                 color: selected ? _mint : _mist,
               ),
               SizedBox(width: 7 * scale),
-              Text(label, style: _type(12 * scale, weight: FontWeight.w500)),
+              Text(
+                label,
+                style: _type(12 * scale, weight: FontWeight.w500).copyWith(
+                  decoration: selected
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                  decorationThickness: 2,
+                ),
+              ),
             ],
           ),
         ),

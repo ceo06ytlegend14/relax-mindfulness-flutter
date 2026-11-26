@@ -112,6 +112,18 @@ void main() {
       await mountSessionPlayer(tester, width: size.width, height: size.height);
       expect(find.byKey(const ValueKey('player-landscape')), findsOneWidget);
       expect(find.byKey(const ValueKey('guided-player-title')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('guided-session-sources')),
+        findsOneWidget,
+      );
+      expect(find.text('Bamboo Chimes + Soft Rain'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(GuidedPlayerOverlay),
+          matching: find.textContaining('No narration'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('15:00'), findsNWidgets(2));
       expect(
         find.descendant(
@@ -290,8 +302,7 @@ void main() {
   ) async {
     final app = await mountSessionPlayer(tester);
     app.guidedPlaying = false;
-    app.guidedError =
-        'Audio could not start. Check your connection and try again.';
+    app.guidedError = 'This session’s soundscape is unavailable. Try again.';
     app.notifyListeners();
     await tester.pump();
     expect(find.byKey(const ValueKey('guided-playback-error')), findsOneWidget);

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
@@ -85,6 +87,14 @@ void main() {
       expect(find.text('Calm Mountain Horizon'), findsOneWidget);
       expect(app.guidedRequests, isEmpty);
       expect(app.active, isEmpty);
+      expect(find.byType(SanctuaryBackdrop), findsNothing);
+      expect(
+        tester
+            .widget<CupertinoPageScaffold>(find.byType(CupertinoPageScaffold))
+            .backgroundColor,
+        MixerTheme.background,
+      );
+      expect(find.textContaining('No spoken guidance.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
     testWidgets(
@@ -141,32 +151,77 @@ void main() {
     },
   );
 
-  testWidgets('all five Sleep mixer controls have distinct vector symbols', (
-    tester,
-  ) async {
-    await mountSanctuary(tester, const SleepScreen(), width: 390);
-    final symbols = <SanctuarySymbol>[];
-    for (final label in ['Ocean', 'Rain', 'Wind', 'Thunder', 'Nature']) {
-      final control = find.byKey(ValueKey('quick-$label'));
-      await reveal(tester, control);
-      final icon = tester.widget<SanctuaryIcon>(
-        find.descendant(of: control, matching: find.byType(SanctuaryIcon)),
+  for (final width in [320.0, 390.0, 431.0, 823.0]) {
+    testWidgets('Sleep keeps compact covers and a scrollable fifth at $width', (
+      tester,
+    ) async {
+      await mountSanctuary(tester, const SleepScreen(), width: width);
+      final tray = find.byKey(const ValueKey('sleep-winddown-tray'));
+      final first = find.byKey(
+        ValueKey('soundscape-${sleepSoundscapes.first.id}'),
       );
-      symbols.add(icon.symbol);
+      await reveal(tester, first);
+      final viewport = tester.getRect(tray);
+      expect(tester.getSize(first).width, greaterThanOrEqualTo(84));
+      if (width >= 390) {
+        final fourth = find.byKey(
+          ValueKey('soundscape-${sleepSoundscapes[3].id}'),
+        );
+        expect(tester.getRect(first).left, greaterThanOrEqualTo(viewport.left));
+        expect(
+          tester.getRect(fourth).right,
+          lessThanOrEqualTo(viewport.right + 1),
+        );
+      }
+      expect(sleepSoundscapes, hasLength(5));
+      final last = find.byKey(
+        ValueKey('soundscape-${sleepSoundscapes.last.id}'),
+      );
+      await tester.ensureVisible(last);
+      await tester.pump();
       expect(
-        find.descendant(of: control, matching: find.byType(Icon)),
-        findsNothing,
+        tester.getRect(last).left,
+        greaterThanOrEqualTo(viewport.left - 1),
       );
-    }
-    expect(symbols, [
-      SanctuarySymbol.waves,
-      SanctuarySymbol.rain,
-      SanctuarySymbol.wind,
-      SanctuarySymbol.bolt,
-      SanctuarySymbol.tree,
-    ]);
-    expect(tester.takeException(), isNull);
-  });
+      expect(tester.getRect(last).right, lessThanOrEqualTo(viewport.right + 1));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'all five Sleep mixer controls have large distinct vector symbols',
+    (tester) async {
+      await mountSanctuary(tester, const SleepScreen(), width: 390);
+      final symbols = <SanctuarySymbol>[];
+      for (final label in ['Ocean', 'Rain', 'Wind', 'Thunder', 'Nature']) {
+        final control = find.byKey(ValueKey('quick-$label'));
+        await reveal(tester, control);
+        final icon = tester.widget<SanctuaryIcon>(
+          find.descendant(of: control, matching: find.byType(SanctuaryIcon)),
+        );
+        symbols.add(icon.symbol);
+        final orb = tester.getSize(find.byKey(ValueKey('sleep-orb-$label')));
+        final hitTarget = tester.getSize(control);
+        expect(orb.width, greaterThanOrEqualTo(44));
+        expect(icon.size! / orb.width, closeTo(0.9, 0.01));
+        expect(hitTarget.width, greaterThanOrEqualTo(44));
+        expect(hitTarget.height, greaterThanOrEqualTo(44));
+        expect(icon.glow, isFalse, reason: 'No playback means no active glow');
+        expect(
+          find.descendant(of: control, matching: find.byType(Icon)),
+          findsNothing,
+        );
+      }
+      expect(symbols, [
+        SanctuarySymbol.waves,
+        SanctuarySymbol.rain,
+        SanctuarySymbol.wind,
+        SanctuarySymbol.bolt,
+        SanctuarySymbol.tree,
+      ]);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('daily journey begins and pauses the correct session', (
     tester,
@@ -175,6 +230,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('begin-daily-journey')));
     await tester.pump();
     expect(app.guidedRequests.single, ('Calm Mountain Horizon', 10));
+    expect(find.text(dailyMeditation.sourceLabel), findsOneWidget);
     expect(app.guidedPlaying, isTrue);
     await tester.tap(find.byKey(const ValueKey('begin-daily-journey')));
     await tester.pump();
@@ -185,7 +241,7 @@ void main() {
     tester,
   ) async {
     await mountSanctuary(tester, const MeditationScreen());
-    await tester.tap(find.byKey(const ValueKey('intent-Comfort')));
+    await tester.tap(find.byKey(const ValueKey('intent-Calm')));
     await tester.pump();
     expect(
       find.byKey(const ValueKey('practice-gentle-relief')),
@@ -202,9 +258,11 @@ void main() {
     tester,
   ) async {
     final app = await mountSanctuary(tester, const MeditationScreen());
+    await reveal(tester, find.byKey(const ValueKey('begin-gentle-relief')));
     await tester.tap(find.byKey(const ValueKey('begin-gentle-relief')));
     await tester.pump();
     expect(app.guidedRequests.single, ('Gentle Relief & Comfort', 15));
+    expect(find.text('Bamboo Chimes + Soft Rain'), findsOneWidget);
     await tester.longPress(
       find.byKey(const ValueKey('practice-gentle-relief')),
     );
@@ -213,6 +271,43 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(app.libraryFavorites, contains('meditation-gentle-relief'));
   });
+
+  testWidgets(
+    'practice options are visible buttons and clipboard errors stay recoverable',
+    (tester) async {
+      final app = await mountSanctuary(
+        tester,
+        const MeditationScreen(),
+        width: 320,
+        textScale: 1.28,
+      );
+      final options = find.byKey(
+        const ValueKey('practice-options-gentle-relief'),
+      );
+      await reveal(tester, options);
+      await tester.tap(options);
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.text('Save practice'), findsOneWidget);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData')
+              throw PlatformException(code: 'denied');
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      await tester.tap(find.text('Copy session details'));
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.text('Could not copy details'), findsOneWidget);
+      expect(find.text('Session details copied'), findsNothing);
+      expect(app.libraryFavorites, isEmpty);
+      await tester.tap(find.text('Done'));
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('timer confirms 30 minutes and cancel clears the shared timer', (
     tester,
@@ -277,16 +372,42 @@ void main() {
     (tester) async {
       final app = await mountSanctuary(tester, const SleepScreen());
       final ocean = find.byKey(const ValueKey('quick-Ocean'));
+      SanctuaryIcon symbol(String label) => tester.widget<SanctuaryIcon>(
+        find.descendant(
+          of: find.byKey(ValueKey('quick-$label')),
+          matching: find.byType(SanctuaryIcon),
+        ),
+      );
       await reveal(tester, ocean);
+      expect(symbol('Ocean').glow, isFalse);
+      expect(symbol('Rain').glow, isFalse);
       await tester.tap(ocean);
       await tester.pump();
       expect(app.active, {'Ocean Waves': 0.6});
+      expect(symbol('Ocean').glow, isTrue);
+      expect(symbol('Ocean').color, SanctuaryPalette.mint);
+      expect(symbol('Rain').glow, isFalse);
       await tester.tap(find.byKey(const ValueKey('quick-Rain')));
       await tester.pump();
       expect(app.active, {'Ocean Waves': 0.6, 'Soft Rain': 0.6});
+      expect(symbol('Rain').glow, isTrue);
       await tester.tap(ocean);
       await tester.pump();
       expect(app.active, {'Soft Rain': 0.6});
+      expect(symbol('Ocean').glow, isFalse);
+      expect(symbol('Rain').glow, isTrue);
+      final resume = find.byKey(const ValueKey('resume-sleep-mix'));
+      await tester.ensureVisible(resume);
+      await tester.pump();
+      await tester.tap(resume);
+      await tester.pump();
+      expect(app.active, isEmpty);
+      expect(app.cached, {'Soft Rain': 0.6});
+      expect(symbol('Rain').glow, isFalse);
+      await tester.tap(resume);
+      await tester.pump();
+      expect(app.active, {'Soft Rain': 0.6});
+      expect(symbol('Rain').glow, isTrue);
     },
   );
 
@@ -321,28 +442,32 @@ void main() {
     expect(app.selectedTab, AppTab.sounds);
   });
 
-  testWidgets('My Stories filters saved stories and has a useful empty state', (
-    tester,
-  ) async {
-    final app = await mountSanctuary(tester, const SleepScreen());
-    await reveal(tester, find.byKey(const ValueKey('stories-My Stories')));
-    await tester.tap(find.byKey(const ValueKey('stories-My Stories')));
-    await tester.pump();
-    expect(find.text('Your bedtime bookshelf'), findsOneWidget);
-    await tester.tap(find.text('Browse all stories'));
-    await tester.pump();
-    await reveal(tester, find.byKey(const ValueKey('save-story-starry-night')));
-    await tester.tap(find.byKey(const ValueKey('save-story-starry-night')));
-    await tester.pump();
-    expect(app.libraryFavorites, contains('story-starry-night'));
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('stories-My Stories')),
-    );
-    await tester.tap(find.byKey(const ValueKey('stories-My Stories')));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('story-starry-night')), findsOneWidget);
-    expect(find.byKey(const ValueKey('story-dreamland')), findsNothing);
-  });
+  testWidgets(
+    'My Journeys filters saved stories and has a useful empty state',
+    (tester) async {
+      final app = await mountSanctuary(tester, const SleepScreen());
+      await reveal(tester, find.byKey(const ValueKey('stories-My Journeys')));
+      await tester.tap(find.byKey(const ValueKey('stories-My Journeys')));
+      await tester.pump();
+      expect(find.text('Your quiet collection'), findsOneWidget);
+      await tester.tap(find.text('Browse all journeys'));
+      await tester.pump();
+      await reveal(
+        tester,
+        find.byKey(const ValueKey('save-story-starry-night')),
+      );
+      await tester.tap(find.byKey(const ValueKey('save-story-starry-night')));
+      await tester.pump();
+      expect(app.libraryFavorites, contains('story-starry-night'));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('stories-My Journeys')),
+      );
+      await tester.tap(find.byKey(const ValueKey('stories-My Journeys')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('story-starry-night')), findsOneWidget);
+      expect(find.byKey(const ValueKey('story-dreamland')), findsNothing);
+    },
+  );
 
   testWidgets('stories keep their original title and duration when played', (
     tester,
@@ -353,4 +478,136 @@ void main() {
     await tester.pump();
     expect(app.guidedRequests.single, ('The Starry Night', 35));
   });
+
+  testWidgets(
+    'Meditate offers three starters and an explicit route to all fourteen',
+    (tester) async {
+      final app = await mountSanctuary(tester, const MeditationScreen());
+      int count() => tester
+          .widget<SliverList>(find.byType(SliverList))
+          .delegate
+          .estimatedChildCount!;
+      expect(count(), 3);
+      for (final id in featuredMeditationIds) {
+        await reveal(tester, find.byKey(ValueKey('practice-$id')));
+      }
+      final browse = find.byKey(const ValueKey('browse-practices'));
+      await reveal(tester, browse);
+      expect(find.text('Browse all 14 practices'), findsOneWidget);
+      await tester.tap(browse);
+      await tester.pump();
+      expect(count(), 14);
+      expect(find.text('Show featured practices'), findsOneWidget);
+      await reveal(tester, browse);
+      await tester.tap(browse);
+      await tester.pump();
+      expect(count(), 3);
+      expect(app.guidedRequests, isEmpty);
+      expect(app.active, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'visible Save and Saved keep favorite identities and never begin audio',
+    (tester) async {
+      final app = await mountSanctuary(tester, const MeditationScreen());
+      final dailySave = find.byKey(const ValueKey('daily-practice-save'));
+      await tester.tap(dailySave);
+      expect(app.libraryFavorites, contains('meditation-calm-mountain'));
+      final save = find.byKey(const ValueKey('save-practice-body-rest'));
+      await reveal(tester, save);
+      await tester.tap(save);
+      await tester.pump();
+      final savedFilter = find.byKey(const ValueKey('intent-Saved'));
+      await tester.ensureVisible(savedFilter);
+      await tester.tap(savedFilter);
+      await tester.pump();
+      expect(
+        tester
+            .widget<SliverList>(find.byType(SliverList))
+            .delegate
+            .estimatedChildCount,
+        1,
+      );
+      await reveal(tester, save);
+      expect(find.byKey(const ValueKey('practice-body-rest')), findsOneWidget);
+      expect(
+        app.libraryFavorites,
+        containsAll(['meditation-calm-mountain', 'meditation-body-rest']),
+      );
+      await tester.tap(save);
+      await tester.pump();
+      expect(
+        find.text(
+          'No saved practices in this collection yet. Tap a heart to keep one here.',
+        ),
+        findsOneWidget,
+      );
+      expect(app.libraryFavorites, {'meditation-calm-mountain'});
+      expect(app.guidedRequests, isEmpty);
+      expect(app.active, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'filtering retains the current session and truthful pause/loading controls',
+    (tester) async {
+      final app = await mountSanctuary(tester, const MeditationScreen());
+      final begin = find.byKey(const ValueKey('begin-quiet-mind'));
+      await reveal(tester, begin);
+      await tester.tap(begin);
+      await tester.pump();
+      for (final filter in ['Rest', 'Focus']) {
+        final chip = find.byKey(ValueKey('intent-$filter'));
+        await tester.ensureVisible(chip);
+        await tester.tap(chip);
+        await tester.pump();
+      }
+      await reveal(tester, begin);
+      expect(app.guidedTitle, 'Quiet Mind Sanctuary');
+      expect(app.guidedRequests, hasLength(1));
+      expect(app.guidedPlaying, isTrue);
+      expect(
+        find.descendant(of: begin, matching: find.text('Pause')),
+        findsOneWidget,
+      );
+      app.guidedPlaying = false;
+      app.guidedLoading = true;
+      app.notifyListeners();
+      await tester.pump();
+      expect(tester.widget<CupertinoButton>(begin).onPressed, isNull);
+      expect(
+        find.descendant(of: begin, matching: find.text('Opening…')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact practice actions stay reachable with 1.6 scale at 320 pixels',
+    (tester) async {
+      await mountSanctuary(
+        tester,
+        const MeditationScreen(),
+        width: 320,
+        textScale: 1.6,
+      );
+      for (final key in [
+        'daily-practice-save',
+        'save-practice-gentle-relief',
+        'begin-body-rest',
+        'browse-practices',
+      ]) {
+        final button = find.byKey(ValueKey(key));
+        await reveal(tester, button);
+        expect(tester.getSize(button).width, greaterThanOrEqualTo(44));
+        expect(tester.getSize(button).height, greaterThanOrEqualTo(44));
+        expect(button.hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
 }

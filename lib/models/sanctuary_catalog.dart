@@ -1,5 +1,7 @@
+import 'package:relax_mindfulness/models/session_soundscapes.dart';
+
 /// Local presentation assets and the existing meditation/sleep session catalog.
-/// Playback is still provided by AppState; artwork never contains interface text.
+/// Playback is provided by AppState; artwork never contains interface text.
 class MeditationSession {
   const MeditationSession({
     required this.id,
@@ -15,6 +17,7 @@ class MeditationSession {
   final String id, title, intent, eyebrow, description, artwork, backdrop;
   final int minutes;
   String get favoriteId => 'meditation-$id';
+  String get sourceLabel => sessionSourceLabel(title);
 }
 
 const dailyMeditation = MeditationSession(
@@ -22,8 +25,8 @@ const dailyMeditation = MeditationSession(
   title: 'Calm Mountain Horizon',
   minutes: 10,
   intent: 'Comfort',
-  eyebrow: 'DAILY GUIDED JOURNEY',
-  description: 'Deep Relaxation',
+  eyebrow: 'DAILY AMBIENT PRACTICE',
+  description: 'Ambient soundscape',
   artwork: 'assets/images/meditate/daily_journey.webp',
   backdrop: 'assets/images/meditate/forest_sunrise.webp',
 );
@@ -56,7 +59,7 @@ const meditationSessions = [
     intent: 'Comfort',
     eyebrow: 'HEART & BODY',
     description:
-        'Warm ocean waves to help your body feel completely weightless and safe.',
+        'Ocean waves over a soft bed of pink noise for an unhurried pause.',
     artwork: 'assets/images/meditate/body_rest.webp',
     backdrop: 'assets/images/meditate/body_backdrop.webp',
   ),
@@ -100,7 +103,7 @@ const meditationSessions = [
     intent: 'Sleep',
     eyebrow: 'RESTFUL HARMONY',
     description:
-        'Peaceful harmonic chimes for a slower, softer end to your day.',
+        'Bamboo chimes and a temple bowl; an ambient mix, not crystal recordings.',
     artwork: 'assets/images/meditate/quiet_mind.webp',
     backdrop: 'assets/images/meditate/body_backdrop.webp',
   ),
@@ -131,7 +134,7 @@ const meditationSessions = [
     intent: 'Healing',
     eyebrow: 'LET IT BE LIGHT',
     description:
-        'Whispering pine trees and a little space to let heavy thoughts pass.',
+        'Meadow breeze and bamboo chimes, with a little space to let thoughts pass.',
     artwork: 'assets/images/sleep/night_forest.webp',
     backdrop: 'assets/images/meditate/quiet_backdrop.webp',
   ),
@@ -163,7 +166,7 @@ const meditationSessions = [
     intent: 'Healing',
     eyebrow: 'FIND YOUR BALANCE',
     description:
-        'A quiet moment with resonant crystal tones and room to breathe.',
+        'Temple bowl over brown noise. A themed mix, not frequency-tuned audio.',
     artwork: 'assets/images/meditate/daily_journey.webp',
     backdrop: 'assets/images/meditate/morning_backdrop.webp',
   ),
@@ -173,7 +176,8 @@ const meditationSessions = [
     minutes: 20,
     intent: 'Comfort',
     eyebrow: 'BACK TO NATURE',
-    description: 'Walk among whispering pines and fresh mountain air.',
+    description:
+        'Forest birds and a meadow breeze for a quiet, nature-inspired pause.',
     artwork: 'assets/images/meditate/quiet_mind.webp',
     backdrop: 'assets/images/meditate/quiet_backdrop.webp',
   ),
@@ -250,74 +254,68 @@ const sleepSoundscapes = [
   ),
 ];
 
+// Legacy model/favorite IDs are retained so saved journeys are not lost.
+// These entries are ambient arrangements, not stories with recorded narrators.
 class SleepStory {
   const SleepStory({
     required this.id,
     required this.title,
-    required this.narrator,
     required this.minutes,
     required this.artwork,
   });
 
-  final String id, title, narrator, artwork;
+  final String id, title, artwork;
   final int minutes;
   String get favoriteId => 'story-$id';
+  String get sourceLabel => sessionSourceLabel(title);
 }
 
 const sleepStories = [
   SleepStory(
     id: 'starry-night',
     title: 'The Starry Night',
-    narrator: 'Emma Wallace',
     minutes: 35,
     artwork: 'assets/images/sleep/thunderstorm.webp',
   ),
   SleepStory(
     id: 'dreamland',
     title: 'Journey to Dreamland',
-    narrator: 'James Harrington',
     minutes: 42,
     artwork: 'assets/images/sleep/ocean_waves.webp',
   ),
   SleepStory(
     id: 'hidden-waterfall',
     title: 'The Hidden Waterfall',
-    narrator: 'Luna Harmony',
     minutes: 38,
     artwork: 'assets/images/meditate/quiet_mind.webp',
   ),
   SleepStory(
     id: 'lighthouse',
     title: 'The Lighthouse Keeper',
-    narrator: 'Oliver M.',
     minutes: 40,
     artwork: 'assets/images/sleep/ocean_waves.webp',
   ),
   SleepStory(
     id: 'japanese-garden',
     title: 'Moonlit Japanese Garden',
-    narrator: 'Mei Lin',
     minutes: 35,
     artwork: 'assets/images/meditate/quiet_mind.webp',
   ),
   SleepStory(
     id: 'whispering-pines',
     title: 'Whispering Pine Forest',
-    narrator: 'Julian Ross',
     minutes: 28,
     artwork: 'assets/images/sleep/night_forest.webp',
   ),
   SleepStory(
     id: 'stargazing',
     title: 'Desert Stargazing',
-    narrator: 'Kai Thompson',
     minutes: 32,
     artwork: 'assets/images/sleep/thunderstorm.webp',
   ),
   SleepStory(
     id: 'temple-bells',
     title: 'Ancient Temple Bells',
-    narrator: 'Ravi Sharma',
     minutes: 45,
     artwork: 'assets/images/meditate/daily_journey.webp',
   ),
@@ -345,3 +343,21 @@ String guidedPlayerArtwork(String title) {
   }
   return 'assets/images/player/comfort_art.webp';
 }
+
+/// Presentation-only grouping. Existing titles, favorite IDs and audio routes
+/// remain the source identities; changing a filter never starts playback.
+const simpleMeditationFilters = ['All', 'Calm', 'Focus', 'Rest', 'Saved'];
+const featuredMeditationIds = ['gentle-relief', 'quiet-mind', 'body-rest'];
+
+bool meditationMatchesFilter(
+  MeditationSession session,
+  String filter,
+  bool saved,
+) => switch (filter) {
+  'All' => true,
+  'Calm' => session.intent == 'Comfort' || session.intent == 'Healing',
+  'Focus' => session.intent == 'Focus' || session.intent == 'Morning',
+  'Rest' => session.intent == 'Sleep',
+  'Saved' => saved,
+  _ => false,
+};

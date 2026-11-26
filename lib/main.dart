@@ -245,8 +245,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           });
         }
 
-        final hasInlinePlayback =
-            state.tab == AppTab.home || state.tab == AppTab.sounds;
         return LayoutBuilder(
           builder: (context, constraints) {
             final width = math.min(constraints.maxWidth, MixerTheme.maxWidth);
@@ -275,33 +273,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     ),
                     child: Stack(
                       children: [
-                        // Other tabs retain the user's existing wallpaper preference.
-                        if (!hasInlinePlayback &&
-                            state.wallpaper.imageUrl.isNotEmpty)
-                          Positioned.fill(
-                            child: Image.network(
-                              state.wallpaper.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox.shrink(),
-                            ),
-                          ),
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  state.wallpaper.baseColor.withOpacity(0.78),
-                                  state.wallpaper.baseColor.withOpacity(0.94),
-                                  state.wallpaper.baseColor,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
+                        // Page backgrounds are local solid colors. Decorative
+                        // artwork belongs inside cards, not behind the tabs or
+                        // pushed wellbeing tools. Do not request a wallpaper
+                        // which an opaque page immediately hides.
                         // ── 🍎 Authentic Apple iOS Inspired Footer Tab Bar ──────────────
                         CupertinoTabScaffold(
                           backgroundColor: Colors.transparent,
@@ -312,12 +287,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                               state.setTab(_indexToAppTab(index));
                             },
                             backgroundColor: const Color(0xF0001D26),
-                            border: const Border(
-                              top: BorderSide(
-                                color: Color(0xFF21565E),
-                                width: 1,
-                              ),
-                            ),
+                            border: null,
                             activeColor: MixerTheme.mint,
                             inactiveColor: const Color(0xFF7E9AA5),
                             iconSize: math.max(24.0, 46 * s),
@@ -326,17 +296,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             items: const [
                               BottomNavigationBarItem(
                                 icon: SanctuaryIcon(SanctuarySymbol.home),
-                                activeIcon: SanctuaryIcon(
-                                  SanctuarySymbol.home,
-                                  glow: true,
-                                ),
+                                activeIcon: SanctuaryIcon(SanctuarySymbol.home),
                                 label: 'Home',
                               ),
                               BottomNavigationBarItem(
                                 icon: SanctuaryIcon(SanctuarySymbol.sounds),
                                 activeIcon: SanctuaryIcon(
                                   SanctuarySymbol.sounds,
-                                  glow: true,
                                 ),
                                 label: 'Sounds',
                               ),
@@ -344,7 +310,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                 icon: SanctuaryIcon(SanctuarySymbol.meditate),
                                 activeIcon: SanctuaryIcon(
                                   SanctuarySymbol.meditate,
-                                  glow: true,
                                 ),
                                 label: 'Meditate',
                               ),
@@ -352,7 +317,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                                 icon: SanctuaryIcon(SanctuarySymbol.sleep),
                                 activeIcon: SanctuaryIcon(
                                   SanctuarySymbol.sleep,
-                                  glow: true,
                                 ),
                                 label: 'Sleep',
                               ),
@@ -369,9 +333,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         ),
 
                         // ── 🎵 Floating Mini Player ───────────────────────────────────
-                        if ((state.isAnyAudioPlaying && !hasInlinePlayback) ||
-                            (state.hasGuidedSession &&
-                                state.activeAmbientTracks.isEmpty))
+                        if (!state.isGuidedPlayerExpanded &&
+                            !state.isAmbientPlayerExpanded &&
+                            (state.hasAmbientSession ||
+                                state.hasAmbientPlaybackRequest ||
+                                state.hasGuidedSession))
                           Positioned(
                             left: 0,
                             right: 0,
@@ -390,12 +356,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                               decoration: BoxDecoration(
                                 color: MixerTheme.mint,
                                 borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: MixerTheme.mint.withOpacity(0.8),
-                                    blurRadius: 16,
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -412,6 +372,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         // ── 🎧 Full-Screen Guided Player ──────────────────────────────
                         if (state.isGuidedPlayerExpanded)
                           const Positioned.fill(child: GuidedPlayerOverlay()),
+                        if (state.isAmbientPlayerExpanded)
+                          const Positioned.fill(child: AmbientPlayerOverlay()),
                       ],
                     ),
                   ),

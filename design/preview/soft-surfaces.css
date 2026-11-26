@@ -1,0 +1,154 @@
+/* Approved continuation of the Home trial. Decoration only: retain artwork,
+   transport/selection semantics, focus rings, progress and Sleep's outline orbs.
+   Loaded after the route styles so these shared surface tokens stay explicit. */
+:root {
+  --soft-surface: #0a3039;
+  --soft-action: #082c35;
+  --soft-quiet: #062831;
+  --soft-active: #103e42;
+  --soft-control: #164d51;
+  --soft-primary: #8ce7d0;
+  --soft-on-primary: #002b26;
+  --soft-heading: #95bbb7;
+  --soft-night: #122945;
+  --soft-night-active: #193853;
+  --soft-night-control: #223f5c;
+}
+
+/* Shared Sounds surfaces and actions. No broad SVG/path reset: strokes are
+   drawings, not panel borders. Selected switches keep their moving thumb. */
+.surface { background: var(--soft-surface); border: 0; box-shadow: none; }
+.track.selected { background: var(--soft-active); border: 0; box-shadow: none; }
+.track { transition: background-color .2s; }
+.section-heading { color: var(--soft-heading); white-space: normal; }
+.section-heading::after, .eyebrow::after { content: none; display: none; }
+.play-dial { background: var(--soft-control); border: 0; box-shadow: none; }
+.save { background: var(--soft-primary); color: var(--soft-on-primary); border: 0; box-shadow: none; min-height: 44px; }
+.round { min-width: 44px; min-height: 44px; }
+.round span { background: var(--soft-action); }
+.mix-chip { background: var(--soft-action); border: 0; box-shadow: none; min-height: 44px; }
+.mix-chip.selected { background: var(--soft-control); border: 0; box-shadow: none; }
+.category { background: var(--soft-action); border: 0; box-shadow: none; min-height: 44px; width: max-content; min-width: calc(184px * var(--s)); padding-left: 12px; padding-right: 12px; }
+.category[aria-selected=true] { background: var(--soft-primary); color: var(--soft-on-primary); border: 0; box-shadow: none; }
+.mix-chip.selected, .category[aria-selected=true] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.toggle-hit { min-width: 44px; min-height: 44px; }
+.toggle, .toggle::after, [aria-checked=true] .toggle { box-shadow: none; }
+.slider-row { height: 44px; }
+.slider { height: 44px; background: none; padding: 0; }
+.slider::-webkit-slider-runnable-track { height: max(3px, calc(6px * var(--s))); border-radius: 99px; background: linear-gradient(90deg, var(--mint) var(--progress), #20404a var(--progress)); }
+.slider::-webkit-slider-thumb { margin-top: calc((max(3px, 6px * var(--s)) - max(16px, 36px * var(--s))) / 2); box-shadow: none; }
+.slider::-moz-range-track { height: max(3px, calc(6px * var(--s))); border-radius: 99px; background: linear-gradient(90deg, var(--mint) var(--progress), #20404a var(--progress)); }
+.slider::-moz-range-thumb { box-shadow: none; }
+
+/* Keep the four destinations and the non-color underline, without neon chrome. */
+.bottom-nav { border: 0; box-shadow: none; }
+.nav-item.active > svg { filter: none; }
+.nav-item.active::after { box-shadow: none; }
+
+/* Form outlines and focus are useful affordances, not decorative card chrome. */
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #a0ffe7; outline-offset: 4px; }
+dialog { background: var(--soft-surface); border: 0; box-shadow: none; }
+dialog button { min-height: 44px; background: var(--soft-control); }
+dialog button.primary { background: var(--soft-primary); color: var(--soft-on-primary); }
+.toast { background: var(--soft-control); border: 0; box-shadow: none; }
+
+/* Meditate remains plain teal, with arched artwork and its orbital drawings. */
+#meditate-page .daily-journey { border: 0; box-shadow: none; }
+#meditate-page .practice-card { background: var(--soft-surface); border: 0; box-shadow: none; }
+#meditate-page .intent-chip > span { background: var(--soft-action); border: 0; box-shadow: none; }
+#meditate-page .intent-chip[aria-pressed=true] > span { background: var(--soft-primary); color: var(--soft-on-primary); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#meditate-page .pill-body { background: var(--soft-primary); color: var(--soft-on-primary); }
+#meditate-page .daily-heading h2, #meditate-page .practice-heading h3 { overflow-wrap: anywhere; }
+
+/* Sleep keeps its own navy palette and moonlit imagery. The five quick-orb
+   rules in sleep.css are intentionally not overridden, including active glow. */
+.sleep-page .night-surface,
+.sleep-page .night-glow,
+.sleep-page .continue-card,
+.sleep-page .quick-mixer { background: var(--soft-night); border: 0; box-shadow: none; }
+.sleep-page .ocean-journey { background: #0b2855; }
+.sleep-page .soundscape-card.is-playing { background: var(--soft-night-active); border: 0; box-shadow: none; }
+.sleep-page .journey-badge { background: #0d223ce8; border: 0; box-shadow: none; }
+.sleep-page .journey-circle > span,
+.sleep-page .soundscape-image > span { background: #0d223cf2; border: 0; box-shadow: none; }
+.sleep-section-title::before { content: none; display: none; }
+.sleep-page .pill-body,
+.sleep-page .ocean-glow .pill-body { background: var(--soft-primary); color: var(--soft-on-primary); border: 0; box-shadow: none; }
+.sleep-page .quiet .pill-body { background: var(--soft-night-control); color: #f7f8eb; border: 0; box-shadow: none; }
+.sleep-page .story-filters button > span { background: var(--soft-night); border: 0; box-shadow: none; }
+.sleep-page .story-filters button[aria-pressed=true] > span { background: var(--soft-night-control); color: #f7f8eb; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.sleep-page #sleep-timer-button, .sleep-page .story-filters button { min-width: 44px; }
+.sleep-page .quick-label { max-width: 100%; overflow-wrap: anywhere; }
+.sleep-page .journey-meta { flex-wrap: wrap; }
+.night-dialog { background: var(--soft-night); border: 0; box-shadow: none; }
+.night-dialog .primary { background: #f5c96d; color: #172735; }
+.timer-choices button, .library-options > button { background: var(--soft-night-control); min-height: 44px; }
+.practice-action-list button { background: var(--soft-action); }
+@media (max-width: 360px) { .story-buttons button { width: 44px; min-width: 44px; } }
+
+/* Player backdrop and breathing rings are retained. Opaque controls replace
+   outlined glass, gradients and decorative glow, including the minimized bar. */
+.player-glass { background: #0b2e3a; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.player-cover { border: 0; box-shadow: none; }
+.immersive-player .player-toggle { background: var(--soft-primary); color: var(--soft-on-primary); border: 0; box-shadow: none; }
+.player-spinner { border-color: #002b2640; border-top-color: var(--soft-on-primary); }
+.player-options button[aria-pressed=true] { background: var(--soft-control); border: 0; box-shadow: none; }
+.player-options button[aria-pressed=true] > span { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#session-progress { height: max(44px, calc(32px * var(--p))); }
+#session-progress::-webkit-slider-thumb { box-shadow: none; }
+.shared-mini-player { background: var(--soft-surface); border: 0; box-shadow: none; backdrop-filter: none; }
+.shared-mini-player .mini-toggle { background: var(--soft-control); border: 0; box-shadow: none; }
+
+/* Layer chooser: a tonal selection plus an underline, not a color-only state. */
+.replacement-row { background: var(--soft-action); border: 0; box-shadow: none; }
+.replacement-row[data-selected=true] { background: var(--soft-control); border: 0; }
+.replacement-row[data-selected=true] .replacement-copy strong { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#sound-replacement-dialog footer { border: 0; background: var(--soft-quiet); }
+#replacement-use { background: var(--soft-primary); color: var(--soft-on-primary); }
+
+/* Pushed wellbeing pages. Keep checkmarks/dashes, chart bars and breathing
+   geometry. Input boundaries and the backup disclosure also remain explicit. */
+.wellbeing-top { border: 0; }
+.wellbeing-page .wellbeing-surface { background: var(--soft-surface); border: 0; box-shadow: none; }
+.wellbeing-primary { background: var(--soft-primary); color: var(--soft-on-primary); }
+.wellbeing-choices button { background: var(--soft-action); border: 0; box-shadow: none; }
+.wellbeing-choices button[aria-pressed=true] { background: var(--soft-primary); color: var(--soft-on-primary); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#wellbeing-reflection-input { background: var(--soft-surface); }
+
+/* Live curated recipes use the existing matte surface, not another card style.
+   Names describe a scene; these are slider levels, not new recordings. */
+.vibe-set-details { margin-top: calc(14px * var(--s)); padding: calc(20px * var(--s)); overflow-wrap: anywhere; }
+.vibe-set-details h3 { margin: 0; font-size: calc(24px * var(--t)); font-weight: 600; line-height: 1.25; }
+.vibe-set-details p { margin: calc(6px * var(--s)) 0 0; color: var(--muted); font-size: calc(20px * var(--t)); line-height: 1.45; }
+.vibe-set-details #vibe-set-purpose { color: #9affe6; font-weight: 600; }
+.vibe-set-details #vibe-set-levels { margin-top: calc(9px * var(--s)); color: #f5fafa; }
+.vibe-set-details #vibe-set-notice { margin-top: calc(8px * var(--s)); font-size: calc(18px * var(--t)); }
+
+/* Available-source browsing changes views, never the selected mix or access. */
+.library-scope { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
+.library-scope button { min-height:44px; }
+/* The unfinished inventory is a deliberate review path, not normal browsing. */
+#catalog-review { margin:0 0 12px; color:var(--muted); font-size:max(12px,calc(20px * var(--t))); line-height:1.5; overflow-wrap:anywhere; }
+#catalog-review > summary { display:list-item; width:fit-content; max-width:100%; min-width:44px; min-height:44px; padding:10px 0; cursor:pointer; color:#9affe6; text-decoration:underline; }
+#catalog-review > summary:focus-visible { outline:2px solid #a0ffe7; outline-offset:4px; border-radius:4px; }
+#catalog-review-description { margin:4px 0 12px; }
+#catalog-review .mix-chip { max-width:100%; white-space:normal; text-align:left; }
+.library-notice { font-size:max(12px,calc(20px * var(--t))); color:var(--muted); line-height:1.5; margin:0 0 18px; overflow-wrap:anywhere; }
+.recording-choice-link { display:block; min-width:44px; min-height:44px; padding:6px 0; text-align:left; color:#9affe6; text-decoration:underline; font-size:max(11px,calc(20px * var(--t))); line-height:1.3; background:none; }
+.toggle-hit:disabled { opacity:.55; cursor:not-allowed; }
+
+
+/* Browser capability labels, not paid locks. Leave the five Sleep symbol
+   drawings, dimensions and playback glow untouched. */
+.preview-only-label { display:block; margin-top:3px; color:#bdd0dd; font-size:max(10px,calc(16px * var(--t))); line-height:1.35; overflow-wrap:anywhere; }
+.preview-only-badge { font-size:max(10px,calc(16px * var(--t))); color:#bdd0dd; }
+#library-review-selected { display:block; min-height:44px; margin-top:6px; padding:8px 0; background:none; color:#9affe6; text-decoration:underline; }
+#preview-availability-dialog { max-width:460px; max-height:85dvh; overflow:auto; padding:24px; }
+#preview-availability-dialog h3 { font-size:max(22px,calc(30px * var(--t))); line-height:1.2; }
+#preview-availability-dialog p { font-size:max(14px,calc(20px * var(--t))); }
+#preview-unavailable-sources { padding:0; margin:18px 0; list-style:none; display:grid; gap:10px; }
+#preview-unavailable-sources li { padding:12px; border-radius:12px; background:var(--soft-surface); overflow-wrap:anywhere; }
+#preview-unavailable-sources strong, #preview-unavailable-sources span { display:block; font-size:max(14px,calc(20px * var(--t))); line-height:1.4; }
+#preview-unavailable-sources span { margin-top:4px; color:var(--muted); font-size:max(12px,calc(18px * var(--t))); }
+#preview-availability-dialog footer { display:grid; grid-template-columns:1fr; }
+#preview-availability-dialog button { width:100%; min-height:44px; white-space:normal; font-size:max(14px,calc(20px * var(--t))); }

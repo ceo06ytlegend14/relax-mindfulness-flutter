@@ -50,8 +50,11 @@ The former JS integration points are retained: `window.triggerPwaInstall()` open
 The interactive HTML design preview in `design/preview/` shares the actual installer, worker, and icons through repository-relative links. Its own manifest is explicitly named **Sanctuary Design Preview** with a separate app ID. Installing that preview does **not** install or validate the Flutter build; install the deployed Flutter app for the full application.
 
 ```sh
+node tool/version_preview_assets.mjs
 python3 -m http.server 3000 --bind 0.0.0.0 --directory design/preview
 ```
+
+Preview CSS/JS URLs are content-versioned, including the Sleep mixer renderer and icon sizing. Re-run the first command after asset edits and reload any already-open page. A returning-browser regression verifies that old cached small buttons are replaced without clearing saved mixes or autoplaying. This is an asset-delivery check, not proof that any user's prior view was cached; the install worker does not cache these assets.
 
 ## Checks
 
@@ -72,15 +75,21 @@ PLAYWRIGHT_MODULE=/tmp/sanctuary-browser-tools/node_modules/playwright/index.mjs
 
 `PLAYWRIGHT_MODULE` can name an absolute module path; `CHROMIUM_PATH` can point to an already installed Chromium binary. Browser tests use a local HTTP test server and isolated contexts; they do not install an OS app. Native prompt outcomes are simulated, while manifest parsing, service-worker registration/scope, cache behavior, navigation fallback, and browser UI are exercised in Chromium.
 
-### Results in this workspace (2026-11-19)
+### Earlier PWA verification (2026-11-19)
+
+The counts below record earlier stages, not the current full suite. See the current follow-up results afterward.
 
 - **15 static PWA checks passed** for manifest identity, deployment-relative URLs, icon dimensions/opacity, HTML integration, and bootstrap ownership.
 - **20 Chromium integration tests passed.** Chromium reported no manifest or installability errors for the real preview at `/` and the actual web PWA assets served in framework-free fixtures at `/app/` and `/nested/sanctuary/`. These fixtures validate the installer and deployment paths, not a compiled Flutter runtime. Prompt outcomes and Apple-device environments were simulated; no OS application was installed by the tests.
 - **52 existing browser-preview regression checks passed again** for Sounds, Meditate, Sleep, navigation, and local audio samples.
 - JavaScript syntax checks and `git diff --check` passed.
 
-The subsequent Home/footer correction was also checked: **17 Home/navigation browser tests passed**, including a separate default Home page and footer SVG pixel checks when font requests fail. Home and Sounds now have separate preview routes (`/` / `/#home` versus `/#sounds`); they still share selected mix levels. See [design notes](../design/README.md#home-and-footer-correction). The native footer implementation uses local vector painting rather than icon fonts; its Flutter widget/raster tests still need to run with the SDK.
+The subsequent Home/footer correction was also checked: **17 Home/navigation browser tests passed**, including a separate default Home page and footer SVG pixel checks when font requests fail. Home and Sounds now have separate preview routes (`/` / `/#home` versus `/#sounds`); they still share selected mix levels. See [design notes](../design/README.md). The native footer implementation uses local vector painting rather than icon fonts; its Flutter widget/raster tests still need to run with the SDK.
 
-The latest sunrise-lake player / moonlit-blue Sleep update adds **31 passing browser tests** covering actual sample playback, pause/resume/seek, timer expiry/fade, retry/loading cancellation, responsive layouts and font-independent icons. The real install selector is tested at all four widths; the install entry hides while the player is expanded and returns on minimize/completion without resetting installed state. All **83 browser/PWA tests passed together** after this update (31 player/Sleep + 17 Home + the 35 PWA checks above). The subsequent release-safety pass adds 7 platform/configuration guards; all **90 tests in `test/web/*.mjs` passed together** using the new locked `npm run test:web` setup. See [updated previews and verification](../design/README.md).
+The earlier sunrise-lake player / moonlit-blue Sleep update added **31 passing browser tests** covering actual sample playback, pause/resume/seek, timer expiry/fade, retry/loading cancellation, responsive layouts and font-independent icons. The real install selector is tested at all four widths; the install entry hides while the player is expanded and returns on minimize/completion without resetting installed state. All **83 browser/PWA tests passed together** after this update (31 player/Sleep + 17 Home + the 35 PWA checks above). The subsequent release-safety pass adds 7 platform/configuration guards; all **90 tests in `test/web/*.mjs` passed together** using the new locked `npm run test:web` setup. See [updated previews and verification](../design/README.md).
 
-**The current workspace has no Flutter/Dart SDK.** Flutter analysis, a generated Flutter web build, and actual home-screen installation on iOS/Android/macOS/Windows still need verification before release. Browser-design/PWA-controller checks are not native Flutter test results.
+### Current wellbeing / sound-library follow-up (2026-11-19)
+
+All **180 repository browser/PWA/source-data/configuration tests passed together**, no failures/skips, including wellbeing routes/timer history, the solid-color Meditate cards and playback of all 18 local chooser sources and 23 individually routed ambient session mixes. [Session-audio verification](SESSION_AUDIO.md) is separate from installer/offline validation. Installer fixtures remain independent of Flutter. The DOM install entry hides over expanded players, sound choosers and wellbeing headers without resetting installed/prompt state. Flutter uses independent visibility classes and visible-page owners; native implementations are no-ops. The preview exercises the same CSS contract, not the compiled-web runtime.
+
+**This sandbox has no Flutter/Dart SDK.** A historical Flutter build passed at `d6447f6`, before the latest wellbeing/audio changes. Fresh analysis/tests/web/native builds for these changes, compiled-web browser checks, and actual home-screen installation on iOS/Android/macOS/Windows remain unverified. The PWA is still install-only, not a full offline/audio cache. See [current screenshots and boundaries](../design/README.md).

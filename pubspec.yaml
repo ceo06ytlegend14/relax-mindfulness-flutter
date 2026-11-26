@@ -1,5 +1,5 @@
 name: relax_mindfulness
-description: "Sanctuary: Relax & Mindfulness — Guided meditation, ambient sound mixer, breathing timer & sleep stories. Your daily calm companion."
+description: "Sanctuary: Relax & Mindfulness — Customizable ambient sound mixes, timed unguided practices, breathing and sleep timers."
 publish_to: 'none'
 # Version: major.minor.patch+buildNumber
 # 1.1.0+5 — Volume shock prevention, multi-track headroom limiter & Apple StoreKit restore compliance

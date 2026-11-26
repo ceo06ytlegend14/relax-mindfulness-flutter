@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
+import 'package:relax_mindfulness/models/mixer_catalog.dart';
+import 'package:relax_mindfulness/providers/app_state.dart';
 
 import 'support/fake_mixer_app_state.dart';
 
@@ -46,6 +49,52 @@ void main() {
     mixer.togglePlayback();
     expect(app.active, {'Soft Rain': 0.45});
   });
+
+  test('intentional starts expand, but gain edits do not undo minimize', () {
+    mixer.applyMix({'Soft Rain': .65, 'Coffee Shop': .25}, name: 'Window');
+    expect(app.isAmbientPlayerExpanded, isTrue);
+    app.minimizeAmbientPlayer();
+    mixer.setVolume('Coffee Shop', .21);
+    expect(app.isAmbientPlayerExpanded, isFalse);
+    expect(app.active, {'Soft Rain': .65, 'Coffee Shop': .21});
+    mixer.applyMix({'Ocean Waves': .6}, name: 'Shore');
+    expect(app.isAmbientPlayerExpanded, isTrue);
+  });
+
+  test('paused session survives mini resume and paused level edits', () async {
+    mixer.applyMix({'Soft Rain': .45}, name: 'Rain');
+    app.minimizeAmbientPlayer();
+    mixer.togglePlayback(expandPlayer: false);
+    expect(app.hasAmbientSession, isTrue);
+    expect(app.isAmbientPlayerExpanded, isFalse);
+    expect(app.active, isEmpty);
+    mixer.setVolume('Soft Rain', .41, preservePaused: true);
+    expect(app.active, isEmpty);
+    expect(mixer.volume('Soft Rain'), .41);
+    expect(mixer.transportLabel, 'Resume soundscape');
+    mixer.togglePlayback(expandPlayer: false);
+    expect(app.active, {'Soft Rain': .41});
+    expect(app.isAmbientPlayerExpanded, isFalse);
+    await app.stopAllAudio();
+    expect(app.hasAmbientSession, isFalse);
+    expect(mixer.volume('Soft Rain'), .41);
+  });
+
+  test(
+    'starting a timed practice replaces the ambient presentation owner',
+    () async {
+      mixer.applyMix({'Soft Rain': .45});
+      expect(app.isAmbientPlayerExpanded, isTrue);
+      await app.playGuidedSession('Gentle Relief & Comfort', 15);
+      expect(app.isAmbientPlayerExpanded, isFalse);
+      expect(app.hasAmbientSession, isFalse);
+      expect(app.isGuidedPlayerExpanded, isTrue);
+      mixer.applyMix({'Ocean Waves': .6});
+      expect(app.isGuidedPlayerExpanded, isFalse);
+      expect(app.isAmbientPlayerExpanded, isTrue);
+      expect(app.guidedPlaying, isFalse);
+    },
+  );
 
   test('volume edits are clamped, finite and persisted', () {
     mixer.setVolume('Soft Rain', 4);
@@ -196,6 +245,241 @@ void main() {
       expect(mixer.replaceTrack('Rain Cave', 'Ocean Waves'), isTrue);
       expect(mixer.levels, {'Soft Rain': .3, 'Ocean Waves': .3});
       expect(mixer.isPlaying, isFalse);
+    },
+  );
+
+  test('pending requests stay cancellable without claiming playback', () {
+    app.ambientLoading.add('Soft Rain');
+    mixer.togglePlayback();
+    expect(mixer.hasPlaybackRequest, isTrue);
+    expect(mixer.isPreparing, isTrue);
+    expect(mixer.isPlaying, isFalse);
+    expect(mixer.playbackStatusLabel, 'Loading soundscape…');
+    expect(mixer.transportLabel, 'Cancel pending soundscape');
+    mixer.togglePlayback();
+    expect(app.requestedAmbientTracks, isEmpty);
+    expect(mixer.isPreparing, isFalse);
+    expect(mixer.volume('Soft Rain'), .3);
+    expect(app.cached['Soft Rain'], .3);
+  });
+
+  test('buffering does not change selected levels or the confirmed count', () {
+    mixer.applyMix({'Soft Rain': .6, 'Ocean Waves': .2}, name: 'Evening');
+    app.ambientBuffering.add('Soft Rain');
+    app.notifyListeners();
+    expect(mixer.levels, {'Soft Rain': .6, 'Ocean Waves': .2});
+    expect(mixer.preset, 'Evening');
+    expect(mixer.playbackStatusLabel, 'Playing · 1 layer · 1 buffering');
+    expect(app.activeAmbientTracks, {'Ocean Waves': .2});
+    app.ambientBuffering.clear();
+    app.notifyListeners();
+    expect(mixer.playbackStatusLabel, 'Playing · 2 layers');
+  });
+
+  test(
+    'replacing a pending layer keeps intent without starting a paused mix',
+    () {
+      app.ambientLoading.add('Soft Rain');
+      mixer.setVolume('Soft Rain', .58);
+      expect(mixer.isPlaying, isFalse);
+      expect(mixer.replaceTrack('Soft Rain', 'Ocean Waves'), isTrue);
+      expect(app.requestedAmbientTracks, {'Ocean Waves': .58});
+      expect(mixer.isPlaying, isTrue);
+      mixer.togglePlayback();
+      expect(mixer.replaceTrack('Ocean Waves', 'Campfire'), isTrue);
+      expect(app.requestedAmbientTracks, isEmpty);
+      expect(mixer.levels, {'Campfire': .58});
+    },
+  );
+
+  test('failure removes a playing count, not the failed selected level', () {
+    mixer.applyMix({'Soft Rain': .6, 'Ocean Waves': .2}, name: 'Evening');
+    app.active.remove('Soft Rain');
+    app.ambientErrors['Soft Rain'] = 'This recording could not play.';
+    app.notifyListeners();
+    expect(mixer.levels, {'Soft Rain': .6, 'Ocean Waves': .2});
+    expect(mixer.preset, 'Evening');
+    expect(mixer.hasPlaybackError, isTrue);
+    expect(mixer.playbackStatusLabel, 'Playing · 1 layer · 1 unavailable');
+    mixer.togglePlayback();
+    expect(app.active, isEmpty);
+    mixer.togglePlayback();
+    expect(app.active, {'Soft Rain': .6, 'Ocean Waves': .2});
+    expect(mixer.hasPlaybackError, isFalse);
+  });
+
+  test(
+    'retry keeps every failed selected level and does not reapply healthy layers',
+    () {
+      mixer.applyMix({
+        'Soft Rain': .6,
+        'Ocean Waves': .2,
+        'Forest Birds': .15,
+      }, name: 'Evening');
+      app.active.remove('Soft Rain');
+      app.active.remove('Forest Birds');
+      app.ambientErrors.addAll({
+        'Soft Rain': 'Unavailable',
+        'Forest Birds': 'Unavailable',
+      });
+      app.notifyListeners();
+      expect(mixer.retryTrack('Ocean Waves'), isFalse);
+      expect(mixer.retryTrack('not a sound'), isFalse);
+      expect(mixer.retryTrack('Soft Rain'), isTrue);
+      expect(mixer.levels, {
+        'Soft Rain': .6,
+        'Ocean Waves': .2,
+        'Forest Birds': .15,
+      });
+      expect(mixer.preset, 'Evening');
+      expect(app.activeAmbientTracks, {'Soft Rain': .6, 'Ocean Waves': .2});
+      expect(app.ambientTrackError('Forest Birds'), isNotNull);
+      expect(mixer.playbackStatusLabel, 'Playing · 2 layers · 1 unavailable');
+      expect(mixer.retryTrack('Forest Birds'), isTrue);
+      expect(mixer.playbackStatusLabel, 'Playing · 3 layers');
+    },
+  );
+
+  test('gain edits retain platform-paused layers until explicit Resume', () {
+    mixer.applyMix({'Soft Rain': .6, 'Ocean Waves': .2}, name: 'Evening');
+    app.ambientPaused.addAll(app.active.keys);
+    app.notifyListeners();
+    expect(mixer.isPlaying, isFalse);
+    expect(mixer.hasPlaybackRequest, isTrue);
+    mixer.setVolume('Soft Rain', .54, preservePaused: true);
+    expect(app.active, {'Soft Rain': .54, 'Ocean Waves': .2});
+    expect(app.activeAmbientTracks, isEmpty);
+    expect(app.ambientPaused, {'Soft Rain', 'Ocean Waves'});
+    expect(mixer.transportLabel, 'Resume soundscape');
+    expect(app.cached, {'Soft Rain': .54, 'Ocean Waves': .2});
+    mixer.togglePlayback(expandPlayer: false);
+    expect(app.activeAmbientTracks, {'Soft Rain': .54, 'Ocean Waves': .2});
+  });
+
+  test('Sounds gain edits are not transport commands during interruption', () {
+    mixer.applyMix({'Soft Rain': .6, 'Ocean Waves': .2});
+    app.ambientPaused.add('Soft Rain');
+    app.notifyListeners();
+    mixer.setVolume('Ocean Waves', .24);
+    expect(app.activeAmbientTracks, {'Ocean Waves': .24});
+    expect(app.ambientPaused, {'Soft Rain'});
+    expect(mixer.playbackStatusLabel, 'Playing · 1 layer · 1 paused');
+  });
+
+  test('gain edits never retry this or unrelated failed selected layers', () {
+    mixer.applyMix({
+      'Soft Rain': .6,
+      'Ocean Waves': .2,
+      'Forest Birds': .15,
+    }, name: 'Evening');
+    app.active.remove('Soft Rain');
+    app.active.remove('Forest Birds');
+    app.ambientErrors.addAll({
+      'Soft Rain': 'Unavailable',
+      'Forest Birds': 'Unavailable',
+    });
+    app.notifyListeners();
+    mixer.setVolume('Ocean Waves', .24, preservePaused: true);
+    mixer.setVolume('Soft Rain', .53, preservePaused: true);
+    expect(app.activeAmbientTracks, {'Ocean Waves': .24});
+    expect(app.ambientErrors.keys.toSet(), {'Soft Rain', 'Forest Birds'});
+    expect(mixer.levels, {
+      'Soft Rain': .53,
+      'Ocean Waves': .24,
+      'Forest Birds': .15,
+    });
+    expect(mixer.retryTrack('Soft Rain'), isTrue);
+    expect(app.activeAmbientTracks, {'Ocean Waves': .24, 'Soft Rain': .53});
+    expect(app.ambientTrackError('Forest Birds'), isNotNull);
+    expect(mixer.volume('Forest Birds'), .15);
+  });
+
+  test('default library is all bundled sources, with honest scoped counts', () {
+    expect(mixer.availableOnly, isTrue);
+    expect(mixer.category, 'all');
+    expect(
+      allMixerTracks
+          .where(mixer.isVisibleTrack)
+          .map((track) => track.name)
+          .toSet(),
+      bundledRecordings.map((recording) => recording.name).toSet(),
+    );
+    expect(mixer.categoryCount('all'), 18);
+    expect(mixer.categoryCount('rain'), 1);
+    expect(mixer.categoryCount('solfeggio'), 0);
+    expect(
+      AppState.curatedPresets.values.where(mixer.isVisiblePreset),
+      hasLength(11),
+    );
+    mixer.setAvailableOnly(false);
+    expect(allMixerTracks.where(mixer.isVisibleTrack), hasLength(77));
+    expect(mixer.categoryCount('rain'), 12);
+    expect(
+      AppState.curatedPresets.values.where(mixer.isVisiblePreset),
+      hasLength(18),
+    );
+    expect(app.active, isEmpty);
+    expect(app.cached, isEmpty);
+  });
+
+  test(
+    'scope changes preserve legacy cached levels, favorites and saved mixes',
+    () {
+      app.cached = {'Rain on Umbrella': .22, 'Soft Rain': .31};
+      app.savePreset('Kept', {'Rain on Umbrella': .22});
+      app.starred.add('Rain on Umbrella');
+      app.notifyListeners();
+      final levels = Map<String, double>.of(mixer.levels);
+      final favorites = Set<String>.of(app.starred);
+      mixer.setAvailableOnly(false);
+      mixer.selectCategory('solfeggio');
+      mixer.setAvailableOnly(true);
+      expect(
+        mixer.category,
+        'all',
+        reason: 'An empty scoped category returns to All',
+      );
+      mixer.selectCategory('favorites');
+      mixer.setAvailableOnly(false);
+      expect(mixer.category, 'favorites');
+      expect(mixer.levels, levels);
+      expect(app.cached, levels);
+      expect(app.saved.single.volumes, {'Rain on Umbrella': .22});
+      expect(app.starred, favorites);
+      expect(app.active, isEmpty);
+    },
+  );
+
+  test('changing a library view never pauses or reapplies a playing mix', () {
+    mixer.applyMix({'Soft Rain': .42, 'Fireplace': .2}, name: 'Kept recipe');
+    final levels = Map<String, double>.of(mixer.levels);
+    mixer.setAvailableOnly(false);
+    mixer.selectCategory('favorites');
+    mixer.setAvailableOnly(true);
+    expect(mixer.levels, levels);
+    expect(app.active, levels);
+    expect(mixer.preset, 'Kept recipe');
+  });
+
+  test(
+    'shuffle always chooses three different canonical bundled recordings',
+    () {
+      final canonical = bundledRecordings
+          .map((recording) => recording.name)
+          .toSet();
+      for (var index = 0; index < 20; index++) {
+        mixer.shuffle();
+        expect(mixer.levels, hasLength(3));
+        expect(canonical.containsAll(mixer.levels.keys), isTrue);
+        expect(
+          mixer.levels.keys.map((name) => bundledSoundAssets[name]).toSet(),
+          hasLength(3),
+        );
+        expect(
+          mixer.levels.values.every((level) => level >= .3 && level <= .6),
+          isTrue,
+        );
+      }
     },
   );
 }

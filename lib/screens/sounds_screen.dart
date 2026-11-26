@@ -10,6 +10,8 @@ import 'package:relax_mindfulness/components/mixer_artwork.dart';
 import 'package:relax_mindfulness/components/sound_replacement_sheet.dart';
 import 'package:relax_mindfulness/services/sound_preview_controller.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
+import 'package:relax_mindfulness/models/vibe_sound_sets.dart';
+import 'package:relax_mindfulness/models/bundled_recordings.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/screens/wellbeing_screen.dart';
@@ -24,13 +26,15 @@ class SoundsScreen extends StatelessWidget {
     BuildContext context,
     MixerTrack track,
     AppState state,
-    MixerController mixer,
-  ) {
+    MixerController mixer, {
+    bool chooseRecording = false,
+  }) {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => SoundReplacementSheet(
         track: track,
         mixer: mixer,
+        chooseRecording: chooseRecording,
         onPreviewActivity: state.setAmbientPreviewDucking,
         previewPlayerFactory: previewPlayerFactory,
       ),
@@ -149,13 +153,26 @@ class SoundsScreen extends StatelessWidget {
           math.min(constraints.maxWidth, MixerTheme.maxWidth),
         );
         final s = metrics.scale;
-        final tracks = mixer.category == 'favorites'
-            ? allMixerTracks
-                  .where((track) => state.isFavorite(track.name))
-                  .toList()
-            : mixerCategories
-                  .firstWhere((category) => category.id == mixer.category)
-                  .tracks;
+        final tracks = allMixerTracks
+            .where(
+              (track) =>
+                  mixer.isVisibleTrack(track) &&
+                  (mixer.category == 'all' ||
+                      (mixer.category == 'favorites'
+                          ? state.isFavorite(track.name)
+                          : mixerCategories
+                                .firstWhere(
+                                  (category) => category.id == mixer.category,
+                                )
+                                .tracks
+                                .contains(track))),
+            )
+            .toList();
+        final candidate = vibeSoundSetForName(mixer.preset);
+        final selectedVibe =
+            candidate != null && candidate.matchesLevels(mixer.levels)
+            ? candidate
+            : null;
         return CupertinoPageScaffold(
           backgroundColor: MixerTheme.background,
           child: Stack(
@@ -208,12 +225,6 @@ class SoundsScreen extends StatelessWidget {
                                     tracking: 2.8 * s,
                                   ),
                                 ),
-                                SizedBox(width: 14 * s),
-                                Container(
-                                  width: 60 * s,
-                                  height: 1,
-                                  color: MixerTheme.mint.withOpacity(0.5),
-                                ),
                               ],
                             ),
                             SizedBox(height: 8 * s),
@@ -228,7 +239,7 @@ class SoundsScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 8 * s),
                             Text(
-                              'Layer natural sounds & healing frequencies for work, study, or sleep',
+                              'Layer natural sounds for work, study, or sleep',
                               style: metrics.text(
                                 22,
                                 color: const Color(0xFFB9D0D5),
@@ -236,15 +247,13 @@ class SoundsScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 24 * s),
                             _masterControls(context, state, mixer, metrics),
-                            if (mixer.levels.keys.any(
-                              (name) => state.ambientTrackError(name) != null,
-                            ))
+                            if (mixer.hasPlaybackError)
                               Padding(
                                 padding: EdgeInsets.only(top: 12 * s),
                                 child: Semantics(
                                   liveRegion: true,
                                   child: Text(
-                                    'Not playing: ${mixer.levels.keys.where((name) => state.ambientTrackError(name) != null).join(', ')}. Choose a configured sound; your other layers are unchanged.',
+                                    'Not playing: ${mixer.levels.entries.where((entry) => entry.value > 0 && state.ambientTrackError(entry.key) != null).map((entry) => entry.key).join(', ')}. Choose a configured sound; your other layers are unchanged.',
                                     key: const ValueKey('mixer-source-notice'),
                                     style: metrics.text(
                                       20,
@@ -261,6 +270,8 @@ class SoundsScreen extends StatelessWidget {
                                     mixer.isPlaying && !state.isBackgroundMode,
                               ),
                             ),
+                            _LibraryScope(mixer: mixer, metrics: metrics),
+                            SizedBox(height: 18 * s),
                             MixerSectionHeading(
                               'CURATED ONE-TAP MIXES',
                               metrics: metrics,
@@ -272,6 +283,7 @@ class SoundsScreen extends StatelessWidget {
                     ),
                     SliverToBoxAdapter(
                       child: SingleChildScrollView(
+                        key: const ValueKey('mixer-curated-mixes'),
                         scrollDirection: Axis.horizontal,
                         padding: EdgeInsets.symmetric(
                           horizontal: 20 * s,
@@ -279,12 +291,22 @@ class SoundsScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            for (final entry in AppState.curatedPresets.entries)
+                            for (final entry
+                                in AppState.curatedPresets.entries.where(
+                                  (entry) => mixer.isVisiblePreset(entry.value),
+                                ))
                               Padding(
                                 padding: EdgeInsets.only(right: 12 * s),
                                 child: _MixChip(
+                                  buttonKey: ValueKey('curated-${entry.key}'),
                                   label: state.getPresetDisplayName(entry.key),
-                                  selected: mixer.preset == entry.key,
+                                  hint: vibeSoundSetForName(entry.key)?.recipe,
+                                  selected:
+                                      mixer.preset == entry.key &&
+                                      (vibeSoundSetForName(
+                                            entry.key,
+                                          )?.matchesLevels(mixer.levels) ??
+                                          true),
                                   onLongPress: () =>
                                       _renamePreset(context, state, entry.key),
                                   metrics: metrics,
@@ -309,6 +331,19 @@ class SoundsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (selectedVibe != null)
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(29 * s, 14 * s, 29 * s, 0),
+                        sliver: SliverToBoxAdapter(
+                          child: _VibeSetDetails(
+                            soundSet: selectedVibe,
+                            title: state.getPresetDisplayName(
+                              selectedVibe.name,
+                            ),
+                            metrics: metrics,
+                          ),
+                        ),
+                      ),
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
                         29 * s,
@@ -337,16 +372,33 @@ class SoundsScreen extends StatelessWidget {
                               id: 'favorites',
                               emoji: '❤️',
                               label: 'Favorites',
-                              count: state.favoriteSounds.length,
+                              count: allMixerTracks
+                                  .where(
+                                    (track) =>
+                                        mixer.isVisibleTrack(track) &&
+                                        state.isFavorite(track.name),
+                                  )
+                                  .length,
                               mixer: mixer,
                               metrics: metrics,
                             ),
-                            for (final category in mixerCategories)
+                            _CategoryChip(
+                              id: 'all',
+                              emoji: '♪',
+                              label: 'All',
+                              count: mixer.categoryCount('all'),
+                              mixer: mixer,
+                              metrics: metrics,
+                            ),
+                            for (final category in mixerCategories.where(
+                              (category) =>
+                                  mixer.categoryCount(category.id) > 0,
+                            ))
                               _CategoryChip(
                                 id: category.id,
                                 emoji: category.emoji,
                                 label: category.label,
-                                count: category.tracks.length,
+                                count: mixer.categoryCount(category.id),
                                 mixer: mixer,
                                 metrics: metrics,
                               ),
@@ -372,6 +424,19 @@ class SoundsScreen extends StatelessWidget {
                                     state: state,
                                     mixer: mixer,
                                     metrics: metrics,
+                                    onChooseRecording:
+                                        recordingChoicesForName(
+                                              tracks[index].name,
+                                            ).length <
+                                            2
+                                        ? null
+                                        : () => _replaceSound(
+                                            context,
+                                            tracks[index],
+                                            state,
+                                            mixer,
+                                            chooseRecording: true,
+                                          ),
                                     onReplace: () => _replaceSound(
                                       context,
                                       tracks[index],
@@ -390,7 +455,11 @@ class SoundsScreen extends StatelessWidget {
                         12,
                         29 * s,
                         MediaQuery.paddingOf(context).bottom +
-                            (state.hasGuidedSession ? 126 : 32),
+                            (state.hasGuidedSession ||
+                                    state.hasAmbientSession ||
+                                    state.hasAmbientPlaybackRequest
+                                ? 126
+                                : 32),
                       ),
                       sliver: SliverToBoxAdapter(
                         child: Column(
@@ -440,7 +509,11 @@ class SoundsScreen extends StatelessWidget {
         children: [
           Semantics(
             button: true,
-            label: mixer.isPlaying ? 'Pause sound mixer' : 'Play sound mixer',
+            label: mixer.isPreparing
+                ? 'Cancel pending sound mixer'
+                : mixer.isPlaying
+                ? 'Pause sound mixer'
+                : 'Play sound mixer',
             child: CupertinoButton(
               key: const ValueKey('mixer-play'),
               padding: EdgeInsets.zero,
@@ -458,22 +531,12 @@ class SoundsScreen extends StatelessWidget {
                     height: 70 * s,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: MixerTheme.mint,
-                        width: 2.5 * s,
-                      ),
-                      gradient: const RadialGradient(
-                        colors: [Color(0xFF0D645F), Color(0xFF02373D)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: MixerTheme.mint.withOpacity(0.4),
-                          blurRadius: 20 * s,
-                        ),
-                      ],
+                      color: MixerTheme.control,
                     ),
                     child: Icon(
-                      mixer.isPlaying
+                      mixer.isPreparing
+                          ? CupertinoIcons.xmark
+                          : mixer.isPlaying
                           ? CupertinoIcons.pause_fill
                           : CupertinoIcons.play_fill,
                       color: MixerTheme.mintLight,
@@ -490,7 +553,13 @@ class SoundsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  mixer.isPlaying ? 'Soundscape Active' : 'Mixer Paused',
+                  mixer.isPlaying
+                      ? 'Soundscape Active'
+                      : mixer.isPreparing
+                      ? 'Preparing Soundscape'
+                      : mixer.hasPlaybackError
+                      ? 'Audio unavailable'
+                      : 'Mixer Paused',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: metrics.text(
@@ -501,9 +570,8 @@ class SoundsScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 3 * s),
                 Text(
-                  mixer.isPlaying
-                      ? '${state.activeAmbientTracks.length} active layers'
-                      : 'Tap play to start audio',
+                  mixer.playbackStatusLabel,
+                  key: const ValueKey('mixer-playback-status'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: metrics.text(20, color: MixerTheme.muted),
@@ -532,7 +600,7 @@ class SoundsScreen extends StatelessWidget {
             label: 'Save sound mix',
             child: CupertinoButton(
               key: const ValueKey('mixer-save'),
-              minSize: 0,
+              minSize: 44,
               padding: EdgeInsets.zero,
               onPressed: () => _saveMix(context, mixer),
               child: Container(
@@ -541,25 +609,8 @@ class SoundsScreen extends StatelessWidget {
                   vertical: 13 * s,
                 ),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFACFFE6),
-                      Color(0xFF45EACB),
-                      Color(0xFF23D7BC),
-                    ],
-                  ),
+                  color: MixerTheme.primary,
                   borderRadius: BorderRadius.circular(34 * s),
-                  border: Border.all(
-                    color: MixerTheme.mintLight.withOpacity(0.7),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: MixerTheme.mint.withOpacity(0.5),
-                      blurRadius: 23 * s,
-                    ),
-                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -605,7 +656,7 @@ class SoundsScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         onPressed: onPressed,
         child: SizedBox(
-          width: math.max(32.0, 48 * s),
+          width: math.max(44.0, 48 * s),
           height: math.max(44.0, 48 * s),
           child: Center(
             child: Container(
@@ -613,7 +664,7 @@ class SoundsScreen extends StatelessWidget {
               height: 48 * s,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: MixerTheme.mint.withOpacity(0.11),
+                color: MixerTheme.action,
               ),
               child: Icon(icon, color: MixerTheme.muted, size: 21 * s),
             ),
@@ -715,6 +766,170 @@ class _MixNameDialogState extends State<_MixNameDialog> {
   );
 }
 
+class _VibeSetDetails extends StatelessWidget {
+  const _VibeSetDetails({
+    required this.soundSet,
+    required this.title,
+    required this.metrics,
+  });
+  final VibeSoundSet soundSet;
+  final String title;
+  final MixerMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: MixerSurface(
+      key: const ValueKey('vibe-set-details'),
+      metrics: metrics,
+      padding: EdgeInsets.all(metrics.space(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            key: const ValueKey('vibe-set-name'),
+            style: metrics.text(24, weight: FontWeight.w600),
+          ),
+          SizedBox(height: metrics.space(6)),
+          Text(
+            soundSet.purpose,
+            key: const ValueKey('vibe-set-purpose'),
+            style: metrics.text(
+              18,
+              color: MixerTheme.primary,
+              weight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: metrics.space(6)),
+          Text(soundSet.vibe, style: metrics.text(20, color: MixerTheme.muted)),
+          SizedBox(height: metrics.space(9)),
+          Text(
+            soundSet.recipe,
+            key: const ValueKey('vibe-set-levels'),
+            style: metrics.text(20),
+          ),
+          SizedBox(height: metrics.space(8)),
+          Text(
+            '${soundSet.levels.length} bundled layers · Individual levels need not total 100%. Overall output is gain-limited. Starting volumes, not a loudness guarantee.',
+            style: metrics.text(18, color: MixerTheme.muted),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Expanding this inventory never changes a mix. Only an explicit view action
+/// shows the unfinished entries; returning to Available hides the review again.
+class _LibraryScope extends StatefulWidget {
+  const _LibraryScope({required this.mixer, required this.metrics});
+  final MixerController mixer;
+  final MixerMetrics metrics;
+
+  @override
+  State<_LibraryScope> createState() => _LibraryScopeState();
+}
+
+class _LibraryScopeState extends State<_LibraryScope> {
+  bool _reviewExpanded = false;
+
+  void _available() {
+    setState(() => _reviewExpanded = false);
+    widget.mixer.setAvailableOnly(true);
+  }
+
+  void _reviewSelection() {
+    setState(() => _reviewExpanded = true);
+    widget.mixer.setAvailableOnly(false);
+    widget.mixer.selectCategory('all');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mixer = widget.mixer;
+    final metrics = widget.metrics;
+    final expanded = _reviewExpanded || !mixer.availableOnly;
+    final nonBundled = mixer.levels.entries
+        .where(
+          (entry) =>
+              entry.value > 0 &&
+              !AppState.localSoundAssets.containsKey(entry.key),
+        )
+        .map((entry) => entry.key)
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MixChip(
+          buttonKey: const ValueKey('library-available'),
+          label: 'Available (${bundledRecordings.length})',
+          metrics: metrics,
+          selected: mixer.availableOnly,
+          onPressed: _available,
+        ),
+        CupertinoButton(
+          key: const ValueKey('catalog-review'),
+          minSize: 44,
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            if (expanded) {
+              _available();
+            } else {
+              setState(() => _reviewExpanded = true);
+            }
+          },
+          child: Text(
+            expanded ? 'Hide catalog review' : 'Review unfinished catalog',
+            style: metrics
+                .text(19, color: const Color(0xFF9AFFE6))
+                .copyWith(decoration: TextDecoration.underline),
+          ),
+        ),
+        if (expanded) ...[
+          Text(
+            '18 bundled sounds, 23 stream-only entries and 36 entries without recordings. Streams need a connection and device verification. This view preserves older selections; it is not a 77-playable-sound library.',
+            key: const ValueKey('catalog-review-description'),
+            style: metrics.text(20, color: MixerTheme.muted),
+          ),
+          SizedBox(height: 8 * metrics.scale),
+          _MixChip(
+            buttonKey: const ValueKey('library-full'),
+            label: 'Full catalog (${allMixerTracks.length})',
+            metrics: metrics,
+            selected: !mixer.availableOnly,
+            onPressed: () => mixer.setAvailableOnly(false),
+          ),
+        ],
+        SizedBox(height: 8 * metrics.scale),
+        Text(
+          mixer.availableOnly
+              ? '18 bundled sounds, ready for your mix.'
+              : 'Catalog review — not 77 playable sounds. Streams and missing recordings are labeled.',
+          style: metrics.text(20, color: MixerTheme.muted),
+        ),
+        if (nonBundled.isNotEmpty) ...[
+          Text(
+            'Your saved selection includes non-bundled sounds: ${nonBundled.join(', ')}. Review or change these sounds; your levels are unchanged.',
+            key: const ValueKey('library-selection-notice'),
+            style: metrics.text(20, color: MixerTheme.muted),
+          ),
+          CupertinoButton(
+            key: const ValueKey('library-review-selected'),
+            minSize: 44,
+            padding: EdgeInsets.zero,
+            onPressed: _reviewSelection,
+            child: Text(
+              'Review selected sounds',
+              style: metrics.text(19, color: const Color(0xFF9AFFE6)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _MixChip extends StatelessWidget {
   const _MixChip({
     required this.label,
@@ -722,7 +937,11 @@ class _MixChip extends StatelessWidget {
     required this.onPressed,
     this.selected = false,
     this.onLongPress,
+    this.buttonKey,
+    this.hint,
   });
+  final Key? buttonKey;
+  final String? hint;
   final String label;
   final MixerMetrics metrics;
   final VoidCallback onPressed;
@@ -736,26 +955,28 @@ class _MixChip extends StatelessWidget {
       onLongPress: onLongPress,
       child: Semantics(
         selected: selected,
+        hint: hint,
         child: CupertinoButton(
-          minSize: 0,
+          key: buttonKey,
+          minSize: 44,
           padding: EdgeInsets.zero,
           onPressed: onPressed,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 14 * s, vertical: 12 * s),
             decoration: BoxDecoration(
-              color: selected
-                  ? const Color(0xFF0A4145)
-                  : const Color(0xD0001821),
+              color: selected ? MixerTheme.control : MixerTheme.action,
               borderRadius: BorderRadius.circular(30 * s),
-              border: Border.all(
-                color: selected
-                    ? MixerTheme.mint.withOpacity(0.6)
-                    : MixerTheme.border.withOpacity(0.2),
-              ),
             ),
             child: Text(
               label,
-              style: metrics.text(19, weight: FontWeight.w500),
+              style: metrics
+                  .text(19, weight: FontWeight.w500)
+                  .copyWith(
+                    decoration: selected
+                        ? TextDecoration.underline
+                        : TextDecoration.none,
+                    decorationThickness: 2,
+                  ),
             ),
           ),
         ),
@@ -790,7 +1011,7 @@ class _CategoryChip extends StatelessWidget {
         label: '$label, $count sounds',
         child: CupertinoButton(
           key: ValueKey('category-$id'),
-          minSize: 0,
+          minSize: 44,
           padding: EdgeInsets.zero,
           onPressed: () {
             HapticFeedback.selectionClick();
@@ -800,38 +1021,26 @@ class _CategoryChip extends StatelessWidget {
             width: 184 * s,
             padding: EdgeInsets.symmetric(vertical: 12 * s),
             decoration: BoxDecoration(
+              color: selected ? MixerTheme.primary : MixerTheme.action,
               borderRadius: BorderRadius.circular(17 * s),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: selected
-                    ? const [Color(0xFF6CECCF), Color(0xFF25C9B2)]
-                    : const [Color(0xFF07363F), Color(0xFF02242E)],
-              ),
-              border: Border.all(
-                color: selected
-                    ? MixerTheme.mintLight.withOpacity(0.6)
-                    : MixerTheme.border.withOpacity(0.4),
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: MixerTheme.mint.withOpacity(0.35),
-                        blurRadius: 18 * s,
-                      ),
-                    ]
-                  : null,
             ),
             child: Text(
               '$emoji $label ($count)',
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: metrics.text(
-                21,
-                color: selected ? const Color(0xFF00544D) : MixerTheme.text,
-                weight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+              style: metrics
+                  .text(
+                    21,
+                    color: selected ? MixerTheme.onPrimary : MixerTheme.text,
+                    weight: selected ? FontWeight.w600 : FontWeight.w400,
+                  )
+                  .copyWith(
+                    decoration: selected
+                        ? TextDecoration.underline
+                        : TextDecoration.none,
+                    decorationThickness: 2,
+                  ),
             ),
           ),
         ),
@@ -847,9 +1056,11 @@ class _TrackCard extends StatelessWidget {
     required this.mixer,
     required this.metrics,
     required this.onReplace,
+    this.onChooseRecording,
     super.key,
   });
   final VoidCallback onReplace;
+  final VoidCallback? onChooseRecording;
   final MixerTrack track;
   final AppState state;
   final MixerController mixer;
@@ -860,6 +1071,7 @@ class _TrackCard extends StatelessWidget {
     final s = metrics.scale;
     final volume = mixer.volume(track.name);
     final selected = volume > 0;
+    final canToggle = selected || AppState.hasAmbientSource(track.name);
     final thumbWidth = math.max(40.0, 104 * s);
     final thumbHeight = math.max(40.0, (selected ? 100 : 88) * s);
     final verticalPadding = selected ? 14.0 : 12.0;
@@ -871,7 +1083,7 @@ class _TrackCard extends StatelessWidget {
           : 'Touch and hold to add to Favorites',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => mixer.toggleTrack(track.name),
+        onTap: canToggle ? () => mixer.toggleTrack(track.name) : null,
         onLongPress: () {
           HapticFeedback.lightImpact();
           state.toggleFavoriteSound(track.name);
@@ -925,10 +1137,25 @@ class _TrackCard extends StatelessWidget {
                           Text(
                             state.ambientTrackError(track.name) ??
                                 (!AppState.hasAmbientSource(track.name)
-                                    ? 'Needs a recording · tap ⋯ to replace'
-                                    : state.isAmbientTrackLoading(track.name)
-                                    ? 'Loading recording…'
-                                    : track.description),
+                                    ? 'No recording configured · unavailable'
+                                    : switch (state.ambientTrackStatus(
+                                        track.name,
+                                      )) {
+                                        AmbientPlaybackStatus.loading =>
+                                          'Loading recording…',
+                                        AmbientPlaybackStatus.buffering =>
+                                          'Buffering recording…',
+                                        AmbientPlaybackStatus.paused =>
+                                          'Playback paused · tap play to resume',
+                                        AmbientPlaybackStatus.playing =>
+                                          'Playing · ${track.description}',
+                                        _ =>
+                                          AppState.localSoundAssets.containsKey(
+                                                track.name,
+                                              )
+                                              ? track.description
+                                              : 'Streamed recording · connection required',
+                                      }),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: metrics.text(
@@ -938,6 +1165,47 @@ class _TrackCard extends StatelessWidget {
                                   : MixerTheme.muted,
                             ),
                           ),
+                          if (onChooseRecording != null)
+                            CupertinoButton(
+                              key: ValueKey('choose-recording-${track.name}'),
+                              minSize: 44,
+                              padding: EdgeInsets.zero,
+                              onPressed: onChooseRecording,
+                              child: Text(
+                                'Choose recording (2)',
+                                style: metrics.text(
+                                  20,
+                                  color: MixerTheme.mintLight,
+                                ),
+                              ),
+                            ),
+                          if (selected &&
+                              state.ambientTrackError(track.name) != null &&
+                              AppState.hasAmbientSource(track.name))
+                            Semantics(
+                              label: 'Retry ${track.name}',
+                              button: true,
+                              excludeSemantics: true,
+                              onTap: () => mixer.retryTrack(track.name),
+                              child: CupertinoButton(
+                                key: ValueKey('retry-${track.name}'),
+                                minSize: 44,
+                                padding: EdgeInsets.zero,
+                                onPressed: () => mixer.retryTrack(track.name),
+                                child: Text(
+                                  'Retry',
+                                  style: metrics
+                                      .text(
+                                        20,
+                                        color: MixerTheme.mintLight,
+                                        weight: FontWeight.w600,
+                                      )
+                                      .copyWith(
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -970,7 +1238,7 @@ class _TrackCard extends StatelessWidget {
                       minSize: 44,
                       onPressed: onReplace,
                       child: Semantics(
-                        label: 'Replace ${track.name}',
+                        label: 'Change ${track.name}',
                         button: true,
                         child: SizedBox(
                           width: 44,
@@ -999,19 +1267,11 @@ class _TrackCard extends StatelessWidget {
                     Semantics(
                       label: 'Enable ${track.name}',
                       child: SizedBox(
-                        width: math.max(38.0, 80 * s),
-                        height: math.max(40.0, 48 * s),
+                        width: math.max(44.0, 80 * s),
+                        height: math.max(44.0, 48 * s),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(40),
-                            boxShadow: selected
-                                ? [
-                                    BoxShadow(
-                                      color: MixerTheme.mint.withOpacity(0.35),
-                                      blurRadius: 20 * s,
-                                    ),
-                                  ]
-                                : null,
                           ),
                           child: FittedBox(
                             fit: BoxFit.contain,
@@ -1021,7 +1281,9 @@ class _TrackCard extends StatelessWidget {
                               activeColor: MixerTheme.mint,
                               trackColor: const Color(0xFF3B5660),
                               thumbColor: Colors.white,
-                              onChanged: (_) => mixer.toggleTrack(track.name),
+                              onChanged: canToggle
+                                  ? (_) => mixer.toggleTrack(track.name)
+                                  : null,
                             ),
                           ),
                         ),
@@ -1045,7 +1307,7 @@ class _TrackCard extends StatelessWidget {
                         SizedBox(width: 14 * s),
                         Expanded(
                           child: SizedBox(
-                            height: math.max(32.0, 34 * s),
+                            height: math.max(44.0, 34 * s),
                             child: Material(
                               type: MaterialType.transparency,
                               child: SliderTheme(

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
+import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
+import 'package:relax_mindfulness/models/session_soundscapes.dart';
 
 /// Matches just_audio's long-lived play future without platform channels.
 class SessionAudioDouble extends Fake implements AudioPlayer {
@@ -141,7 +143,7 @@ void main() {
       expect(app.isGuidedPlaying, isTrue);
       expect(app.isGuidedPlayerExpanded, isTrue);
       expect(app.canSeekGuidedSession, isTrue);
-      expect(audio.loadedSources, ['assets/sounds/calm_guided.mp3']);
+      expect(audio.loadedSources, ['assets/sounds/session_starry_night.mp3']);
       expect(audio.loop, LoopMode.one);
       expect(audio.volume, .35);
     },
@@ -336,7 +338,7 @@ void main() {
     () async {
       audio.failLoads = true;
       await app.playGuidedSession('Gentle Relief & Comfort', 15);
-      expect(audio.loadedSources, hasLength(3));
+      expect(audio.loadedSources, ['assets/sounds/session_gentle_relief.mp3']);
       expect(app.isGuidedPlaying, isFalse);
       expect(app.isGuidedLoading, isFalse);
       expect(app.guidedPlaybackError, isNotNull);
@@ -346,6 +348,10 @@ void main() {
       await app.resumeGuidedSession();
       expect(app.isGuidedPlaying, isTrue);
       expect(app.guidedPlaybackError, isNull);
+      expect(audio.loadedSources, [
+        'assets/sounds/session_gentle_relief.mp3',
+        'assets/sounds/session_gentle_relief.mp3',
+      ]);
     },
   );
 
@@ -470,16 +476,72 @@ void main() {
     },
   );
   test(
-    'a local load error still falls back to CDN before reporting failure',
+    'a missing arrangement never falls back to a shared sample or stream',
     () async {
       audio.failFirstLoads = 1;
       await app.playGuidedSession('Calm Mountain Horizon', 10);
-      expect(audio.loadedSources, hasLength(2));
-      expect(audio.loadedSources.first, 'assets/sounds/calm_guided.mp3');
-      expect(audio.loadedSources.last, startsWith('https://'));
-      expect(app.isGuidedPlaying, isTrue);
-      expect(app.guidedPlaybackError, isNull);
+      expect(audio.loadedSources, ['assets/sounds/session_calm_mountain.mp3']);
+      expect(app.isGuidedPlaying, isFalse);
+      expect(app.guidedPlaybackError, isNotNull);
       expect(app.guidedRemainingSec, 600);
+      await app.resumeGuidedSession();
+      expect(audio.loadedSources, [
+        'assets/sounds/session_calm_mountain.mp3',
+        'assets/sounds/session_calm_mountain.mp3',
+      ]);
+      expect(app.isGuidedPlaying, isTrue);
+    },
+  );
+
+  test(
+    'every titled card opens its own arrangement, not just a new timer',
+    () async {
+      final cards = [dailyMeditation, ...meditationSessions];
+      final titles = [
+        for (final card in cards) card.title,
+        for (final card in sleepStories) card.title,
+      ];
+      for (final title in titles) {
+        await app.playGuidedSession(title, 10);
+        expect(app.isGuidedPlaying, isTrue);
+        expect(
+          audio.loadedSources.last,
+          sessionSoundscapeForTitle(title)!.assetPath,
+        );
+      }
+      expect(audio.loadedSources.toSet(), hasLength(23));
+      expect(audio.playCalls, 23);
+    },
+  );
+
+  test(
+    'an unknown title reports missing content without trying any audio',
+    () async {
+      await app.playGuidedSession('An unconfigured practice', 15);
+      expect(app.currentGuidedTitle, 'An unconfigured practice');
+      expect(app.guidedPlaybackError, isNotNull);
+      expect(app.guidedRemainingSec, 900);
+      expect(app.isGuidedPlaying, isFalse);
+      expect(app.canSeekGuidedSession, isFalse);
+      expect(audio.loadedSources, isEmpty);
+      expect(audio.playCalls, 0);
+    },
+  );
+
+  test(
+    'retry after a playback error seeks the same arrangement to retained time',
+    () async {
+      await app.playGuidedSession('Calm Mountain Horizon', 10);
+      now = now.add(const Duration(seconds: 25));
+      audio.events.addError(StateError('Disconnected'), StackTrace.current);
+      await flushSessionMicrotasks();
+      await app.resumeGuidedSession();
+      expect(app.guidedRemainingSec, 575);
+      expect(audio.seeks.last, const Duration(seconds: 25));
+      expect(audio.loadedSources, [
+        'assets/sounds/session_calm_mountain.mp3',
+        'assets/sounds/session_calm_mountain.mp3',
+      ]);
     },
   );
 }

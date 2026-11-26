@@ -1,6 +1,6 @@
 'use strict';
 // Independent browser representation of the Flutter player. Audio here is the
-// bundled calming sample, not narration, streaming quality or simulated history.
+// per-card ambient arrangements of existing recordings, not narrated sessions.
 Object.assign(icons, {
   down: '<path d="m6 12 10 10 10-10"/>',
   close: '<path d="m8 8 16 16M24 8 8 24"/>',
@@ -10,10 +10,43 @@ Object.assign(icons, {
   restart: '<path d="M6 10C14-1 31 8 27 21S5 31 4 19M6 3v8h8"/>',
   loop: '<path d="M16 16C10 4 2 6 2 16s8 12 14 0 14-10 14 0-8 12-14 0Z"/>',
 });
-const guidedAudio = new Audio('assets/sounds/calm_guided.mp3');
-guidedAudio.loop = true;
-guidedAudio.preload = 'none';
-guidedAudio.volume = .35;
+// One arrangement at a time. Replacing the media element also fences off late
+// metadata/error/play events from a previous card; no source is preloaded here.
+let guidedAudio = createSessionAudio();
+function createSessionAudio() {
+  const audio = new Audio();
+  audio.preload = 'none';
+  audio.volume = .35;
+  audio.addEventListener('loadedmetadata', () => {
+    if (audio !== guidedAudio || !guidedSession) return;
+    const elapsed = guidedSession.total - guidedSession.remaining;
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      audio.currentTime = guidedSession.loop ? elapsed % audio.duration
+        : Math.min(elapsed, Math.max(0, audio.duration - .001));
+      guidedSession.ready = true;
+    }
+    updateSession();
+  });
+  audio.addEventListener('ended', () => {
+    if (audio === guidedAudio && guidedSession && !audio.loop) finishGuidedSession({ automatic: true });
+  });
+  audio.addEventListener('error', () => {
+    if (audio === guidedAudio && guidedSession) failSessionAudio(guidedRequest);
+  });
+  return audio;
+}
+function releaseSessionAudio(audio) {
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load(); // Cancel a pending fetch/play without loading a replacement.
+}
+function failSessionAudio(request) {
+  if (request !== guidedRequest || !guidedSession) return;
+  pauseGuided();
+  guidedSession.ready = false;
+  guidedSession.error = 'This session’s soundscape is unavailable. Try again.';
+  updateSession();
+}
 let guidedRequest = 0;
 let guidedLooping = true;
 let scrubSeconds = null;
@@ -28,7 +61,7 @@ playerDialog.innerHTML = `
     <div class="player-layout">
       <div class="player-main">
         <header class="player-header">
-          <div class="player-stream player-glass">${svg('equalizer')}<span>SOOTHING AUDIO</span><i id="session-live-dot"></i></div>
+          <div class="player-stream player-glass">${svg('equalizer')}<span>AMBIENT SOUNDSCAPE</span><i id="session-live-dot"></i></div>
           <button id="session-minimize" class="player-circle player-glass" aria-label="Minimize session player">${svg('down')}</button>
         </header>
         <div class="breathing-art" id="breathing-art">
@@ -36,7 +69,8 @@ playerDialog.innerHTML = `
           <div class="player-cover"><img id="session-art" src="assets/images/player/comfort_art.webp" alt=""><span class="player-cover-tag player-glass">${svg('leaf')}Relax</span></div>
         </div>
         <h3 id="session-title"></h3>
-        <p id="session-description">Calming audio · A little space to breathe.</p>
+        <p id="session-sources" class="session-sources"></p>
+        <p id="session-description">Ambient arrangement · No narration</p>
         <p id="session-error" role="status" hidden></p>
         <p class="session-clock" id="session-clock">15:00</p>
         <p id="session-status" class="session-status">PREPARING YOUR SOUNDSCAPE</p>
@@ -57,7 +91,7 @@ playerDialog.innerHTML = `
       </div>
       <footer class="player-ending">
         <button id="session-stop" class="player-complete player-glass"><span class="player-check">${svg('check')}</span><span><strong>Complete &amp; End Session</strong><small>Take this little moment of calm with you.</small></span>${svg('arrow')}</button>
-        <p class="player-preview-note">Independent browser design preview · Bundled calming audio</p>
+        <p class="player-preview-note">Independent browser design preview · Mixed from existing library recordings</p>
       </footer>
     </div>
   </div>`;
@@ -85,6 +119,7 @@ function syncGuidedRemaining() {
 
 function openSessionPlayer() {
   if (!guidedSession) return;
+  if (typeof dismissAmbientPlayer === 'function') dismissAmbientPlayer();
   updateSession();
   if (!playerDialog.open) {
     playerDialog.showModal();
@@ -92,37 +127,47 @@ function openSessionPlayer() {
     document.documentElement.classList.add('sanctuary-player-expanded');
     playerDialog.querySelector('.player-scroll').scrollTop = 0;
   }
+  renderMaster();
   updateMiniPlayer();
 }
 
 function minimizeSessionPlayer() {
-  playerDialog.close();
-  document.body.classList.remove('player-open');
-  document.documentElement.classList.remove('sanctuary-player-expanded');
-  updateMiniPlayer();
+  if (playerDialog.open) playerDialog.close();
+  if (typeof syncPlayerPresentation === 'function') syncPlayerPresentation();
+  else {
+    document.body.classList.remove('player-open');
+    document.documentElement.classList.remove('sanctuary-player-expanded');
+    renderMaster();
+    updateMiniPlayer();
+  }
 }
 
 async function startGuided(session) {
+  if (!Number.isInteger(session.minutes) || session.minutes <= 0) return;
+  const soundscape = sessionSoundscapeForTitle(session.title);
   if (guidedSession?.title === session.title && guidedSession.remaining > 0) {
     openSessionPlayer();
     if (!guidedSession.playing && !guidedSession.loading) await resumeGuided();
     return;
   }
   guidedRequest++;
-  guidedAudio.pause();
+  const previousAudio = guidedAudio;
+  guidedAudio = createSessionAudio();
+  releaseSessionAudio(previousAudio);
   playing = false;
   syncAudio();
   renderMaster();
   guidedSession = {
     ...session,
+    soundscape,
     total: session.minutes * 60,
     remaining: session.minutes * 60,
     playing: false,
     loading: false,
+    ready: false,
     error: null,
     loop: guidedLooping,
   };
-  guidedAudio.currentTime = 0;
   guidedAudio.loop = guidedLooping;
   scrubSeconds = null;
   $('session-title').textContent = session.title;
@@ -133,37 +178,39 @@ async function startGuided(session) {
 
 async function resumeGuided() {
   if (!guidedSession || guidedSession.playing || guidedSession.loading) return;
+  if (typeof dismissAmbientPlayer === 'function') dismissAmbientPlayer();
   const request = ++guidedRequest;
+  const audio = guidedAudio;
+  const session = guidedSession;
   playing = false;
   syncAudio();
   renderMaster();
-  guidedSession.loading = true;
-  guidedSession.error = null;
+  session.loading = true;
+  session.error = null;
   updateSession();
   try {
-    if (guidedAudio.error) {
-      const elapsed = guidedSession.total - guidedSession.remaining;
-      guidedAudio.addEventListener('loadedmetadata', () => {
-        if (request !== guidedRequest || !guidedSession || !Number.isFinite(guidedAudio.duration)) return;
-        guidedAudio.currentTime = guidedSession.loop ? elapsed % guidedAudio.duration
-          : Math.min(elapsed, Math.max(0, guidedAudio.duration - .001));
-      }, { once: true });
-      guidedAudio.src = 'assets/sounds/calm_guided.mp3';
+    // Never derive a URL from the title or fall back to unrelated audio. A
+    // retry reloads only this arrangement, restoring its retained elapsed time.
+    if (!session.soundscape) throw new Error('No arrangement is configured');
+    if (!session.ready || audio.error) {
+      session.ready = false;
+      audio.src = session.soundscape.assetPath;
+      audio.load();
     }
-    await guidedAudio.play();
-    if (request !== guidedRequest || !guidedSession) return;
-    guidedSession.loading = false;
-    guidedSession.playing = true;
-    guidedSession.deadline = Date.now() + guidedSession.remaining * 1000;
+    await audio.play();
+    if (request !== guidedRequest || session !== guidedSession) {
+      // A cancelled old play cannot revive discarded or paused audio. Do not
+      // interrupt a newer successful resume of the same media element.
+      if (audio !== guidedAudio || !guidedSession?.playing) audio.pause();
+      return;
+    }
+    session.loading = false;
+    session.playing = true;
+    session.deadline = Date.now() + session.remaining * 1000;
     updateSession();
     updateSleepState();
   } catch (error) {
-    if (request !== guidedRequest || !guidedSession) return;
-    guidedSession.loading = false;
-    guidedSession.playing = false;
-    guidedSession.error = 'Audio could not start. Check your connection and try again.';
-    updateSession();
-    updateSleepState();
+    failSessionAudio(request);
   }
 }
 
@@ -180,10 +227,10 @@ function pauseGuided() {
 }
 
 function seekGuided(seconds) {
-  if (!guidedSession || guidedSession.loading || !Number.isFinite(guidedAudio.duration)) return;
+  if (!guidedSession?.ready || guidedSession.loading || guidedSession.error || !Number.isFinite(guidedAudio.duration) || guidedAudio.duration <= 0) return;
   syncGuidedRemaining();
   const elapsed = Math.max(0, Math.min(guidedSession.total - 1, Math.round(seconds)));
-  // Sessions are timed soundscapes: the sample position wraps while Loop is on.
+  // Timed ambient arrangements repeat; seek within this card’s own recording.
   guidedAudio.currentTime = guidedSession.loop ? elapsed % guidedAudio.duration
     : Math.min(elapsed, Math.max(0, guidedAudio.duration - .001));
   guidedSession.remaining = guidedSession.total - elapsed;
@@ -195,8 +242,8 @@ function seekGuided(seconds) {
 
 function finishGuidedSession({ automatic = false, silent = false } = {}) {
   guidedRequest++;
-  guidedAudio.pause();
   guidedSession = null;
+  releaseSessionAudio(guidedAudio);
   scrubSeconds = null;
   minimizeSessionPlayer();
   updateSleepState();
@@ -209,8 +256,9 @@ function updateSession() {
   syncGuidedRemaining();
   const session = guidedSession;
   const elapsed = scrubSeconds ?? Math.max(0, session.total - session.remaining);
-  const ready = Number.isFinite(guidedAudio.duration) && !session.loading && !session.error;
-  $('session-description').textContent = session.loop ? 'Calming audio · A little space to breathe.' : 'Calming audio · Stops when this audio ends.';
+  const ready = session.ready && Number.isFinite(guidedAudio.duration) && !session.loading && !session.error;
+  $('session-sources').textContent = session.soundscape?.sourceLabel || 'No soundscape configured';
+  $('session-description').textContent = session.loop ? 'Ambient mix · Repeats about every 30 sec · No narration' : 'Ambient mix · Ends after this ~30 sec recording · No narration';
   $('session-clock').textContent = clock(session.remaining);
   $('session-elapsed').textContent = clock(Math.floor(elapsed));
   $('session-duration').textContent = clock(session.total);
@@ -224,11 +272,11 @@ function updateSession() {
   $('session-loop').setAttribute('aria-pressed', String(session.loop));
   $('session-loop').querySelector('span').textContent = session.loop ? 'Loop On' : 'Loop Off';
   $('session-pause').disabled = session.loading;
-  $('session-pause').setAttribute('aria-label', session.loading ? 'Loading calming audio'
+  $('session-pause').setAttribute('aria-label', session.loading ? 'Loading ambient soundscape'
     : session.playing ? 'Pause session' : session.error ? 'Retry audio' : 'Resume session');
   $('session-pause').innerHTML = session.loading ? '<span class="player-spinner" aria-hidden="true"></span>' : svg(session.playing ? 'pause' : 'play');
   $('session-status').textContent = session.loading ? 'PREPARING YOUR SOUNDSCAPE'
-    : session.playing ? 'TIME TO UNWIND' : 'PAUSED · STAY A LITTLE LONGER';
+    : session.error ? 'SOUNDSCAPE UNAVAILABLE' : session.playing ? 'TIME TO UNWIND' : 'PAUSED · STAY A LITTLE LONGER';
   $('session-error').hidden = !session.error;
   $('session-error').textContent = session.error || '';
   $('breathing-art').classList.toggle('is-breathing', session.playing);
@@ -237,35 +285,45 @@ function updateSession() {
 }
 
 function updateMiniPlayer() {
-  const active = playing ? Object.entries(levels).filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]) : [];
-  const guided = !!guidedSession && !active.length;
-  const visible = !playerDialog.open && (guided || (active.length > 0 && ['meditate', 'sleep'].includes(currentTab)));
+  updateMeditationCards();
+  updateStoryPlayback();
+  const state = ambientPlaybackState();
+  const selected = [...state.selected].sort((a, b) => b[1] - a[1]);
+  const guided = !!guidedSession && !ambientHasSession && !playing;
+  const ambientExpanded = !!document.querySelector('#ambient-dialog[open]');
+  const visible = !playerDialog.open && !ambientExpanded && (guided || (ambientHasSession && selected.length > 0));
   miniPlayer.hidden = !visible;
   document.body.classList.toggle('has-mini-player', visible);
+  if (typeof updateAmbientPlayer === 'function') updateAmbientPlayer();
   if (!visible) return;
-  const main = active[0]?.[0];
-  const title = guided ? guidedSession.title : selectedPreset || (active.length === 1 ? main : `${main} + ${active.length - 1} more`);
-  const isPlaying = guided ? guidedSession.playing : playing;
+  const main = selected[0]?.[0];
+  const title = guided ? guidedSession.title : selectedPreset || (selected.length === 1 ? main : `${main} + ${selected.length - 1} more`);
+  const isPlaying = guided ? guidedSession.playing : state.active.length > 0;
   $('mini-title').textContent = title;
-  $('mini-art').src = guided ? playerArtwork(guidedSession) : levels['Ocean Waves'] > 0 ? OCEAN_JOURNEY.artwork : artworkForTrack(main);
+  $('mini-art').src = guided ? playerArtwork(guidedSession) : typeof ambientArtwork === 'function' ? ambientArtwork() : artworkForTrack(main);
   $('mini-subtitle').textContent = guided
-    ? guidedSession.loading ? 'Preparing calming audio…' : guidedSession.error ? 'Audio unavailable · tap to retry'
-      : `${isPlaying ? 'A moment of calm' : 'Session paused'} · ${Math.ceil(guidedSession.remaining / 60)} min left`
-    : sleepDeadline !== null ? `Auto-fade · ${Math.ceil(timerRemaining() / 60)} min left`
-      : `${active.length} ${active.length === 1 ? 'sound' : 'sounds'} · Your quiet space`;
-  $('mini-open').setAttribute('aria-label', guided ? `Open ${title} session player` : 'Open sound mixer');
-  $('mini-pause').setAttribute('aria-label', isPlaying ? 'Pause audio' : 'Resume session');
+    ? guidedSession.loading ? 'Preparing soundscape…' : guidedSession.error ? 'Audio unavailable · tap to retry'
+      : `${isPlaying ? sessionSourceLabel(guidedSession.title) : 'Session paused'} · ${Math.ceil(guidedSession.remaining / 60)} min left`
+    : [typeof ambientPlaybackLabel === 'function' ? ambientPlaybackLabel(state) : 'Your selected sounds',
+      sleepDeadline !== null ? `Auto-fade · ${Math.ceil(timerRemaining() / 60)} min left` : ''].filter(Boolean).join(' · ');
+  $('mini-open').setAttribute('aria-label', guided ? `Open ${title} session player` : `Open ${title} soundscape player`);
+  $('mini-pause').setAttribute('aria-label', guided ? isPlaying ? 'Pause audio' : 'Resume session'
+    : typeof ambientTransportLabel === 'function' ? ambientTransportLabel(state) : 'Resume soundscape');
   $('mini-pause').disabled = guided && guidedSession.loading;
-  $('mini-pause').innerHTML = guided && guidedSession.loading ? '<span class="player-spinner" aria-hidden="true"></span>' : svg(isPlaying ? 'pause' : 'play');
+  $('mini-pause').innerHTML = guided && guidedSession.loading ? '<span class="player-spinner" aria-hidden="true"></span>'
+    : svg(guided ? isPlaying ? 'pause' : 'play' : state.canPause ? state.active.length ? 'pause' : 'close' : 'play');
 }
 
 $('session-minimize').onclick = minimizeSessionPlayer;
 playerDialog.addEventListener('cancel', (event) => { event.preventDefault(); minimizeSessionPlayer(); });
 playerDialog.addEventListener('close', () => {
   if (playerDialog.open) return; // A queued close must not affect a reopened player.
-  document.body.classList.remove('player-open');
-  document.documentElement.classList.remove('sanctuary-player-expanded');
-  updateMiniPlayer();
+  if (typeof syncPlayerPresentation === 'function') syncPlayerPresentation();
+  else {
+    document.body.classList.remove('player-open');
+    document.documentElement.classList.remove('sanctuary-player-expanded');
+    updateMiniPlayer();
+  }
 });
 $('session-pause').onclick = () => guidedSession?.playing ? pauseGuided() : resumeGuided();
 $('session-stop').onclick = () => finishGuidedSession();
@@ -289,29 +347,11 @@ $('session-loop').onclick = () => {
   guidedAudio.loop = guidedLooping;
   updateSession();
 };
-$('mini-open').onclick = () => !playing && guidedSession ? openSessionPlayer() : selectRetreatTab('sounds');
+$('mini-open').onclick = () => !ambientHasSession && guidedSession ? openSessionPlayer() : openAmbientPlayer();
 $('mini-pause').onclick = () => {
-  if (!playing && guidedSession) {
+  if (!ambientHasSession && guidedSession) {
     if (guidedSession.playing) pauseGuided(); else resumeGuided();
-  } else {
-    playing = false;
-    syncAudio();
-    finishGuidedSession({ silent: true });
-    render();
-  }
+  } else start({ expand: false });
 };
-$('mini-stop').onclick = () => {
-  playing = false;
-  syncAudio();
-  finishGuidedSession({ silent: true });
-  render();
-};
-guidedAudio.addEventListener('ended', () => { if (guidedSession && !guidedAudio.loop) finishGuidedSession({ automatic: true }); });
-guidedAudio.addEventListener('loadedmetadata', updateSession);
-guidedAudio.addEventListener('error', () => {
-  if (!guidedSession) return;
-  pauseGuided();
-  guidedSession.error = 'Audio could not start. Check your connection and try again.';
-  updateSession();
-});
+$('mini-stop').onclick = () => stopPreviewAudio();
 updateMiniPlayer();

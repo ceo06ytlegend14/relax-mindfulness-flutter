@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
 class ReviewPromptDialog extends StatefulWidget {
   const ReviewPromptDialog({super.key});
@@ -45,23 +46,8 @@ class _ReviewPromptDialogState extends State<ReviewPromptDialog> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF0F2624).withOpacity(0.95),
-                  const Color(0xFF07121A).withOpacity(0.95),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: MixerTheme.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: tealPrimary.withOpacity(0.3), width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -71,16 +57,7 @@ class _ReviewPromptDialogState extends State<ReviewPromptDialog> {
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const RadialGradient(
-                      colors: [Color(0x662DD4BF), Color(0x00050D15)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: tealPrimary.withOpacity(0.4),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
+                    color: MixerTheme.control,
                   ),
                   child: const Center(
                     child: Text('⭐', style: TextStyle(fontSize: 32)),
@@ -144,17 +121,8 @@ class _ReviewPromptDialogState extends State<ReviewPromptDialog> {
                     height: 48,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [tealPrimary, mintAccent],
-                      ),
+                      color: MixerTheme.primary,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: tealPrimary.withOpacity(0.4),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: Center(
                       child: Text(

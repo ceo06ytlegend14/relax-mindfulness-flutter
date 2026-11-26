@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/services/subscription_controller.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Uses real store offerings and SDK entitlements. New sales are disabled by
@@ -66,10 +67,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
         final active = _billing.hasFullAccess;
         final waiting = _billing.isBusy || _billing.isLoading;
         return CupertinoPageScaffold(
-          backgroundColor: const Color(0xFF061722),
+          backgroundColor: MixerTheme.background,
           navigationBar: const CupertinoNavigationBar(
             middle: Text('Sanctuary Premium'),
-            backgroundColor: Color(0xF0061722),
+            backgroundColor: MixerTheme.background,
+            border: null,
           ),
           child: SafeArea(
             child: SingleChildScrollView(
@@ -276,16 +278,12 @@ class _PremiumScreenState extends State<PremiumScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: selected
-                  ? const Color(0xFF173E44)
-                  : const Color(0xFF102A3B),
+              color: selected ? MixerTheme.surfaceActive : MixerTheme.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: selected
-                    ? const Color(0xFF9CF0DA)
-                    : const Color(0xFF294451),
-                width: selected ? 2 : 1,
-              ),
+              // A selected-plan outline conveys state, not decorative chrome.
+              border: selected
+                  ? Border.all(color: MixerTheme.primary, width: 2)
+                  : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

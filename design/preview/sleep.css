@@ -1,14 +1,21 @@
-/* Moonlit-blue Sleep refresh. Navigation remains the existing teal four tabs. */
+/* Preferred moonlit Sleep look: large outline orbs, compact playlist covers
+   and a pinned starfield. The teal four-tab footer is deliberately unchanged. */
 .sleep-page {
-  background: radial-gradient(ellipse at 80% 4%, #14366b55, transparent 42%), #03162f;
+  background: #02132c;
   --mist: #c0cee8;
 }
-.sleep-page .retreat-inner { padding-top: calc(32px * var(--s)); }
+.sleep-page .retreat-inner { padding-top: calc(32px * var(--s)); padding-left: max(14px, calc(29px * var(--s))); padding-right: max(14px, calc(29px * var(--s))); }
 .sleep-page .page-heading { min-height: 44px; }
 .sleep-page .scenery {
+  /* Match Flutter's backdrop outside its CustomScrollView. A document-scrolling
+     image disappears before the mixer and made the revised page feel flat. */
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 823px);
   height: calc(620px * var(--s));
-  opacity: .8;
-  background-image: linear-gradient(0deg, #03162f, #03162f30 60%, #03162f10), url('assets/images/sleep/night_sky.webp');
+  opacity: 1;
+  background-image: linear-gradient(0deg, #02132c, #02132c1f 50%, #02132c00), url('assets/images/sleep/night_sky.webp');
 }
 .sleep-page .sleep-welcome { display: flex; align-items: center; gap: calc(9px * var(--s)); margin-top: calc(12px * var(--s)); font-size: max(12px, calc(21px * var(--t))); color: #b9c5dd; }
 .sleep-welcome > svg { width: max(14px, calc(21px * var(--t))); height: max(14px, calc(21px * var(--t))); color: #f5c96d; }
@@ -52,8 +59,8 @@
 .sleep-page .progress-fill { background: #78eed0; }
 .sleep-page .progress-track { background: #2c456b; }
 .sleep-page .winddown-tray { gap: calc(16px * var(--s)); padding: 1px 0 2px; }
-.sleep-page .soundscape-card { width: max(98px, calc(174px * var(--s))); border-radius: max(18px, calc(23px * var(--s))); overflow: hidden; padding: 0; }
-.sleep-page .soundscape-image { width: 100%; height: max(93px, calc(165.3px * var(--s))); border: 0; border-radius: 0; }
+.sleep-page .soundscape-card { width: max(84px, calc(174px * var(--s))); border-radius: max(18px, calc(23px * var(--s))); overflow: hidden; padding: 0; }
+.sleep-page .soundscape-image { width: 100%; height: max(79.8px, calc(165.3px * var(--s))); border: 0; border-radius: 0; }
 .soundscape-image::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 50%, #091b3880); }
 .sleep-page .soundscape-image > span { z-index: 1; right: calc(11px * var(--s)); bottom: calc(11px * var(--s)); padding: max(7px, calc(8px * var(--s))); border: 1px solid #c5e3f9cc; background: #082039a0; font-size: max(17px, calc(24px * var(--t))); }
 .soundscape-caption { display: block; padding: calc(8px * var(--s)) calc(9px * var(--s)) calc(11px * var(--s)) calc(12px * var(--s)); }
@@ -62,11 +69,24 @@
 .sleep-page .soundscape-duration { margin: 0; font-size: max(10.5px, calc(17px * var(--t))); }
 .soundscape-bottom > svg { font-size: max(13px, calc(20px * var(--t))); color: #78eed0; }
 .sleep-page .soundscape-card.is-playing { border-color: #78eed0a0; box-shadow: 0 0 16px #43e9cd22; }
-.sleep-page .quick-mixer { border-color: #88a6d98c; box-shadow: 0 0 20px #3b73c722, inset 0 1px 8px #b7ddff08; }
+.sleep-page .continue-card { border-color: #88a6d966; box-shadow: 0 6px 18px #0003; }
+.sleep-page .quick-mixer { border-radius: max(17px, calc(28px * var(--s))); border-color: #88a6d98c; box-shadow: 0 0 20px #3b73c722, inset 0 1px 8px #b7ddff08; }
+.sleep-page .quick-track { min-width: 44px; min-height: 44px; }
 .sleep-page .quick-orb { background: radial-gradient(circle at 35% 20%, #365685, #192f54); color: #d7e6ff; }
+/* Size the drawing, not just the button: the smaller 23px glyphs lost the
+   distinctive outline/glow from the user's preferred version. */
+.sleep-page #quick-mixer .quick-orb > svg {
+  /* Explicit drawing dimensions match Flutter's 0.9 × orb size, independent
+     of border-box percentage sizing or a cached base icon font size. */
+  width: max(39.6px, calc(64.8px * var(--s)));
+  height: max(39.6px, calc(64.8px * var(--s)));
+  stroke-width: 2.1;
+}
 .sleep-page .quick-track[data-quick=Thunder] .quick-orb { color: #f5c96d; }
 .sleep-page .quick-track[aria-pressed=true] .quick-orb { background: radial-gradient(#1d7c8c, #163a65); border-color: #78eed08c; box-shadow: 0 0 16px #56ebcb33; color: #78eed0; }
+.sleep-page .quick-track[aria-pressed=true] .quick-orb > svg { filter: drop-shadow(0 0 3px #78eed066); }
 .sleep-page .quick-level > span { background: #78eed0; }
+.sleep-page .story-copy .session-ingredients { color: #78eed0; font-size: max(11px, calc(17px * var(--t))); line-height: 1.4; margin-top: 5px; overflow-wrap: anywhere; }
 .sleep-page .story-play { color: #78eed0; }
 .sleep-page .story-buttons button[aria-pressed=true] { color: #78eed0; }
 .sleep-page .retreat-inner { padding-bottom: 115px; }

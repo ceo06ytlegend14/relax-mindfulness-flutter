@@ -1,5 +1,6 @@
 // Checks the independent HTML design preview, not a compiled Flutter build.
 import assert from 'node:assert/strict';
+import { minimizeAmbientForBackgroundControls } from './support/ambient_player_helpers.mjs';
 import { createServer } from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
@@ -42,7 +43,7 @@ after(async () => {
   if (server) await new Promise((resolve) => server.close(resolve));
 });
 
-async function open(t, { route = '/', width = 390, height = 844, blockFonts = false } = {}) {
+async function open(t, { route = '/', width = 390, height = 844, blockFonts = false, virtualClock = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
   t.after(() => context.close());
   let blockedFonts = 0;
@@ -54,6 +55,7 @@ async function open(t, { route = '/', width = 390, height = 844, blockFonts = fa
     return route.continue();
   });
   const page = await context.newPage();
+  if (virtualClock) await page.clock.install({ time: new Date('2026-11-19T12:00:00Z') });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   t.after(() => assert.deepEqual(errors, [], 'No unhandled browser errors'));
@@ -163,6 +165,7 @@ test('Home daily session uses the real catalog title, duration and bundled sampl
 test('Home and Sounds share live levels; pause/reload does not lose the mix or autoplay', async (t) => {
   const { page } = await open(t);
   await page.locator('#home-mix-toggle').click();
+  await minimizeAmbientForBackgroundControls(page);
   await page.waitForFunction(() => !players.get('Soft Rain')?.paused && players.get('Soft Rain')?.readyState >= 2);
   assert.equal(await page.locator('#home-mix-status').textContent(), 'Playing · 1 layer');
   await go(page, 'sounds');
@@ -174,6 +177,7 @@ test('Home and Sounds share live levels; pause/reload does not lose the mix or a
   });
   await go(page, 'home');
   await page.locator('#home-mix-toggle').click();
+  await minimizeAmbientForBackgroundControls(page);
   assert.equal(await page.evaluate(() => playing), false);
   assert.equal(await page.evaluate(() => levels['Soft Rain']), .65);
   assert.equal(await page.evaluate(() => players.get('Soft Rain').paused), true);
@@ -192,6 +196,7 @@ test('empty Home selections use an explicit Soft Rain fallback rather than ficti
   await go(page, 'home');
   assert.equal(await page.locator('#home-mix-name').textContent(), 'A fresh soundscape');
   await page.locator('#home-mix-toggle').click();
+  await minimizeAmbientForBackgroundControls(page);
   assert.equal(await page.evaluate(() => levels['Soft Rain']), .3);
   assert.equal(await page.locator('#home-mix-name').textContent(), 'Soft Rain');
 });
@@ -204,16 +209,31 @@ test('a named saved mix loaded in Sounds is reflected on Home', async (t) => {
   await page.getByRole('button', { name: 'Save mix', exact: true }).click();
   await page.getByRole('button', { name: 'Saved mixes (1)', exact: true }).click();
   await page.getByRole('button', { name: 'Night Rain', exact: true }).click();
+  await minimizeAmbientForBackgroundControls(page);
   await go(page, 'home');
   assert.equal(await page.locator('#home-mix-name').textContent(), 'Night Rain');
 });
 
-test('the preview discloses that wellbeing tools run in the Flutter application', async (t) => {
+test('wellbeing has real pushed-page designs and discloses the separate browser history', async (t) => {
   const { page } = await open(t);
   await page.locator('#home-wellbeing').click();
-  assert.match(await page.locator('#wellbeing-preview-dialog').innerText(), /not simulated by this design preview/);
-  await page.locator('#close-wellbeing-preview').click();
-  assert.equal(await page.locator('#wellbeing-preview-dialog').isVisible(), false);
+  assert.equal(await page.locator('#wellbeing-page').isVisible(), true);
+  assert.equal(await page.locator('#wellbeing-route-title').textContent(), 'Your wellbeing');
+  assert.match(await page.locator('.wellbeing-week').innerText(), /0 \/ 7/);
+  assert.match(await page.locator('.wellbeing-preview-label').innerText(), /not your Flutter app/);
+  assert.equal(await page.locator('.install-entry').isVisible(), false, 'Install entry does not cover a pushed-page header');
+  await page.locator('[data-wellbeing-route="breathing"]').click();
+  assert.equal(await page.locator('#wellbeing-route-title').textContent(), 'Breathing room');
+  assert.equal(await page.locator('#meditate-page').isVisible(), false, 'Breathing never aliases to Meditate');
+  assert.equal(await page.locator('#breathing-time').textContent(), '03:00');
+  await page.locator('#wellbeing-back').click();
+  assert.equal(await page.locator('#wellbeing-route-title').textContent(), 'Your wellbeing');
+  await page.locator('[data-wellbeing-route="backup"]').click();
+  assert.match(await page.locator('.wellbeing-preview-boundary').innerText(), /cannot access or replace your Flutter data/);
+  assert.equal(await page.getByRole('button', {name:'Copy backup in the Flutter app'}).isDisabled(), true);
+  await page.locator('[data-tab="home"]').click();
+  assert.equal(await page.locator('#home-page').isVisible(), true);
+  assert.equal(await page.locator('.install-entry').isVisible(), true);
 });
 
 for (const [width, height] of [[320, 640], [390, 844], [823, 1568], [1440, 1000]]) {
@@ -242,5 +262,382 @@ for (const tab of ['home', 'sounds', 'meditate', 'sleep']) {
     assert.equal(icons.length, 4);
     for (const icon of icons) assert(icon.visible > 80);
     assert.equal(await page.locator(`.nav-item[data-tab="${tab}"] > svg`).evaluate((svg) => getComputedStyle(svg).color), 'rgb(67, 233, 205)');
+  });
+}
+
+for (const width of [320, 390, 823]) {
+  test(`Meditate has a solid background, creative inset cards and working filters at ${width}px`, async t => {
+    const { page } = await open(t, { route: '/#meditate', width });
+    const background = await page.locator('#meditate-page').evaluate(node => ({ color:getComputedStyle(node).backgroundColor, image:getComputedStyle(node).backgroundImage }));
+    assert.deepEqual(background, { color:'rgb(0, 27, 36)', image:'none' });
+    assert.equal(await page.locator('#meditate-page .scenery').count(), 0);
+    assert.equal(await page.locator('.practice-orbit .arched-art').first().evaluate(image => image.naturalWidth > 0), true);
+    await page.locator('[data-intent="Calm"]').click();
+    assert.equal(await page.locator('[data-practice]').count(), await page.evaluate(() => MEDITATIONS.filter(s=>['Comfort','Healing'].includes(s.intent)).length));
+    assert.equal(await page.locator('[data-practice="morning-awakening"]').count(), 0);
+    assert.equal(await page.evaluate(()=>guidedSession), null);
+    await page.locator('[data-practice-options="gentle-relief"]').click();
+    await page.getByRole('button', {name:'Save practice',exact:true}).click();
+    assert.equal(await page.locator('[data-practice="gentle-relief"]').evaluate(node=>node.classList.contains('saved')), true);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), true);
+    await page.locator('[data-intent="All"]').click();
+    assert.equal(await page.locator('[data-practice]').count(), 3);
+    await page.locator('#browse-practices').click();
+    assert.equal(await page.locator('[data-practice]').count(), 14);
+  });
+
+  test(`all wellbeing destinations remain plain and scrollable at ${width}px`, async t => {
+    const { page } = await open(t, {route:'/#wellbeing/hub',width});
+    for (const section of ['hub','breathing','progress','reflection','backup']) {
+      await page.evaluate(section=>openWellbeing(section), section);
+      assert.equal(await page.locator('#wellbeing-page').isVisible(), true);
+      assert.equal(await page.locator('#wellbeing-page').evaluate(node=>getComputedStyle(node).backgroundImage), 'none');
+      assert.equal(await page.locator('#wellbeing-page img').count(), 0);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), true);
+      assert.equal(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('data-tab'), 'home');
+      // scrollIntoViewIfNeeded ignores fixed-footer occlusion if a node is
+      // already inside the viewport. Exercise the real reachable scroll end.
+      await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));
+      const boundary=await page.locator('.wellbeing-preview-label').boundingBox();
+      const footer=await page.locator('.bottom-nav').boundingBox();
+      assert(boundary.y+boundary.height<=footer.y, 'The final content scrolls above the unchanged footer');
+    }
+  });
+}
+
+test('breathing pause/resume preserves its phase and pattern changes reset safely', async t => {
+  const { page } = await open(t, {route:'/#wellbeing/breathing',virtualClock:true});
+  await page.locator('[data-breathing-pattern="2"]').click();
+  await page.locator('#breathing-toggle').click();
+  await page.clock.fastForward(2100);
+  assert.equal(await page.locator('#breathing-phase-seconds').textContent(), '3');
+  await page.locator('#breathing-toggle').click();
+  const time=await page.locator('#breathing-time').textContent();
+  await page.clock.fastForward(600000);
+  assert.equal(await page.locator('#breathing-time').textContent(),time);
+  assert.equal(await page.locator('#breathing-toggle').textContent(),'Resume practice');
+  await page.locator('#breathing-toggle').click();
+  await page.clock.fastForward(3100);
+  assert.equal(await page.locator('#breathing-phase').textContent(),'Breathe out');
+  await page.locator('[data-breathing-pattern="0"]').click();
+  assert.equal(await page.locator('#breathing-time').textContent(),'03:00');
+  assert.equal(await page.locator('#breathing-phase-seconds').textContent(),'4');
+  assert.equal(await page.evaluate(()=>previewBreaths.length),0);
+});
+
+test('a completed breathing practice adds one actual preview record, never sample progress', async t => {
+  const { page } = await open(t, {route:'/#wellbeing/breathing',virtualClock:true});
+  await page.locator('[data-breathing-duration="1"]').click();
+  await page.locator('#breathing-toggle').click();
+  await page.clock.fastForward(61000);
+  assert.equal(await page.locator('#breathing-time').textContent(),'00:00');
+  assert.equal(await page.evaluate(()=>previewBreaths.length),1);
+  await page.clock.fastForward(120000);
+  assert.equal(await page.evaluate(()=>previewBreaths.length),1);
+  await page.locator('#wellbeing-back').click();
+  assert.match(await page.locator('.wellbeing-week').innerText(),/1 \/ 7/);
+  await page.locator('[data-wellbeing-route="progress"]').click();
+  assert.equal(await page.locator('.progress-total').textContent(),'1 min');
+  assert.equal(await page.locator('.wellbeing-session').count(),1);
+  await page.reload({waitUntil:'networkidle'});
+  assert.equal(await page.locator('.wellbeing-session').count(),1);
+  assert.equal(await page.evaluate(()=>guidedSession),null);
+});
+
+test('hiding the browser or changing footer tabs pauses breathing without adding a session', async t => {
+  const { page } = await open(t, {route:'/#wellbeing/breathing',virtualClock:true});
+  await page.locator('#breathing-toggle').click();
+  await page.clock.fastForward(2100);
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+  const paused=await page.locator('#breathing-time').textContent();
+  await page.clock.fastForward(600000);
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+  assert.equal(await page.locator('#breathing-time').textContent(),paused);
+  assert.equal(await page.locator('#breathing-toggle').textContent(),'Resume practice');
+  await page.locator('#breathing-toggle').click();
+  await go(page,'sounds');
+  await page.clock.fastForward(600000);
+  assert.equal(await page.evaluate(()=>breathing.running),false);
+  assert.equal(await page.evaluate(()=>previewBreaths.length),0);
+});
+
+test('reflection safely renders local text and reports clipboard denial without claiming a save', async t => {
+  const { page } = await open(t, {route:'/#wellbeing/reflection'});
+  const prompt='<img src=x onerror="window.unwanted=true">';
+  await page.locator('#wellbeing-reflection-input').fill(prompt);
+  await page.locator('#wellbeing-create-reflection').click();
+  assert.match(await page.locator('#wellbeing-reflection-output').textContent(),/<img src=x/);
+  assert.equal(await page.locator('#wellbeing-reflection-output img').count(),0);
+  assert.equal(await page.evaluate(()=>window.unwanted),undefined);
+  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied');}}}));
+  await page.locator('#wellbeing-copy-reflection').click();
+  assert.equal(await page.locator('#wellbeing-reflection-notice').textContent(),'Clipboard access failed. Nothing was saved.');
+  await page.locator('#wellbeing-back').click();
+  await page.locator('[data-wellbeing-route="reflection"]').click();
+  assert.equal(await page.locator('#wellbeing-reflection-input').inputValue(),'');
+});
+
+// The softer-surface trial is deliberately Home-only. Playback and the four-tab
+// shell remain the real shared preview, not inert screenshot replacements.
+test('soft Home: cards use matte fills instead of decorative borders and glow', async t => {
+  const { page } = await open(t);
+  const cards = await page.locator('.home-daily, .home-action, .home-soundscape, .home-wellbeing').evaluateAll(nodes => nodes.map(node => {
+    const style = getComputedStyle(node);
+    return { name: node.className, borders: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
+      shadow: style.boxShadow, fill: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius) };
+  }));
+  assert.equal(cards.length, 6);
+  for (const card of cards) {
+    assert.deepEqual(card.borders, ['0px', '0px', '0px', '0px'], card.name);
+    assert.equal(card.shadow, 'none', card.name);
+    assert.notEqual(card.fill, 'rgba(0, 0, 0, 0)', 'Grouping remains visible through filled surfaces');
+    assert(card.radius >= 10, 'The existing rounded-card vocabulary remains');
+  }
+  const decorations = await page.locator('#home-page .section-heading').evaluateAll(nodes => nodes.map(node => getComputedStyle(node, '::after').content));
+  assert.deepEqual(decorations, ['none', 'none'], 'Section labels no longer draw decorative rules');
+  assert.equal(await page.locator('#home-mix-toggle').evaluate(node => getComputedStyle(node).borderTopWidth), '0px');
+  assert.equal(await page.locator('#home-daily > span').evaluate(node => getComputedStyle(node).backgroundImage), 'none');
+  assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+});
+
+test('soft Home: borderless actions retain touch targets, text contrast and visible keyboard focus', async t => {
+  const { page } = await open(t);
+  await page.keyboard.press('Tab');
+  for (const selector of ['#home-daily', '[data-home-tab="sounds"]', '[data-home-tab="meditate"]', '[data-home-tab="sleep"]', '#home-mix-toggle', '#home-edit-mix', '#home-wellbeing']) {
+    const button = page.locator(selector);
+    await button.focus();
+    const style = await button.evaluate(node => {
+      const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { width: rect.width, height: rect.height, visible: node.matches(':focus-visible'), outlineWidth: parseFloat(css.outlineWidth), outlineStyle: css.outlineStyle };
+    });
+    assert(style.width >= 44 && style.height >= 44, selector + ' keeps a 44px target');
+    assert(style.visible && style.outlineWidth >= 2 && style.outlineStyle === 'solid', selector + ' retains a visible focus ring');
+  }
+  const colors = await page.evaluate(() => [
+    ['.home-action-detail', '.home-action'],
+    ['#home-mix-status', '.home-soundscape'],
+    ['.home-wellbeing small', '.home-wellbeing'],
+    ['#home-daily > span', '#home-daily > span'],
+  ].map(([text, surface]) => ({ foreground: getComputedStyle(document.querySelector(text)).color,
+    background: getComputedStyle(document.querySelector(surface)).backgroundColor })));
+  const luminance = rgb => {
+    const [r, g, b] = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map(value => {
+      value /= 255; return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+    });
+    return .2126 * r + .7152 * g + .0722 * b;
+  };
+  for (const { foreground, background } of colors) {
+    const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    assert((values[0] + .05) / (values[1] + .05) >= 4.5, 'Normal text on the new solid fills retains at least 4.5:1 contrast');
+  }
+  await page.locator('[data-home-tab="sounds"]').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('main.content').isVisible(), true);
+  assert.equal(await page.evaluate(() => playing), false, 'Keyboard navigation does not start audio');
+});
+
+for (const width of [320, 390]) {
+  test(`soft Home: larger text wraps and final actions stay reachable at ${width}px`, async t => {
+    const { page } = await open(t, { width, height: 844 });
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      const size = parseFloat(getComputedStyle(root).getPropertyValue('--t'));
+      root.style.setProperty('--t', String(size * 1.6));
+    });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    for (const selector of ['#home-daily', '[data-home-tab="meditate"]', '#home-mix-toggle', '#home-wellbeing']) {
+      await page.locator(selector).scrollIntoViewIfNeeded();
+      const bounds = await page.locator(selector).boundingBox();
+      assert(bounds.width >= 44 && bounds.height >= 44);
+      assert(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
+    }
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    const note = await page.locator('.home-note').boundingBox();
+    const footer = await page.locator('.bottom-nav').boundingBox();
+    assert(note.y + note.height <= footer.y, 'The last Home content clears the unchanged footer');
+    assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+  });
+}
+
+// The user approved extending the Home trial. Container borders are no longer
+// isolation requirements; meaningful symbol, focus and state outlines still are.
+async function expectMatte(page, selector) {
+  const panels = await page.locator(selector).evaluateAll(nodes => nodes.map(node => {
+    const css = getComputedStyle(node);
+    return { name: node.id || node.className, borders: [css.borderTopWidth, css.borderRightWidth, css.borderBottomWidth, css.borderLeftWidth],
+      shadow: css.boxShadow, image: css.backgroundImage, fill: css.backgroundColor };
+  }));
+  assert(panels.length > 0, selector + ' matches rendered panels');
+  for (const panel of panels) {
+    assert.deepEqual(panel.borders, ['0px', '0px', '0px', '0px'], panel.name);
+    assert.equal(panel.shadow, 'none', panel.name);
+    assert.equal(panel.image, 'none', panel.name + ' uses a matte fill, not a card gradient');
+    assert.notEqual(panel.fill, 'rgba(0, 0, 0, 0)', panel.name + ' retains tonal grouping');
+  }
+}
+
+async function expectTouchFocus(page, selectors) {
+  await page.keyboard.press('Tab');
+  for (const selector of selectors) {
+    const action = page.locator(selector).first();
+    await action.focus();
+    const style = await action.evaluate(node => {
+      const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { width: rect.width, height: rect.height, visible: node.matches(':focus-visible'), outline: css.outlineStyle, size: parseFloat(css.outlineWidth) };
+    });
+    assert(style.width >= 44 && style.height >= 44, selector + ' keeps a 44px target');
+    assert(style.visible && style.outline === 'solid' && style.size >= 2, selector + ' keeps keyboard focus');
+  }
+}
+
+async function expectContrast(page, pairs) {
+  const colors = await page.evaluate(pairs => pairs.map(([text, surface]) => ({ name: text,
+    foreground: getComputedStyle(document.querySelector(text)).color,
+    background: getComputedStyle(document.querySelector(surface)).backgroundColor,
+  })), pairs);
+  const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map(value => {
+    value /= 255; return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+  }).reduce((total, value, index) => total + value * [.2126, .7152, .0722][index], 0);
+  for (const { name, foreground, background } of colors) {
+    const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    assert((light + .05) / (dark + .05) >= 4.5, name + ' retains at least 4.5:1 contrast on its solid fill');
+  }
+}
+
+test('soft pages: shared panels are matte while Sleep symbols and selected navigation remain distinct', async t => {
+  const { page } = await open(t);
+  await go(page, 'sounds');
+  await expectMatte(page, '.master.surface, #tracks .track');
+  assert.equal(await page.locator('.section-heading').first().evaluate(node => getComputedStyle(node, '::after').content), 'none');
+  await go(page, 'meditate');
+  assert.equal(await page.locator('#meditate-page').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(0, 27, 36)');
+  await expectMatte(page, '#meditate-page .daily-journey, #meditate-page .practice-card');
+  await go(page, 'sleep');
+  await expectMatte(page, '#sleep-page .night-surface');
+  assert.equal(await page.locator('#quick-mixer').getAttribute('data-control-design'), 'large-outline');
+  assert.equal(await page.locator('#quick-mixer [data-quick]').count(), 5);
+  assert.equal(await page.locator('[data-quick="Thunder"] .quick-orb').evaluate(node => getComputedStyle(node).color), 'rgb(245, 201, 109)');
+  assert.equal(await page.locator('[data-quick="Rain"] .quick-orb path').first().evaluate(node => getComputedStyle(node).fill), 'none');
+  await expectTouchFocus(page, ['#sleep-timer-button', '.story-filters button', '[data-quick="Thunder"]']);
+  for (const tab of ['home', 'sounds', 'meditate', 'sleep']) {
+    await go(page, tab);
+    assert.equal(await page.locator('.bottom-nav').evaluate(node => getComputedStyle(node).borderTopWidth), '0px');
+    assert.notEqual(await page.locator('.nav-item.active').evaluate(node => getComputedStyle(node, '::after').content), 'none', 'The selected tab still has an indicator besides color');
+  }
+  assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+});
+
+test('soft pages: Sounds controls retain touch, focus, contrast and non-color selected cues', async t => {
+  const { page } = await open(t, { route: '/#sounds' });
+  await expectMatte(page, '.play-dial, #save, .mix-chip, .category');
+  await expectTouchFocus(page, ['#master-play', '#save', '#shuffle', '#share', '.mix-chip', '.category', '[data-sound-options="Soft Rain"]', '.toggle-hit', '.slider']);
+  await page.locator('[data-category="nature"]').click();
+  assert.match(await page.locator('[data-category="nature"]').evaluate(node => getComputedStyle(node).textDecorationLine), /underline/);
+  assert.equal(await page.locator('.category[aria-selected=true]').count(), 1);
+  await expectContrast(page, [['#save', '#save'], ['.category[aria-selected=true]', '.category[aria-selected=true]'], ['.track-info p', '.track']]);
+  assert.equal(await page.evaluate(() => playing), false);
+});
+
+test('soft pages: Meditate keeps inset artwork and underlined selected intents without card outlines', async t => {
+  const { page } = await open(t, { route: '/#meditate' });
+  await expectMatte(page, '#meditate-page .intent-chip > span, #meditate-page .pill-body');
+  await expectTouchFocus(page, ['#begin-daily', '#meditate-page .med-options', '#meditate-page .intent-chip', '#meditate-page .practice-actions .pill-hit']);
+  await page.locator('[data-intent="Focus"]').click();
+  assert.match(await page.locator('[data-intent="Focus"] > span').evaluate(node => getComputedStyle(node).textDecorationLine), /underline/);
+  assert(await page.locator('#meditate-page .arched-art').count() > 1);
+  assert(await page.locator('#meditate-page .practice-orbit').first().evaluate(node => parseFloat(getComputedStyle(node, '::before').borderTopWidth)) > 0, 'Artwork orbit remains artwork');
+  await expectContrast(page, [['#meditate-page .pill-body', '#meditate-page .pill-body'], ['#meditate-page .practice-card .session-ingredients', '#meditate-page .practice-card']]);
+  assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+});
+
+test('soft pages: player and mini-player use flat controls without changing pause or loop', async t => {
+  const { page } = await open(t);
+  await page.locator('#home-daily').click();
+  await page.waitForFunction(() => guidedSession?.playing && guidedAudio.readyState >= 2);
+  await expectMatte(page, '#session-dialog .player-glass, #session-dialog .player-toggle');
+  assert.equal(await page.locator('#session-dialog .player-cover').evaluate(node => getComputedStyle(node).borderTopWidth), '0px');
+  assert.equal(await page.locator('#session-dialog .breathing-ring').count(), 3);
+  await expectTouchFocus(page, ['#session-minimize', '#session-back', '#session-pause', '#session-forward', '#session-loop', '#session-stop', '#session-progress']);
+  await expectContrast(page, [['#session-pause', '#session-pause'], ['#session-loop', '#session-loop']]);
+  await page.locator('#session-loop').click();
+  assert.equal(await page.locator('#session-loop').getAttribute('aria-pressed'), 'false');
+  await page.locator('#session-pause').click();
+  assert.equal(await page.evaluate(() => guidedAudio.paused), true);
+  await page.locator('#session-minimize').click();
+  await expectMatte(page, '#shared-mini-player, #mini-pause');
+  await expectTouchFocus(page, ['#mini-open', '#mini-pause', '#mini-stop']);
+  assert.match(await page.locator('#mini-subtitle').innerText(), /paused/);
+});
+
+test('soft pages: sound chooser keeps a visible non-color selection and form focus', async t => {
+  const { page } = await open(t, { route: '/#sounds' });
+  const before = await page.evaluate(() => JSON.stringify(levels));
+  await page.locator('[data-sound-options="Soft Rain"]').click();
+  await expectMatte(page, '#sound-replacement-dialog, .replacement-row');
+  await page.locator('[data-select-recording="Ocean Waves"]').click();
+  const selected = '[data-recording="Ocean Waves"]';
+  await expectMatte(page, selected);
+  assert.equal(await page.locator(`${selected} [aria-pressed=true]`).count(), 1);
+  assert.match(await page.locator(`${selected} .replacement-copy strong`).evaluate(node => getComputedStyle(node).textDecorationLine), /underline/);
+  await expectTouchFocus(page, ['#replacement-close', '#replacement-search', '[data-select-recording="Ocean Waves"]', '[data-preview-recording="Ocean Waves"]', '#replacement-use']);
+  await expectContrast(page, [['#replacement-use', '#replacement-use'], [`${selected} .replacement-copy small`, selected]]);
+  assert.equal(await page.evaluate(() => JSON.stringify(levels)), before);
+  assert.equal(await page.evaluate(() => playing || !!soundPreviewAudio), false);
+});
+
+test('soft pages: wellbeing hub, progress and backup use filled panels without invented progress', async t => {
+  const { page } = await open(t, { route: '/#wellbeing/hub' });
+  for (const route of ['hub', 'progress', 'backup']) {
+    await page.goto(`${origin}/#wellbeing/${route}`);
+    await expectMatte(page, '.wellbeing-surface');
+    assert.equal(await page.locator('.wellbeing-top').evaluate(node => getComputedStyle(node).borderBottomWidth), '0px');
+    await expectTouchFocus(page, ['#wellbeing-back']);
+  }
+  await page.goto(`${origin}/#wellbeing/hub`);
+  assert.equal(await page.locator('.wellbeing-days i.recorded').count(), 0);
+  assert.equal(await page.locator('.wellbeing-days i').count(), 7);
+  await expectContrast(page, [['.wellbeing-footnote', '.wellbeing-week'], ['.wellbeing-destination small', '.wellbeing-destination']]);
+  assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+});
+
+test('soft pages: breathing choices have non-color state cues while the timer and guide rings remain', async t => {
+  const { page } = await open(t, { route: '/#wellbeing/breathing' });
+  await expectMatte(page, '.wellbeing-surface, .wellbeing-choices button, .wellbeing-primary');
+  await expectTouchFocus(page, ['#breathing-toggle', '#breathing-reset', '[data-breathing-pattern="0"]', '[data-breathing-duration="1"]']);
+  await page.locator('[data-breathing-duration="1"]').click();
+  assert.equal(await page.locator('[data-breathing-duration="1"]').getAttribute('aria-pressed'), 'true');
+  assert.match(await page.locator('[data-breathing-duration="1"]').evaluate(node => getComputedStyle(node).textDecorationLine), /underline/);
+  assert.equal(await page.locator('#breathing-time').textContent(), '01:00');
+  assert(await page.locator('.wellbeing-orbit').evaluate(node => parseFloat(getComputedStyle(node).borderTopWidth)) > 0);
+  await expectContrast(page, [['#breathing-toggle', '#breathing-toggle'], ['[data-breathing-duration="1"]', '[data-breathing-duration="1"]']]);
+});
+
+test('soft pages: reflection has an explicit focused input and solid primary action', async t => {
+  const { page } = await open(t, { route: '/#wellbeing/reflection' });
+  await page.locator('#wellbeing-reflection-input').fill('A quiet pause');
+  await expectMatte(page, '#wellbeing-create-reflection');
+  await expectTouchFocus(page, ['#wellbeing-reflection-input', '#wellbeing-create-reflection']);
+  await expectContrast(page, [['#wellbeing-create-reflection', '#wellbeing-create-reflection'], ['#wellbeing-reflection-input', '#wellbeing-reflection-input']]);
+  await page.locator('#wellbeing-create-reflection').click();
+  assert.match(await page.locator('#wellbeing-reflection-output').textContent(), /A quiet pause/);
+});
+
+for (const width of [320, 823]) {
+  test(`soft pages: main tabs and utility pages remain reachable at ${width}px with larger text`, async t => {
+    const { page } = await open(t, { width, height: 920 });
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      root.style.setProperty('--t', String(parseFloat(getComputedStyle(root).getPropertyValue('--t')) * 1.6));
+    });
+    for (const tab of ['sounds', 'meditate', 'sleep', 'home']) {
+      await go(page, tab);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, tab + ' has no document overflow');
+    }
+    for (const route of ['hub', 'breathing', 'progress', 'reflection', 'backup']) {
+      await page.goto(`${origin}/#wellbeing/${route}`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, route + ' has no document overflow');
+      await expectTouchFocus(page, ['#wellbeing-back']);
+    }
+    assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
   });
 }

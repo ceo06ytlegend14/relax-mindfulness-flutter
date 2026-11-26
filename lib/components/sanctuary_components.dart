@@ -13,7 +13,9 @@ abstract final class SanctuaryPalette {
   static const cream = Color(0xFFF7F8EB);
   static const sage = Color(0xFFBED2CA);
   static const navy = Color(0xFF02132C);
-  static const navySurface = Color(0xFF101F3C);
+  static const navySurface = Color(0xFF122945);
+  static const navyActive = Color(0xFF193853);
+  static const navyControl = Color(0xFF223F5C);
   static const gold = Color(0xFFF5C96D);
   static const lavender = Color(0xFFABB4E3);
   static const mist = Color(0xFFB9C5DD);
@@ -135,10 +137,8 @@ class SanctuaryPillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = gold ? SanctuaryPalette.gold : SanctuaryPalette.mint;
-    final foreground = quiet || glow
-        ? SanctuaryPalette.cream
-        : const Color(0xFF002B26);
+    final color = gold ? SanctuaryPalette.gold : MixerTheme.primary;
+    final foreground = quiet ? SanctuaryPalette.cream : MixerTheme.onPrimary;
     return Semantics(
       label: semanticLabel ?? label,
       button: true,
@@ -156,36 +156,7 @@ class SanctuaryPillButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(100),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: quiet
-                  ? const [Color(0xAA4976AD), Color(0xCC25416F)]
-                  : glow
-                  ? const [
-                      Color(0xFF087B80),
-                      Color(0xFF03B6A9),
-                      Color(0xFF03515D),
-                    ]
-                  : gold
-                  ? const [Color(0xFFFFD980), Color(0xFFEFBF5F)]
-                  : const [
-                      SanctuaryPalette.mintLight,
-                      SanctuaryPalette.mint,
-                      Color(0xFF50D9BD),
-                    ],
-            ),
-            border: Border.all(
-              color: (quiet ? const Color(0xFF99DDF1) : color).withOpacity(0.6),
-            ),
-            boxShadow: gold || quiet || glow
-                ? [
-                    BoxShadow(
-                      color: color.withOpacity(0.24),
-                      blurRadius: metrics.space(22),
-                    ),
-                  ]
-                : null,
+            color: quiet ? SanctuaryPalette.navyControl : color,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -250,18 +221,6 @@ class SleepSectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Container(
-        width: 3,
-        height: metrics.font(24, min: 18),
-        margin: EdgeInsets.only(right: metrics.space(13)),
-        decoration: BoxDecoration(
-          color: SanctuaryPalette.mint,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: const [
-            BoxShadow(color: Color(0x5543E9CD), blurRadius: 10),
-          ],
-        ),
-      ),
       Expanded(
         child: Text(
           title,
@@ -305,22 +264,6 @@ class SleepSectionHeading extends StatelessWidget {
 BoxDecoration sleepSurface({double radius = 26, bool glow = false}) =>
     BoxDecoration(
       borderRadius: BorderRadius.circular(radius),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xDC203C69), Color(0xE2091D3C)],
-      ),
-      border: Border.all(
-        color: const Color(0xFF88A6D9).withOpacity(glow ? 0.55 : 0.27),
-      ),
-      boxShadow: glow
-          ? const [
-              BoxShadow(color: Color(0x333B73C7), blurRadius: 20),
-              BoxShadow(
-                color: Color(0x55000000),
-                blurRadius: 18,
-                offset: Offset(0, 5),
-              ),
-            ]
-          : null,
+      // Retain the call-site emphasis without an ornamental ring or glow.
+      color: glow ? SanctuaryPalette.navyActive : SanctuaryPalette.navySurface,
     );

@@ -1,24 +1,98 @@
-# Sound library: scope, source audit and release boundary
+# Sound library: sources, safeguards and release boundary
 
-Updated: 2026-11-19. **No new audio download, pack, recording take, personal-file import, entitlement or purchase was added.**
+Updated: 2026-11-19. **77 mixer cards, 18 distinct local chooser sources, 12 additions; ten live vibe sets; 23 session arrangements from 14 existing recordings.** Source configuration, original-page grants, technical playback checks and release clearance are separate facts.
 
-## Product choice
+## Current launch gate
 
-- Every one of the **75 familiar sound cards** now has a bundled decorative cover, not a mixture of photographs and emoji placeholders. Covers can be shared and do not prove audio availability. [Artwork provenance](../assets/images/mixer/README.md).
-- **Card → ⋯ → Replace sound** opens a small library of **six existing bundled recordings**. This replaces one layer with a different named sound; it is deliberately **not called “Choose recording”** or sold as alternate takes of that sound. New same-sound variants and packs remain deferred until distinct recordings and redistribution rights are documented.
-- Opening or selecting a row never autoplays or changes the mix. **Preview** is explicit, quiet and limited to eight seconds. A playing ambient mix is temporarily ducked; a paused mix stays paused. Stopping, closing, leaving the foreground, failure, timeout or using a choice disposes the preview and restores ambient gain. Late loads cannot restart a canceled preview.
-- **Use sound** keeps that layer's volume and other layers. An off card selects the new layer at 30%; it does not start a paused mix. The new category is shown so the chosen card is visible. The web install entry is hidden while the chooser is open, independently of the full-screen player, then restored without changing install state. Already-selected targets and aliases using the same bundled clip are unavailable as duplicates.
-- Saves, cached selections, share links and backups store the resulting **real sound name and level** through the existing format. There is no invisible audio override or new backup schema. To return to an original bundled sound, choose it again. For a stream-only original, turn off the replacement and reselect the original card; original saved mixes are not overwritten by a swap. Normal card/switch taps and long-press Favorites remain; the **Home / Sounds / Meditate / Sleep** footer is unchanged.
+[Launch hardening](LAUNCH_HARDENING.md) passes **256/256 web + 71/71 Python** local tests, but full preflight remains **BLOCKED**. Its [register](release/launch-review.json) covers 42 shipped audio files (18 mixer + 23 arrangements + unused legacy sample), 68 artwork/drawable files, two fonts and all 75 effective stream-only native name bindings, including legacy names outside the 77-card catalog. These are inventory counts, not approvals. All review/build/device/listening/owner gates remain pending; normal Sounds browsing is bundled-only, not a promise every legacy route is offline or cleared.
 
-## Highest-value remaining work
+## Current product behavior
+
+- Preserve all **75 familiar cards/covers**, plus **Woodland Morning** and **Fireplace**. Every card has local decorative artwork; related sounds may share a cover. An image does not prove a recording's location, availability or rights. [Artwork provenance](../assets/images/mixer/README.md).
+- **Available (18)** is normal browsing. **Review unfinished catalog → Full catalog (77)** deliberately exposes all stable cards with 18 bundled / 23 stream-only / 36 no-recording context; it is not a claim of 77 playable sounds. Categories/curated recipes follow the view; saved mixes, favorites, legacy levels and share/backup formats are preserved. The browser disables inactive stream-only/missing controls; native retains configured streams and disables missing sources. Availability is not Premium access. [Full flow and evidence](SIMPLE_LIBRARY_FLOW.md).
+- **Card → ⋯ → Change sound** offers **18 local sources**, searchable by name/description. Twelve additions have visible creator/terms credits. This replaces one layer with a different named sound; it is not alternate takes of every card or a personal-file importer.
+- The browser now preflights all mix/transport/switch/slider entry points before selecting unsupported content or pausing another audio mode. Sleep’s app-stream sources and incompatible legacy recipes have visible availability labels; exact-source details preserve current players/timer/levels and offer review or an explicit current-layer removal. A saved recipe is not silently partially applied. [Screenshot-warning follow-up](SIMPLE_LIBRARY_FLOW.md#browser-availability-follow-up). Native stream bindings are unchanged; these are not Premium locks or new audio files.
+- **Choose recording (2)** appears only for Fire (Campfire/Fireplace) and Birds (Forest Birds/Woodland Morning). The compact two-choice sheet is distinct from the searchable cross-source chooser. No alternate rain takes were added.
+- Opening, searching or selecting a row never autoplays or changes the mix. **Preview** is explicit, quiet and limited to eight seconds, with loading/failure/timeout handling. A playing mix is temporarily ducked; a paused mix stays paused. Stop, close, lifecycle loss, failure, timeout or use disposes the preview and restores gain. Late loads cannot restart a canceled preview.
+- **Use sound** keeps the layer's volume and other layers. An off card selects the new layer at 30%, without starting a paused mix. The chosen category is shown. Already-selected targets and aliases sharing the same source are blocked as duplicates. The web install entry is hidden independently while the chooser owns the screen.
+- Saves, cached selections, share links and backups keep the **real chosen name and level** in the existing format; there is no hidden override or new backup schema. Local-only additions work in shared links. Return to a bundled original by choosing it again; for a stream-only original, turn off the replacement and reselect its card. Existing saved mixes are not overwritten by a swap. Card/switch taps, independent levels, long-press Favorites and **Home / Sounds / Meditate / Sleep** remain.
+
+## Ten one-tap vibe sets
+
+The first ten chips in **Sounds → Curated one-tap mixes** now use the user’s exact requested recipes below, replacing the preceding featured ten. They use **15 of the 18 existing bundled recordings**, not new recordings or the separately rendered Meditate/Sleep arrangements. Names, main purposes and percentages match the requested catalog.
+
+| # | Preset | Main purpose | Individual volume levels |
+| --- | --- | --- | --- |
+| 1 | **Rainy Window Café** | Focus | Soft Rain 65% · Coffee Shop 25% · Brown Noise 15% · Bamboo Chimes 10% |
+| 2 | **Enchanted Forest Morning** | Morning | Woodland Morning 65% · Forest Birds 55% · Meadow Breeze 25% · Mountain Stream 20% |
+| 3 | **Ocean Deep Sleep** | Sleep | Ocean Waves 65% · Brown Noise 35% · Crickets 15% |
+| 4 | **Mountain Meditation** | Meditate | Mountain Stream 50% · Meadow Breeze 30% · Forest Birds 25% · Temple Bowl 15% |
+| 5 | **Cozy Fireplace Night** | Comfort | Fireplace 65% · Crickets 30% · Soft Rain 20% · Brown Noise 15% |
+| 6 | **Tropical Rainforest** | Relax | Mountain Stream 55% · Soft Rain 40% · Forest Birds 40% · Meadow Breeze 15% |
+| 7 | **Zen Temple Sanctuary** | Meditate | Temple Bowl 55% · Meadow Breeze 25% · Mountain Stream 20% · Bamboo Chimes 15% |
+| 8 | **Midnight Focus** | Focus | Brown Noise 55% · White Noise 30% · Coffee Shop 15% · Soft Rain 10% |
+| 9 | **Campfire Under Stars** | Relax | Campfire 65% · Crickets 50% · Meadow Breeze 20% · Ocean Waves 10% |
+| 10 | **Peaceful Ocean Journey** | Escape | Boat Deck 45% · Ocean Waves 65% · Meadow Breeze 20% · Bamboo Chimes 10% |
+
+Percentages are **independent volume sliders**, not a 100% split. Requested totals are **110–165%**; no layer exceeds 65%. The existing master output gain, per-track cap, preview ducking and sleep fade remain active without changing selected/saved slider levels. These are not measured acoustic-loudness or hearing-safety guarantees. Start with low device volume. Pink, Blue and Violet Noise remain in the library even though these recipes do not use them.
+
+- One tap immediately enables the exact ingredients, resets every other sound to off/zero and updates badges, switches and sliders. Readiness/glow still reflects actual playback. Pause/resume retains the recipe; shared healthy loops are not restarted when switching mixes.
+- Editing a level or toggling an ingredient makes a custom mix without mutating the original. Save writes a separate custom snapshot in the existing format; reselecting a preset restores official levels without overwriting saved mixes. Same-named custom recipes cannot display an incorrect official ingredient panel.
+- The **eight older preset names/recipes**, rename keys, Favorites, saved snapshots, cached selections and backup/share formats remain intact. Incompatible old recipes remain in Full catalog. Old saved snapshots bearing a preceding featured name are preserved rather than renamed or migrated.
+- The 77-card catalog, 18 bundled source choices, audio/artwork bytes, aliases, player/readiness/availability guards, Sleep drawings and all 23 session arrangements are unchanged. No stock/example image from the supplied links was imported or treated as licensed.
+- Results at completion of the requested-recipe batch (before launch hardening): **22/22 browser playback/UI cases + 9/9 source/parity guards**; full **244/244 web + 41/41 Python**, zero failures/skips. **50/50 live recipe/viewport checks** cover 320/390/431/823/1440px. **147 protected hashes** and the inline engine remain unchanged from this pass’s baseline. The 34 set-related native cases (22 model/provider/controller + 12 widget, two newly added) remain **unexecuted** without Flutter.
+
+[Exact behavior, independent recipe contract and limits](CURATED_SOUND_MIXES.md) · [Current paused Rainy Window Café capture](../design/requested-curated-mixes-mobile-preview.png). The earlier [Rainlit Cabin capture](../design/vibe-sets-mobile-preview.png) and 202-test/52–70% evidence are historical, not current recipe settings. Browser decoding is not native/device or human-listening certification.
+
+## Meditate / nighttime session audio
+
+Meditate initially shows today and three starters, visible Save/ingredients, All/Calm/Focus/Rest/Saved filters and Browse all 14. This is a browsing simplification, not deletion or access gating.
+
+The daily practice, 14 Meditate cards and eight nighttime journeys now use **23 explicitly routed ambient arrangements**, each mixing a different pair from 14 existing recordings. Home and Meditate reuse the same daily practice. Ingredient names are visible on cards/player; approximate 30-second repetition and no narration are disclosed. Missing/failed content has no universal or unrelated remote fallback. This does not add 23 new master recordings, expand the 18-choice mixer or clear source rights. See [all recipes, measured checks and rebuild instructions](SESSION_AUDIO.md).
+
+## Coverage, counted by card name
+
+| Measure | Current value | Meaning |
+| --- | ---: | --- |
+| Cards | **77** | 75 retained + 2 additions |
+| Configured card names | **41** | 18 bundled + 23 stream-only; not 41 unique or cleared recordings |
+| Cards still needing a recording | **36** | Kept in Full catalog and explicitly labeled; never silently substituted with unrelated rain |
+| Local chooser sources | **18** | Six legacy clips + twelve additions; source aliases are not extra choices |
+| Local name aliases | **23** | Includes legacy saved-mix names sharing the six older clips |
+| Additions with provenance in this pack | **12** | Seven field recordings + five generated noises; 6,765,450 bytes |
+
+Six previously stream-only card names now use the new local recordings. Other additions fill previously missing sources or appear on the two new cards. This does **not** mean twelve new catalog cards or twelve extra versions of rain.
+
+## New additions and original-page evidence
+
+The [manifest](../assets/sounds/ambient_pack.json) pins every output hash/size, original page/creator, grant, mirror commit/blob, source hash and processing description. The [recording-specific evidence](audio-licenses/ambient-pack-2026-11-19.md) records the checked CC0/public-domain statements and limitations. The mirror's **code licence is not used as an audio licence**.
+
+| Chooser name | Kind | Distributed file | Original grant / creator |
+| --- | --- | --- | --- |
+| Woodland Morning | Field recording | `woodland_morning.mp3` | [CC0-1.0](https://freesound.org/people/kvgarlic/sounds/156826/) · kvgarlic |
+| Boat Deck | Field recording | `boat_deck.mp3` | [CC0-1.0](https://freesound.org/people/Falcet/sounds/439365/) · Falcet |
+| Mountain Stream | Field recording | `woodland_stream.mp3` | [CC0-1.0](https://freesound.org/people/gluckose/sounds/333987/) · gluckose |
+| Meadow Breeze | Field recording | `meadow_wind.mp3` | [CC0-1.0](https://freesound.org/people/felix.blume/sounds/217506/) · felix.blume |
+| Coffee Shop | Field recording | `cafe_ambience.mp3` | [Public domain (source-page designation)](https://soundbible.com/1664-Restaurant-Ambiance.html) · stephan |
+| Fireplace | Field recording | `fireplace.mp3` | [Public domain (source-page designation)](https://soundbible.com/1543-Fireplace.html) · ezwa |
+| Crickets | Field recording | `night_crickets.mp3` | [Public domain (source-page designation)](https://soundbible.com/2083-Crickets-Chirping-At-Night.html) · Lisa Redfern |
+| White Noise | Generated noise | `noise_white.mp3` | [CC0-1.0](../tool/prepare_ambient_pack.py) · Sanctuary project |
+| Pink Noise | Generated noise | `noise_pink.mp3` | [CC0-1.0](../tool/prepare_ambient_pack.py) · Sanctuary project |
+| Brown Noise | Generated noise | `noise_brown.mp3` | [CC0-1.0](../tool/prepare_ambient_pack.py) · Sanctuary project |
+| Blue Noise | Generated noise | `noise_blue.mp3` | [CC0-1.0](../tool/prepare_ambient_pack.py) · Sanctuary project |
+| Violet Noise | Generated noise | `noise_violet.mp3` | [CC0-1.0](../tool/prepare_ambient_pack.py) · Sanctuary project |
+
+These are MP3 derivatives, not original lossless masters or individual narrated sessions. Stream/boat/wind descriptions reflect the source pages, not artwork or unverified locations. All bundled identities now have **no automatic remote fallback** in native source: a failed local asset produces a retry/replacement error. Source/fixture checks are not native execution evidence. Five independently seeded noises contain no third-party samples; Grey Noise remains unconfigured rather than relabeling another color.
+
+### Highest-value remaining work
 
 | Priority / source | Finding and required action |
 | --- | --- |
-| P0 — audio rights / `assets/sounds/` | Six ambient MP3s and the separate session sample were already in the initial repository. No per-file author/license receipt was found. Existing bytes are unchanged; owner must obtain provenance/redistribution permission or replace them before public distribution. Successful decoding is not rights clearance. |
-| P0 — catalog / `lib/providers/app_state.dart` | **35 of 75 card names have a configured source: six bundled-first and 29 stream-only; 40 have no configured recording.** This is a configuration count, not 35 unique or cleared recordings. Retain the cards and mark them as needing a recording. Missing names now fail visibly instead of silently playing unrelated heavy rain. Source-load/play failures remove the failed active layer and offer retry/replacement. |
-| P0 — external recordings | Moodist's code license does **not** license its audio. The upstream README says audio uses Pixabay Content License or CC0, without per-file license/author evidence in the inspected category records. Do not add these as newly cleared takes or packs. Audit each original audio source and applicable license, including the existing Google-hosted OGG URLs. |
-| P0 — legacy source labels | The incorrect `Ambient Piano` → singing-bowl URL was removed. Old presets/backups can retain that name, but it is now explicitly unconfigured, not a purported piano. Other shared-source aliases are listed below; do not advertise their count as new recordings. Recordings, frequency claims and health/marketing copy need owner review. |
-| P0 — compiled-device audio | Automated doubles/browser playback do not prove real iOS/Android routing, interruptions, focus, background behavior, lock screen, sleep fade, output loudness or long-running loops. Signed-device tests remain a release gate. |
+| P0 — legacy audio / `assets/sounds/` | The six old mixer MP3s and separate `calm_guided.mp3` predate this work. No per-file redistribution receipts were found. Their bytes remain unchanged; owner must establish provenance/permission or replace them before distribution. |
+| P0 — new-pack claim review / `docs/audio-licenses/` | Original-page CC0/public-domain grants are documented, not a warranty of all third-party rights. The wood-thrush source page contains historical Content ID complaints. Review/resolve that risk before release; do not promise claim-free use. |
+| P0 — streams / `lib/providers/app_state.dart` | Existing Moodist/Google URLs are configured, not individually rights-cleared or device-verified. Moodist's MIT code licence does not clear its audio; audit original sources and pin/provision approved media. |
+| P0 — listening and device playback | Browser decoding/FFmpeg checks do not establish pleasing levels, clean seams, correct spectrum or iOS/Android audio routing, interruptions, background/lock screen, long timers or fades. A human listening pass and signed-device matrix remain required. |
+| Deferred — missing cards / `lib/models/mixer_catalog.dart` | 36 entries remain review-only without recordings; adding content is not launch hardening. Preserve names/saved levels. Any later additions need real distinct recordings, accurate descriptions and recording-specific grants; never count aliases or make unverified frequency/health claims. |
 
 ### Existing bundled bytes (unchanged)
 
@@ -33,28 +107,28 @@ The chooser lists one name per distinct ambient clip. Legacy aliases are not ext
 | Bamboo Chimes | `assets/sounds/wind_chimes.mp3` | 897,356 | `66b3a7165cbff1dca1ad5a9edc1050b05dca0435af83ddb97041e8ae4b7e8079` |
 | Temple Bowl | `assets/sounds/tibetan_bowls.mp3` | 1,011,212 | `933c8c4218c0e89d88624db68bb89aa7eda080a41a7a404ee3d6029afaa8d582` |
 
-`calm_guided.mp3` is the seventh existing file, used for timed calming sessions; it is **not narration or a mixer-choice recording**. Its provenance also needs owner review.
+`calm_guided.mp3` is the seventh existing file, **formerly** the universal timed-session sample. It is no longer referenced by playback or used as a fallback and is not narration or a mixer-choice source. It is still present in the bundled asset directory; remove it or establish provenance before distribution. None of the arrangements uses it.
 
 ### Shared legacy sources
 
-- `Campfire` / `Cozy Hearth`: one bundled fire clip and the same named remote fallback.
+- `Campfire` / `Cozy Hearth`: one bundled fire clip. The former similarly named network fallback is no longer attempted for either local identity.
 - `Bamboo Chimes` / `Wind Chimes`: one bundled wind-chime clip.
 - `Temple Bowl` / `Singing Bowl` / `Singing Bowls` / `Tibetan Bowls`: one bundled bowl clip. `Temple Bowl` is now explicitly mapped to it, not generic rain.
 - `Wind in Trees` / `Soothing Breeze`: same existing remote tree-wind URL.
 - `Gamma Insight` / `Deep Space Drone`: same existing remote binaural-gamma WAV. No unique cosmic-drone recording is implied.
-- Local-first clips and their named network fallbacks have not been proven byte-identical or perceptually equivalent. The fallbacks predate this feature; they are not exposed as new alternative takes.
+- Legacy local files and similarly named network URLs have not been proven byte-identical, perceptually equivalent or rights-equivalent. **Native source now loads only the bundled file for local identities**; failure is explicit and retry reloads that asset. This hardening change has authored tests but still needs Flutter/device execution. Stream-only bindings retain their original CDN/raw transport; no source URL is silently replaced.
 
-### Audit evidence and limits
+### Remote audit evidence and limits
 
-Read-only GitHub inspection of [`remvze/moodist`](https://github.com/remvze/moodist) at tree/revision **`11c0be2200116a3635880d600fd6953899cc51a3`** found all currently configured Moodist file paths in its public tree. The [README third-party-assets notice](https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/README.md) distinguishes [Pixabay](https://pixabay.com/service/license-summary/) and [CC0](https://creativecommons.org/publicdomain/zero/1.0/) from MIT code. Inspected rain/nature/noise category records contain display labels and paths, **not per-recording licensing receipts**. No external MP3 was downloaded or auditioned, no permission was obtained, and no external service's license was assumed to authorize redistribution. Existing remote URLs still track `main`; a cleared release should pin/provision approved media.
+Read-only inspection of [`remvze/moodist` at `11c0be2200116a3635880d600fd6953899cc51a3`](https://github.com/remvze/moodist/tree/11c0be2200116a3635880d600fd6953899cc51a3) found the configured Moodist paths in its tree. Its [third-party-assets notice](https://github.com/remvze/moodist/blob/11c0be2200116a3635880d600fd6953899cc51a3/README.md) distinguishes Pixabay Content License/CC0 audio from MIT code. Inspected category records do not supply individual licence receipts. No Moodist audio was imported or relicensed by this addition. Existing remote URLs still track `main`; availability is not permission.
 
-### All sound cards
+## All sound cards
 
-“Configured stream” means a URL is declared, not that its playback/rights have been verified on a device. In the independent browser preview **only bundled clips play**; it does not fetch the streaming catalog. All names, Favorites and old saved levels remain addressable. In-app missing-source errors are intentional, not placeholders for invented content.
+“Configured stream” means a declared URL, not proven playback or redistribution rights. The independent HTML preview **plays only local sources**, not the remote catalog. All names and old Favorites/saved levels remain addressable. Missing-source notices are intentional, not fake playback.
 
 | Category | Card | Current source configuration |
 | --- | --- | --- |
-| Rain | Soft Rain | Bundled-first: `assets/sounds/soft_rain.mp3` |
+| Rain | Soft Rain | Bundled: `assets/sounds/soft_rain.mp3` |
 | Rain | Thunderstorm | Configured stream: `sounds/rain/thunder.mp3` |
 | Rain | Rain on Window | Configured stream: `sounds/rain/rain-on-window.mp3` |
 | Rain | Rain on Roof | Configured stream: `sounds/rain/rain-on-car-roof.mp3` |
@@ -66,35 +140,37 @@ Read-only GitHub inspection of [`remvze/moodist`](https://github.com/remvze/mood
 | Rain | Light Drizzle | **No recording configured** — labeled; no substitute playback |
 | Rain | Rain Cave | **No recording configured** — labeled; no substitute playback |
 | Rain | Tropical Storm | **No recording configured** — labeled; no substitute playback |
-| Nature | Ocean Waves | Bundled-first: `assets/sounds/ocean_waves.mp3` |
-| Nature | Mountain Stream | Configured stream: `sounds/nature/river.mp3` |
-| Nature | Forest Birds | Bundled-first: `assets/sounds/forest_birds.mp3` |
-| Nature | Campfire | Bundled-first: `assets/sounds/campfire.mp3` |
+| Nature | Ocean Waves | Bundled: `assets/sounds/ocean_waves.mp3` |
+| Nature | Mountain Stream | Bundled: `assets/sounds/woodland_stream.mp3` |
+| Nature | Forest Birds | Bundled: `assets/sounds/forest_birds.mp3` |
+| Nature | Woodland Morning | Bundled: `assets/sounds/woodland_morning.mp3` |
+| Nature | Campfire | Bundled: `assets/sounds/campfire.mp3` |
+| Nature | Fireplace | Bundled: `assets/sounds/fireplace.mp3` |
 | Nature | Wind in Trees | Configured stream: `sounds/nature/wind-in-trees.mp3` |
-| Nature | Crickets | Configured stream: `sounds/animals/crickets.mp3` |
+| Nature | Crickets | Bundled: `assets/sounds/night_crickets.mp3` |
 | Nature | Waterfall | Configured stream: `sounds/nature/waterfall.mp3` |
 | Nature | Frogs | Configured stream: `sounds/animals/frog.mp3` |
 | Nature | Waves on Pebbles | **No recording configured** — labeled; no substitute playback |
 | Nature | Underwater | **No recording configured** — labeled; no substitute playback |
-| Nature | Meadow Breeze | **No recording configured** — labeled; no substitute playback |
+| Nature | Meadow Breeze | Bundled: `assets/sounds/meadow_wind.mp3` |
 | Nature | Desert Wind | **No recording configured** — labeled; no substitute playback |
 | Nature | Jungle Night | **No recording configured** — labeled; no substitute playback |
 | Nature | Leaves Rustling | **No recording configured** — labeled; no substitute playback |
 | Nature | Mountain Echo | **No recording configured** — labeled; no substitute playback |
-| Places | Coffee Shop | Configured stream: `sounds/places/cafe.mp3` |
+| Places | Coffee Shop | Bundled: `assets/sounds/cafe_ambience.mp3` |
 | Places | Library | Configured stream: `sounds/places/library.mp3` |
 | Places | Office Ambience | Configured stream: `sounds/places/office.mp3` |
 | Places | Church Bells | **No recording configured** — labeled; no substitute playback |
 | Places | Quiet Park | **No recording configured** — labeled; no substitute playback |
 | Places | Street Market | **No recording configured** — labeled; no substitute playback |
-| Places | Temple Bowl | Bundled-first: `assets/sounds/tibetan_bowls.mp3` |
+| Places | Temple Bowl | Bundled: `assets/sounds/tibetan_bowls.mp3` |
 | Places | Zen Garden | **No recording configured** — labeled; no substitute playback |
 | Places | Harbor | **No recording configured** — labeled; no substitute playback |
 | Places | Farmyard | **No recording configured** — labeled; no substitute playback |
 | Transport | Train Track | **No recording configured** — labeled; no substitute playback |
 | Transport | Airplane Cabin | Configured stream: `sounds/transport/airplane.mp3` |
 | Transport | Driving Rain Car | **No recording configured** — labeled; no substitute playback |
-| Transport | Boat Deck | **No recording configured** — labeled; no substitute playback |
+| Transport | Boat Deck | Bundled: `assets/sounds/boat_deck.mp3` |
 | Transport | Subway Train | **No recording configured** — labeled; no substitute playback |
 | Transport | Bicycle Ride | **No recording configured** — labeled; no substitute playback |
 | Transport | Sailing Ship | Configured stream: `sounds/transport/sailboat.mp3` |
@@ -105,15 +181,15 @@ Read-only GitHub inspection of [`remvze/moodist`](https://github.com/remvze/mood
 | Things | Washing Machine | Configured stream: `sounds/things/washing-machine.mp3` |
 | Things | Vinyl Crackle | Configured stream: `sounds/things/vinyl-effect.mp3` |
 | Things | Boiling Kettle | **No recording configured** — labeled; no substitute playback |
-| Things | Bamboo Chimes | Bundled-first: `assets/sounds/wind_chimes.mp3` |
+| Things | Bamboo Chimes | Bundled: `assets/sounds/wind_chimes.mp3` |
 | Things | Page Turning | **No recording configured** — labeled; no substitute playback |
 | Things | Pendulum | **No recording configured** — labeled; no substitute playback |
 | Things | Wind Generator | **No recording configured** — labeled; no substitute playback |
-| Noise | White Noise | Configured stream: `sounds/noise/white-noise.wav` |
-| Noise | Pink Noise | Configured stream: `sounds/noise/pink-noise.wav` |
-| Noise | Brown Noise | Configured stream: `sounds/noise/brown-noise.wav` |
-| Noise | Blue Noise | **No recording configured** — labeled; no substitute playback |
-| Noise | Violet Noise | **No recording configured** — labeled; no substitute playback |
+| Noise | White Noise | Bundled: `assets/sounds/noise_white.mp3` |
+| Noise | Pink Noise | Bundled: `assets/sounds/noise_pink.mp3` |
+| Noise | Brown Noise | Bundled: `assets/sounds/noise_brown.mp3` |
+| Noise | Blue Noise | Bundled: `assets/sounds/noise_blue.mp3` |
+| Noise | Violet Noise | Bundled: `assets/sounds/noise_violet.mp3` |
 | Noise | Grey Noise | **No recording configured** — labeled; no substitute playback |
 | Solfeggio | 432Hz Healing | **No recording configured** — labeled; no substitute playback |
 | Solfeggio | 528Hz Transformation | **No recording configured** — labeled; no substitute playback |
@@ -132,12 +208,26 @@ Read-only GitHub inspection of [`remvze/moodist`](https://github.com/remvze/mood
 
 ## Implementation and verification
 
-- `lib/models/bundled_recordings.dart`: six choices and explicit source identity for legacy bundled aliases.
-- `lib/components/{mixer_artwork,sound_replacement_sheet}.dart`, `lib/services/sound_preview_controller.dart`: consistent covers, explicit preview/use, request ownership, lifecycle cancellation and safe errors.
-- `lib/providers/{mixer_controller,app_state}.dart`: one-layer level-preserving swaps, duplicate prevention, preview ducking, injectable ambient players, bounded source attempts, visible missing/failing source state and stale-load guards.
-- `test/{mixer_catalog,mixer_controller,mixer_screen,sound_preview_controller,ambient_audio_state,user_backup_state}_test.dart`: asset, controller, widget, delayed-load/failure, gain, persistence and legacy-backup regressions. Fresh [hosted verification at `d6447f6` / run 44483121445](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44483121445) passes **260/260 Flutter tests**, analysis/scoped formatting, clean locks, release-web compilation and **all four jobs**, including Android debug/unsigned release, real artifact/signing guards and iOS unsigned release compilation. No test was skipped. This supersedes the earlier engineering baseline, not the owner’s media/device/store gates.
-- `design/preview/sound-replacement.{js,css}` and `test/web/sound_replacement_browser_test.mjs`: independent HTML implementation and **20 browser regressions**, including actual decoding/playback of all six bundled files and 320/390/823px/landscape layouts. Local full browser suite: **116 passed, 0 failed, 0 skipped**; Python diagnostics/verifiers: **15 passed**. These are not Flutter/device results.
+The [stability follow-up](PROJECT_GOALS.md) adds confirmed-playback indicators to the independent HTML mixer: unavailable/failed sources do not count or glow, pending loads stay cancelable, and explicit retry leaves healthy loops running. The ten new ambient regressions cover partial failure, playback refusal, timeout, late media events, retry and mode-switch cancellation. This does not establish native readiness/buffering behavior.
 
-[Scrolled covers](../design/mixer-covers-mobile-preview.png) and [replacement chooser](../design/sound-replacement-mobile-preview.png) are **independent HTML screenshots**, not native captures. The chooser screenshot shows a selected row with playback paused; merely opening it does not create a player.
+- `lib/models/{bundled_recordings,mixer_catalog,vibe_sound_sets}.dart`: 77 cards, 18 source choices, 23 explicit aliases, ten live mixer recipes and new-pack credits.
+- `lib/components/sound_replacement_sheet.dart`, `lib/services/sound_preview_controller.dart`, `lib/providers/{mixer_controller,app_state}.dart`: searchable explicit preview/use, source identity/duplicate guards, level/paused-state preservation, local-only link support and safe load/play errors. Preview request ownership, lifecycle cancellation and gain recovery are retained.
+- `tool/verify_ambient_pack.py`: checks twelve exact output hashes/sizes, seven distinct pinned source identities and per-recording provenance; optionally fully decodes the MP3s and checks duration, non-silence and bounded mono/downsampled levels. It is not a subjective loudness/true-peak/spectrum/seam guarantee. All twelve final files passed full decode/QC on 2026-11-19.
+- Current executed local suites: **244/244 browser/PWA/source/configuration tests**, including actual playback of all **18** chooser sources, **23** session arrangements and **ten** new live vibe sets; **41/41 Python tests**, including provenance/duplicate/corruption/rebuild guards for both packs. The 23 final arrangements also passed full decode, full-bandwidth stereo loudness/headroom measurement, and 253 pairwise identity-regression checks; those checks do not replace a human listening pass. No skips. New wellbeing, breathing, responsive Meditate/filter and chooser-search regressions are included, along with 15 first-pass library/Meditate cases and two family/filter parity guards. The [simplification evidence](SIMPLE_LIBRARY_FLOW.md#verification-and-limits) records 40 live checks, 93 unchanged protected hashes and 16 additional unexecuted native cases. The subsequent warning follow-up adds 20 preflight/availability regressions and 25 live checks; 148 protected files were unchanged for that earlier browser-only pass. The later requested-preset update replaces only the featured ten recipes, updates their details/purposes and maintains exact independent volume levels: 22 recipe-browser cases, 9 parity guards, 50 live checks and 147 current protected hashes pass. [Current recipe evidence](CURATED_SOUND_MIXES.md). Tests use isolated browser history, not fabricated native data.
+- Changed Dart source/tests were WASM-parsed/formatted, **not compiled**. New Flutter regressions cover wellbeing navigation/real activity/timer phases and new sources/search/keyboard/clipboard handling; they remain unexecuted without the SDK. [Run 44483121445 / `d6447f6`](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/44483121445) passed 260 Flutter tests and all four jobs **before these changes**. Fresh Flutter/web/unsigned-native verification is still required.
 
-No signed build, store submission, live billing change, public launch or spending was authorized or performed by this update. See [launch readiness](LAUNCH_READINESS.md) for the remaining owner-controlled gates.
+### Reproduce and rebuild
+
+```sh
+python3 -m unittest discover -s tool -p 'test_*.py' -v
+python3 tool/verify_ambient_pack.py
+python3 tool/verify_ambient_pack.py --ffmpeg /path/to/ffmpeg --report build/audio-qc.json
+# Restore pinned source blobs and rebuild into ignored scratch storage:
+python3 tool/prepare_ambient_pack.py --download --ffmpeg /path/to/ffmpeg
+```
+
+The rebuild defaults to `build/rebuilt-ambient-pack`. Changing reviewed bundled files requires **both** `--output-dir assets/sounds --update-manifest`; a scratch rebuild cannot rewrite the bundled manifest. Different encoder builds can produce different hashes: review/recheck the files and update the encoder/evidence description when deliberately replacing them. Raw downloads and QC reports stay in ignored `build/` storage.
+
+[Updated sound-search capture](../design/sound-library-search-mobile-preview.png) and [card covers](../design/mixer-covers-mobile-preview.png) are independent HTML screenshots, not native captures. The search screenshot is paused; filtering/selecting did not create a player.
+
+No signed distribution, store submission, live billing change, public launch or spending was performed by this follow-up. See [launch readiness](LAUNCH_READINESS.md) for the owner-controlled gates.

@@ -6,12 +6,65 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   final Map<String, double> active = {};
   final Map<String, String> ambientErrors = {};
   final Set<String> ambientLoading = {};
+  final Set<String> ambientBuffering = {};
+  final Set<String> ambientPaused = {};
   bool previewDucked = false;
 
   @override
   String? ambientTrackError(String name) => ambientErrors[name];
   @override
-  bool isAmbientTrackLoading(String name) => ambientLoading.contains(name);
+  bool isAmbientTrackLoading(String name) =>
+      ambientTrackStatus(name) == AmbientPlaybackStatus.loading;
+  @override
+  bool isAmbientTrackPlaying(String name) =>
+      ambientTrackStatus(name) == AmbientPlaybackStatus.playing;
+  @override
+  AmbientPlaybackStatus ambientTrackStatus(String name) {
+    if (ambientErrors.containsKey(name)) return AmbientPlaybackStatus.failed;
+    if ((active[name] ?? 0) <= 0) return AmbientPlaybackStatus.idle;
+    if (ambientLoading.contains(name)) return AmbientPlaybackStatus.loading;
+    if (ambientBuffering.contains(name)) return AmbientPlaybackStatus.buffering;
+    if (ambientPaused.contains(name)) return AmbientPlaybackStatus.paused;
+    return AmbientPlaybackStatus.playing;
+  }
+
+  @override
+  bool get hasAmbientSession =>
+      ambientSession || active.values.any((value) => value > 0);
+  @override
+  bool get isAmbientPlayerExpanded => hasAmbientSession && ambientExpanded;
+  @override
+  void showAmbientPlayer() {
+    ambientSession = true;
+    ambientExpanded = true;
+    guidedExpanded = false;
+    notifyListeners();
+  }
+
+  @override
+  void minimizeAmbientPlayer() {
+    ambientExpanded = false;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> pauseAllAmbientSoundTracks() async {
+    ambientSession = hasAmbientSession;
+    active.clear();
+    ambientLoading.clear();
+    ambientBuffering.clear();
+    ambientPaused.clear();
+    notifyListeners();
+  }
+
+  @override
+  bool get hasAmbientPlaybackRequest => requestedAmbientTracks.isNotEmpty;
+  @override
+  bool get isAmbientPlaybackPending => requestedAmbientTracks.keys.any((name) {
+    final status = ambientTrackStatus(name);
+    return status == AmbientPlaybackStatus.loading ||
+        status == AmbientPlaybackStatus.buffering;
+  });
   @override
   void setAmbientPreviewDucking(bool previewing) {
     previewDucked = previewing;
@@ -29,6 +82,8 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   bool guidedPlaying = false;
   bool guidedLoading = false;
   bool guidedExpanded = false;
+  bool ambientSession = false;
+  bool ambientExpanded = false;
   bool guidedLoop = true;
   String? guidedError;
   final List<bool> guidedCompletions = [];
@@ -39,10 +94,16 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   Map<String, double> get cachedVolumes => Map.of(cached);
   @override
-  Map<String, double> get activeAmbientTracks => Map.of(active);
+  Map<String, double> get requestedAmbientTracks =>
+      Map.fromEntries(active.entries.where((entry) => entry.value > 0));
   @override
-  bool get isAnyAudioPlaying =>
-      guidedPlaying || active.values.any((value) => value > 0);
+  Map<String, double> get activeAmbientTracks => Map.fromEntries(
+    active.entries.where((entry) => isAmbientTrackPlaying(entry.key)),
+  );
+  @override
+  bool get isAnyAudioPlaying => guidedPlaying || activeAmbientTracks.isNotEmpty;
+  @override
+  bool get isPlayingAny => isAnyAudioPlaying;
   @override
   bool get isBackgroundMode => false;
   @override
@@ -68,19 +129,36 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   }
 
   @override
-  Future<void> updateSoundTrackVolume(String name, double volume) async {
+  Future<void> updateSoundTrackVolume(
+    String name,
+    double volume, {
+    bool resumePaused = true,
+  }) async {
     if (volume > 0) {
+      final wasRequested = (active[name] ?? 0) > 0;
+      if (!hasAmbientSession) {
+        ambientSession = true;
+        ambientExpanded = true;
+      }
+      guidedExpanded = false;
       guidedPlaying = false;
       guidedLoading = false;
       active[name] = volume;
+      ambientErrors.remove(name);
+      if (resumePaused || !wasRequested) ambientPaused.remove(name);
     } else {
       active.remove(name);
+      ambientLoading.remove(name);
+      ambientBuffering.remove(name);
+      ambientPaused.remove(name);
     }
     notifyListeners();
   }
 
   @override
   Future<void> stopAllAudio() async {
+    ambientSession = false;
+    ambientExpanded = false;
     guidedPlaying = false;
     guidedLoading = false;
     guidedExpanded = false;
@@ -88,6 +166,9 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
     guidedSeconds = 0;
     guidedTotal = 0;
     active.clear();
+    ambientLoading.clear();
+    ambientBuffering.clear();
+    ambientPaused.clear();
     notifyListeners();
   }
 
@@ -141,7 +222,12 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   int get guidedElapsedSec => guidedTotal - guidedSeconds;
   @override
   Future<void> playGuidedSession(String title, int durationMins) async {
+    ambientSession = false;
+    ambientExpanded = false;
     active.clear();
+    ambientLoading.clear();
+    ambientBuffering.clear();
+    ambientPaused.clear();
     if (guidedTitle != title || guidedSeconds <= 0) {
       guidedTitle = title;
       guidedTotal = durationMins * 60;
@@ -156,7 +242,12 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   Future<void> resumeGuidedSession() async {
     if (!hasGuidedSession) return;
+    ambientSession = false;
+    ambientExpanded = false;
     active.clear();
+    ambientLoading.clear();
+    ambientBuffering.clear();
+    ambientPaused.clear();
     guidedPlaying = true;
     guidedError = null;
     notifyListeners();
@@ -164,6 +255,8 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
 
   @override
   void showGuidedPlayer() {
+    ambientSession = false;
+    ambientExpanded = false;
     guidedExpanded = true;
     notifyListeners();
   }

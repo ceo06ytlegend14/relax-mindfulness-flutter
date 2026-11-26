@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:relax_mindfulness/components/wellbeing_components.dart';
+import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
 /// Legacy route name retained for compatibility. This is a local writing
 /// template, not an AI/music service. No provider key or network call belongs
@@ -87,152 +89,132 @@ When you are ready, notice something around you and choose one small, kind next 
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: const Color(0xFF061722),
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Reflection studio'),
-        backgroundColor: Color(0xF0061722),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 130),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return WellbeingPage(
+      title: 'Reflection studio',
+      scrollKey: const PageStorageKey('reflection-scroll'),
+      builder: (context, m) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const WellbeingEyebrow('A MOMENT TO CHECK IN'),
+          const SizedBox(height: 10),
+          Text('Make room for a quiet thought', style: m.serif(60, min: 34)),
+          const SizedBox(height: 14),
+          const Text(
+            'Use an on-device writing template for a short pause. This is not AI or music generation. '
+            'The app does not upload your prompt or save this text automatically.',
+            style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'What would you like to reflect on?',
+            style: TextStyle(
+              color: CupertinoColors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          CupertinoTextField(
+            key: const ValueKey('reflection-prompt'),
+            controller: _prompt,
+            placeholder: 'A feeling, an intention, or a small moment…',
+            minLines: 3,
+            maxLines: 5,
+            maxLength: 400,
+            autocorrect: false,
+            enableSuggestions: false,
+            style: const TextStyle(color: CupertinoColors.white),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: MixerTheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: MixerTheme.border),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              const Text(
-                'Make room for a quiet thought',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Use an on-device writing template for a short pause. This is not AI or music generation. '
-                'The app does not upload your prompt or save this text automatically.',
-                style: TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'What would you like to reflect on?',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              CupertinoTextField(
-                key: const ValueKey('reflection-prompt'),
-                controller: _prompt,
-                placeholder: 'A feeling, an intention, or a small moment…',
-                minLines: 3,
-                maxLines: 5,
-                maxLength: 400,
-                autocorrect: false,
-                enableSuggestions: false,
-                style: const TextStyle(color: CupertinoColors.white),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF102A3B),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final idea in _ideas)
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      color: const Color(0xFF173A43),
-                      onPressed: () => _prompt.text = idea.$2,
-                      child: Text(
-                        idea.$1,
-                        style: const TextStyle(
-                          color: Color(0xFF9CF0DA),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              CupertinoButton.filled(
-                key: const ValueKey('create-reflection'),
-                onPressed: _prompt.text.trim().isEmpty
-                    ? null
-                    : _createReflection,
-                child: const Text(
-                  'Create reflection from template',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              if (_reflection != null) ...[
-                const SizedBox(height: 28),
-                const Text(
-                  'YOUR TEMPLATE REFLECTION',
-                  style: TextStyle(
-                    color: Color(0xFF9CF0DA),
-                    fontSize: 12,
-                    letterSpacing: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _reflection!,
-                  key: const ValueKey('reflection-output'),
-                  style: const TextStyle(
-                    color: Color(0xFFE3F1F5),
-                    height: 1.65,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                CupertinoButton.filled(
-                  key: const ValueKey('copy-reflection'),
-                  onPressed: _copying ? null : _copyReflection,
-                  child: _copying
-                      ? const CupertinoActivityIndicator()
-                      : const Text('Copy text'),
-                ),
-              ],
-              if (_notice != null) ...[
-                const SizedBox(height: 14),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _notice!,
-                    key: const ValueKey('reflection-notice'),
-                    style: const TextStyle(
-                      color: Color(0xFFBCD0DC),
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-              if (_prompt.text.isNotEmpty)
+              for (final idea in _ideas)
                 CupertinoButton(
-                  key: const ValueKey('clear-reflection'),
-                  onPressed: _prompt.clear,
-                  child: const Text('Clear this reflection'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  color: const Color(0xFF173A43),
+                  onPressed: () => _prompt.text = idea.$2,
+                  child: Text(
+                    idea.$1,
+                    style: const TextStyle(
+                      color: Color(0xFF9CF0DA),
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 24),
-              const Text(
-                'Leaving this screen discards the draft. Copying is optional; other apps may be able '
-                'to read your clipboard. This general wellbeing exercise is not medical care.',
-                style: TextStyle(
-                  color: Color(0xFF9BB4C4),
-                  fontSize: 12,
-                  height: 1.5,
-                ),
-              ),
             ],
           ),
-        ),
+          const SizedBox(height: 20),
+          CupertinoButton.filled(
+            key: const ValueKey('create-reflection'),
+            onPressed: _prompt.text.trim().isEmpty ? null : _createReflection,
+            child: const Text(
+              'Create reflection from template',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (_reflection != null) ...[
+            const SizedBox(height: 28),
+            const Text(
+              'YOUR TEMPLATE REFLECTION',
+              style: TextStyle(
+                color: Color(0xFF9CF0DA),
+                fontSize: 12,
+                letterSpacing: 1.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _reflection!,
+              key: const ValueKey('reflection-output'),
+              style: const TextStyle(color: Color(0xFFE3F1F5), height: 1.65),
+            ),
+            const SizedBox(height: 16),
+            CupertinoButton.filled(
+              key: const ValueKey('copy-reflection'),
+              onPressed: _copying ? null : _copyReflection,
+              child: _copying
+                  ? const CupertinoActivityIndicator()
+                  : const Text('Copy text'),
+            ),
+          ],
+          if (_notice != null) ...[
+            const SizedBox(height: 14),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _notice!,
+                key: const ValueKey('reflection-notice'),
+                style: const TextStyle(color: Color(0xFFBCD0DC), height: 1.5),
+              ),
+            ),
+          ],
+          if (_prompt.text.isNotEmpty)
+            CupertinoButton(
+              key: const ValueKey('clear-reflection'),
+              onPressed: _prompt.clear,
+              child: const Text('Clear this reflection'),
+            ),
+          const SizedBox(height: 24),
+          const Text(
+            'Leaving this screen discards the draft. Copying is optional; other apps may be able '
+            'to read your clipboard. This general wellbeing exercise is not medical care.',
+            style: TextStyle(
+              color: Color(0xFF9BB4C4),
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }
