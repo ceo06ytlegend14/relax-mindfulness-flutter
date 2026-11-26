@@ -98,6 +98,9 @@ jobs:
           lib/screens/sleep_screen.dart test/wellbeing_screen_test.dart
       - name: Run Flutter regressions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        # Leave time for failure annotations, event retention and the independent
+        # web build if a widget test hangs. A timeout is still a failed check.
+        timeout-minutes: 8
         shell: bash
         run: |
           set -o pipefail

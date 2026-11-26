@@ -23,6 +23,7 @@ def report(source):
     errors = {}
     prints = {}
     completed = []
+    finished_ids = set()
     finish = None
     for line in source.splitlines():
         try:
@@ -47,8 +48,12 @@ def report(source):
             error = str(event.get('error', 'Unknown test error'))
             stack = str(event.get('stackTrace', ''))
             errors.setdefault(event.get('testID'), []).append(f'{error}\n{stack}'.strip())
-        elif kind == 'testDone' and not event.get('hidden', False):
-            completed.append(event)
+        elif kind == 'testDone':
+            # Hidden loading/setup events also finish: do not mistake them for
+            # a hanging test when the stream is interrupted later.
+            finished_ids.add(event.get('testID'))
+            if not event.get('hidden', False):
+                completed.append(event)
         elif kind == 'done':
             finish = bool(event.get('success', False))
 
@@ -73,6 +78,17 @@ def report(source):
         annotations.append(f'::error title={escape(name[:220], prop=True)}{location}::{escape(body)}')
     if finish is None:
         annotations.append('::error title=Incomplete Flutter test stream::No final Dart test event was recorded; inspect the test process output.')
+        unfinished = [(test_id, test) for test_id, test in tests.items()
+                      if test_id not in finished_ids]
+        for test_id, test in unfinished[:8]:
+            name = str(test.get('name', f'Test {test_id}'))
+            path = suites.get(test.get('suiteID'), '')
+            detail = [f'Test started but did not finish: {name}', f'Suite: {path}']
+            detail.extend(prints.get(test_id, []))
+            annotations.append(
+                f'::error title={escape(("Unfinished Flutter test: " + name)[:220], prop=True)}'
+                f'::{escape(chr(10).join(detail)[:14000])}'
+            )
     elif not finish and not errors:
         annotations.append('::error title=Flutter tests failed::The runner reported failure without a structured error event.')
     success = finish is True and not errors and failed == 0

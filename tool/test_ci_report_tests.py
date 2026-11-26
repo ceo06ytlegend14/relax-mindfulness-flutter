@@ -61,6 +61,35 @@ class TestReporterTest(unittest.TestCase):
         self.assertFalse(report('')[0])
         self.assertFalse(report(events({'type': 'done', 'success': False}))[0])
 
+    def test_interrupted_stream_names_only_unfinished_tests(self):
+        ok, summary, annotations = report(events(
+            {'type': 'suite', 'suite': {'id': 1, 'path': 'test/player_test.dart'}},
+            {'type': 'testStart', 'test': {'id': 2, 'name': 'finished', 'suiteID': 1}},
+            {'type': 'testDone', 'testID': 2, 'result': 'success'},
+            {'type': 'testStart', 'test': {'id': 3, 'name': 'loading', 'suiteID': 1}},
+            {'type': 'testDone', 'testID': 3, 'result': 'success', 'hidden': True},
+            {'type': 'testStart', 'test': {'id': 4, 'name': 'waiting for audio', 'suiteID': 1}},
+            {'type': 'print', 'testID': 4, 'message': 'still in setup'},
+        ))
+        self.assertFalse(ok)
+        self.assertIn('1 passed, 0 failed', summary)
+        self.assertEqual(len(annotations), 2)
+        self.assertIn('Incomplete Flutter test stream', annotations[0])
+        self.assertIn('waiting for audio', annotations[1])
+        self.assertIn('test/player_test.dart', annotations[1])
+        self.assertIn('still in setup', annotations[1])
+
+    def test_unfinished_test_annotations_are_bounded_and_escaped(self):
+        ok, _, annotations = report(events(
+            *({'type': 'testStart', 'test': {'id': i, 'name': 'hang,\n::warning::' + 'x' * 50000}}
+              for i in range(40)),
+        ))
+        self.assertFalse(ok)
+        self.assertEqual(len(annotations), 9)
+        self.assertTrue(all(len(annotation) < 14500 for annotation in annotations))
+        self.assertTrue(all('\n' not in annotation for annotation in annotations))
+        self.assertIn('hang%2C%0A%3A%3Awarning', annotations[1])
+
     def test_error_output_is_bounded(self):
         _, _, annotations = report(events(
             *({'type': 'error', 'testID': i, 'error': 'e' * 50000} for i in range(40)),

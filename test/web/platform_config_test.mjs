@@ -74,6 +74,19 @@ test('quality automation has no repository-write or deployment capability', asyn
   assert.match(workflow, /npm run test:web/);
 });
 
+test('a hung Flutter regression fails before the job loses its diagnostics', async () => {
+  const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
+  const testStep = workflow.match(/- name: Run Flutter regressions\n([\s\S]*?)(?=\n      -)/)?.[1];
+  assert(testStep, 'The test process has its own step');
+  assert.match(testStep, /timeout-minutes: 8\b/);
+  assert.match(testStep, /set -o pipefail/);
+  assert.doesNotMatch(testStep, /continue-on-error/);
+  for (const label of ['Summarize Flutter failures without masking the test exit code', 'actions/upload-artifact@']) {
+    const step = workflow.split(label)[1]?.split(/\n      -/)[0];
+    assert.match(step ?? '', /if: \$\{\{ !cancelled\(\) && steps\.dependencies\.outcome == 'success' \}\}/);
+  }
+});
+
 test('the native ambient player and its regressions are included in the pinned format gate', async () => {
   const workflow = await readFile(path.join(root, '.github/workflows/quality.yml'), 'utf8');
   const formatStep = workflow.match(/dart format --output=none --set-exit-if-changed([\s\S]*?)(?=\n      -)/)?.[1];
