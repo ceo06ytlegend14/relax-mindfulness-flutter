@@ -2,7 +2,9 @@
 
 Updated: 2026-11-19. Implements the user-approved **automatic full ambient player**, separate from the timed Meditate player, and investigates the reported **actual audio stuttering/stopping**. This is not a decorative waveform-only fix.
 
-**Current local result: 289/289 web checks and 71/71 Python checks. The original player batch also passed 55/55 live-preview checks; those captures/checks were not rerun for the non-visual interruption-safety follow-up below. Flutter analysis, compilation, device audio and human listening are still unverified. Launch remains blocked.**
+**Verification update:** the [current exact-source hosted record](release/BUILD_CHECKS.md) includes **409/409 Flutter tests**, pinned analysis/formatting, release web compilation and the browser/PWA/platform job. Android debug/unsigned release and unsigned iOS compilation also passed for that same candidate. Runtime fingerprint: `8b02ccfdc421379d35232d8e4809a1bdfc4c23396543a603b2f24a45f019bc62`. Physical-device audio, human listening, rights and release approvals remain unverified; launch remains blocked.
+
+The local-only counts, fingerprints, captures and then-unexecuted Dart statements below are historical checkpoints, superseded for automation status by that hosted record. The **55 live-preview checks and loop telemetry were not rerun or relabeled as native listening**.
 
 ## User flow
 
@@ -63,7 +65,7 @@ The corresponding native source adds a `resumePaused` intent to existing-player 
 
 Five new browser regressions cover the three reproduced cases, multiple retained failures and deliberate-start compatibility. A sixth source/configuration regression verifies that the new ambient part and its widget tests are actually listed in the pinned CI format command; the workflow was edited, **not triggered**. All **289/289** web checks pass. Seven more Dart cases (three controller, three fake-native audio, one widget) are authored/WASM-parsed but **unexecuted**. The complete player-related addition is now 22 unexecuted Dart cases, including the original 15.
 
-All **115 protected hashes** for this narrow follow-up match: bundled media, catalog/recipes, theme, the Sleep screen, dependency files, launch register and unfilled device worksheet. No source recording, independent percentage, artwork, store identity or approval was changed. Current runtime fingerprint is **`3c95e71ae4b986ea90ff04f0c165b927743fe74156924038a70069a647fd9771`**; read-only preflight still exits **1 / BLOCKED** with **196** pending records/gates. The previous `90a04e…` fingerprint does not verify this candidate.
+All **115 protected hashes** for this narrow follow-up match: bundled media, catalog/recipes, theme, the Sleep screen, dependency files, launch register and unfilled device worksheet. No source recording, independent percentage, artwork, store identity or approval was changed. At that earlier local checkpoint, the runtime fingerprint was **`3c95e71ae4b986ea90ff04f0c165b927743fe74156924038a70069a647fd9771`**; read-only preflight still exits **1 / BLOCKED** with **196** pending records/gates. The previous `90a04e…` fingerprint does not verify this candidate.
 
 Diagnostics remain ignored/local: `/tmp/arena-ambient-edit-before.log` (three reproduced failures), `/tmp/arena-ambient-edit-focused.log`, `/tmp/arena-ambient-edit-all-web-final.log`, `/tmp/arena-ambient-edit-python-final.log`, and `build/ambient-edit-safety-preflight.json`. Checked-in tests are the portable regression evidence, not native/device execution. No new screenshots or physical-output listening claim is made by this non-visual follow-up.
 
@@ -77,9 +79,9 @@ The PWA visibility helper now tracks full-player owners, preventing disposal of 
 
 **The original 15 additional Dart regressions remain authored, not executed:** eleven overlay/widget/responsive/mini-clearance cases, three controller cases and one native fake-player source/ownership case. The prior pending-cancel mini assertion now expects a retained paused control rather than disappearance. Touched Dart files pass WASM formatting/parsing only; **there is no Flutter/Dart SDK in this sandbox**, so that is not type analysis or compilation. A fresh pinned-toolchain run and signed-device listening are still required.
 
-## Executed checks and captures
+## Earlier local checks and captures (historical)
 
-- **289/289** current browser/PWA/source/configuration tests, no failures/skips. This includes the six interruption-safety/configuration additions above. The original 27 added cases cover actual decoding, exact layers/levels, all entry points/tabs, no autoplay, healthy source-node continuity, actual loop-boundary crossing, slow/stalled loading deadlines, late-result fencing, partial failure/retry, suspension/context closure, memory eviction, media-element compatibility, save, mode ownership, timers/fade, keyboard containment, 44px targets and five viewport shapes with 1.6× text and blocked fonts.
+- **289/289** earlier browser/PWA/source/configuration tests, no failures/skips. This includes the six interruption-safety/configuration additions above. The original 27 added cases cover actual decoding, exact layers/levels, all entry points/tabs, no autoplay, healthy source-node continuity, actual loop-boundary crossing, slow/stalled loading deadlines, late-result fencing, partial failure/retry, suspension/context closure, memory eviction, media-element compatibility, save, mode ownership, timers/fade, keyboard containment, 44px targets and five viewport shapes with 1.6× text and blocked fonts.
 - **71/71** Python tests, no failures/skips. Media/provenance/recipe checks remain unchanged.
 - **55/55** original-player checks (not rerun for the non-visual safety follow-up) against the existing port-3000 preview at 320 / 390 / 431 / 823 / 1440px; no page errors or player/layer overflow. Four exact layers/gains, automatic expansion, minimize/reopen identity, paused persistence and 44px targets checked.
 - **20** CSS/JS content versions verified; JavaScript syntax and `git diff --check` pass. Existing mixer/availability tests now deliberately minimize before using background controls; none force-click through a modal or disable the new flow.
@@ -89,10 +91,10 @@ The PWA visibility helper now tracks full-player owners, preventing disposal of 
 npm run test:web
 python3 -m unittest discover -s tool -p 'test_*.py' -v
 node tool/version_preview_assets.mjs --check
-# Still required on the pinned Flutter toolchain:
+# Reproduce the pinned-toolchain checks now exercised by hosted CI:
 flutter analyze --no-fatal-infos
 flutter test
 flutter build web --release
 ```
 
-**The original player work was committed locally as `cd7abf3`; that is the earlier checkpoint, not this follow-up candidate. No push, hosted workflow, signing, publishing, spending or sales activation occurred for this follow-up.** The [launch-hardening evidence gate](LAUNCH_HARDENING.md) remains fail-closed with all rights/credential/native-build/device/human/owner requirements open. Earlier launch fingerprints or historical green CI do not verify this changed candidate.
+**The original local player checkpoint was recorded as `cd7abf3`. Its later approved reconciliation/push and current hosted workflow are documented in the [build-check record](release/BUILD_CHECKS.md); the old local-only checkpoint is not current CI evidence. No production signing, publishing, spending or sales activation occurred.** The [launch-hardening evidence gate](LAUNCH_HARDENING.md) remains fail-closed with all rights/credential/native-build/device/human/owner requirements open. Earlier launch fingerprints or historical green CI do not verify this changed candidate.

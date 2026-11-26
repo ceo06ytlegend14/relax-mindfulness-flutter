@@ -2,9 +2,11 @@
 
 Agreed 2026-11-19. **Stability first, custom icons next.** Work in small, testable batches rather than redesigning the app at once. This is a development plan, not authorization to publish, spend, sign builds or change store identities.
 
-**Current priority: launch hardening, with the user’s explicit ambient-player/stutter correction as a limited follow-up.** Other new features, custom icons and later groups stay deferred while rights, fresh native verification, device audio and human listening remain open. **289/289 current web + 71/71 Python checks** pass; the original full-player batch also passed **55/55 live checks** (not rerun for the non-visual safety follow-up). Full release preflight remains **BLOCKED**. [Hardening/evidence handoff](LAUNCH_HARDENING.md) and [unfilled device/listening worksheet](release/DEVICE_QA.md).
+**Current priority: release hardening, not new features or a public launch.** The requested ambient-player/stutter correction, exact recipes and simpler library are implemented. [Current hosted verification](release/BUILD_CHECKS.md) now includes **409 passing Flutter tests**, pinned analysis/formatting, release web compilation and the browser job, plus successful exact-source Android debug/unsigned release and unsigned iOS compilation. Device audio, human listening, rights, credentials and owner release decisions remain open. The preflight remains **BLOCKED** and custom icons remain deferred.
 
-Earlier, the user reviewed Home and approved the softer treatment across all pages. That rollout is implemented in the independent preview and corresponding Flutter styles, as are the ten exact bundled-source recipes and library/Meditate simplification. The native ambient readiness follow-up is now implemented in source, with **29 new, unexecuted native regressions**. Phase 1 remains active while Flutter/device verification is open; custom icons remain queued.
+The restored snapshot was reconciled and pushed on the existing working branch without resetting work or rewriting remote history. Hosted verification exposed and corrected native control-sheet overflow and test lifecycle/route/lazy-layout issues without disabling assertions. The earlier readiness, recipe, surface and player regressions are included in the full Flutter suite.
+
+**Historical implementation checklists below** preserve what had and had not run at each local stage. Their then-unexecuted/native-SDK labels are superseded by the current hosted record, **not** by signed-device or human-listening evidence. The old **289 web / 71 Python** and **55 live checks** are historical runs, not new physical-output certification. [Hardening handoff](LAUNCH_HARDENING.md) · [unfilled device/listening worksheet](release/DEVICE_QA.md).
 
 ## Preserve throughout
 
