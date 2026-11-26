@@ -61,6 +61,15 @@ def report(source):
     failed = sum(e.get('result') in ('failure', 'error') for e in completed)
     skipped = sum(bool(e.get('skipped')) for e in completed)
     summary = f'Flutter tests: {passed} passed, {failed} failed, {skipped} skipped.'
+    # A runner interrupted by a deadline can end tests as errors without a
+    # separate structured error event. Name those failures too, not just counts.
+    for event in completed:
+        test_id = event.get('testID')
+        if event.get('result') in ('failure', 'error') and test_id not in errors:
+            errors[test_id] = [
+                f'The runner ended this test with result {event["result"]}; '
+                'no structured error was recorded. It may have been interrupted.'
+            ]
     annotations = []
     # Keep diagnostics bounded while covering a multi-suite regression batch.
     for test_id, messages in list(errors.items())[:32]:
@@ -79,6 +88,10 @@ def report(source):
         annotations.append(f'::error title={escape(name[:220], prop=True)}{location}::{escape(body)}')
     if finish is None:
         annotations.append('::error title=Incomplete Flutter test stream::No final Dart test event was recorded; inspect the test process output.')
+    elif not finish and not errors:
+        annotations.append('::error title=Flutter tests failed::The runner reported failure without a structured error event.')
+    if finish is not True:
+        # SIGINT can produce a final done:false while leaving active tests.
         unfinished = [(test_id, test) for test_id, test in tests.items()
                       if test_id not in finished_ids]
         for test_id, test in unfinished[:8]:
@@ -86,12 +99,11 @@ def report(source):
             path = suites.get(test.get('suiteID'), '')
             detail = [f'Test started but did not finish: {name}', f'Suite: {path}']
             detail.extend(prints.get(test_id, []))
+            body = '\n'.join(detail)[:14000]
             annotations.append(
                 f'::error title={escape(("Unfinished Flutter test: " + name)[:220], prop=True)}'
-                f'::{escape(chr(10).join(detail)[:14000])}'
+                f'::{escape(body)}'
             )
-    elif not finish and not errors:
-        annotations.append('::error title=Flutter tests failed::The runner reported failure without a structured error event.')
     success = finish is True and not errors and failed == 0
     return success, summary, annotations
 

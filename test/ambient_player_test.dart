@@ -192,11 +192,17 @@ void main() {
       state.app.setTab(target.$1);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.drag(
-        find.byKey(PageStorageKey(target.$2)),
-        const Offset(0, -10000),
+      await tester.scrollUntilVisible(
+        find.text(target.$3),
+        400,
+        scrollable: find
+            .descendant(
+              of: find.byKey(PageStorageKey(target.$2)),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
       expect(
         tester.getBottomLeft(find.text(target.$3)).dy,
         lessThanOrEqualTo(
@@ -249,7 +255,13 @@ void main() {
     expect(state.app.activeAmbientTracks, isEmpty);
     expect(state.app.requestedAmbientTracks, state.mixer.levels);
     expect(state.app.isAmbientPlayerExpanded, isTrue);
-    expect(find.text('Playback paused · tap play to resume'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AmbientPlayerOverlay),
+        matching: find.text('Playback paused · tap play to resume'),
+      ),
+      findsOneWidget,
+    );
     await tapAmbient(tester, 'ambient-play-pause');
     expect(state.app.activeAmbientTracks, {..._forest, 'Meadow Breeze': .31});
     expect(tester.takeException(), isNull);

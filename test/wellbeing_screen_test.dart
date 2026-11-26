@@ -70,7 +70,8 @@ Future<void> tapWellbeing(WidgetTester tester, String key) async {
   await tester.tap(target);
   // Start the pushed route's animation before advancing its duration.
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 450));
+  await tester.pump(const Duration(milliseconds: 600));
+  await tester.pump();
 }
 
 void main() {
@@ -147,7 +148,8 @@ void main() {
       ]);
       await tester.tap(find.byType(CupertinoNavigationBarBackButton));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 450));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
       expect(find.byType(WellbeingScreen), findsOneWidget);
       expect(find.byType(BreatheScreen), findsNothing);
       expect(tester.takeException(), isNull);
@@ -168,7 +170,8 @@ void main() {
         expect(app.tab, AppTab.home);
         await tester.tap(find.byType(CupertinoNavigationBarBackButton));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 450));
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump();
         expect(find.byKey(const ValueKey('wellbeing-title')), findsOneWidget);
         expect(app.sessions, isEmpty);
         expect(tester.takeException(), isNull);
@@ -319,13 +322,25 @@ void main() {
       final app = await mountWellbeing(tester, screen: const BreatheScreen());
       await tapWellbeing(tester, 'breathing-toggle');
       await tester.pump(const Duration(seconds: 2));
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
       await tester.pump();
       final time = tester
           .widget<Text>(find.byKey(const ValueKey('breathing-time')))
           .data;
       await tester.pump(const Duration(minutes: 10));
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      for (final state in [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
       await tester.pump();
       expect(
         tester.widget<Text>(find.byKey(const ValueKey('breathing-time'))).data,

@@ -79,6 +79,27 @@ class TestReporterTest(unittest.TestCase):
         self.assertIn('test/player_test.dart', annotations[1])
         self.assertIn('still in setup', annotations[1])
 
+    def test_a_failed_final_event_does_not_hide_active_tests(self):
+        ok, _, annotations = report(events(
+            {'type': 'testStart', 'test': {'id': 1, 'name': 'cancelled load'}},
+            {'type': 'done', 'success': False},
+        ))
+        self.assertFalse(ok)
+        self.assertTrue(any('Unfinished Flutter test' in row and 'cancelled load' in row
+                            for row in annotations))
+
+    def test_a_failed_result_without_an_error_event_is_named(self):
+        ok, summary, annotations = report(events(
+            {'type': 'testStart', 'test': {'id': 1, 'name': 'interrupted cleanup'}},
+            {'type': 'testDone', 'testID': 1, 'result': 'error'},
+            {'type': 'done', 'success': False},
+        ))
+        self.assertFalse(ok)
+        self.assertIn('1 failed', summary)
+        self.assertEqual(len(annotations), 1)
+        self.assertIn('interrupted cleanup', annotations[0])
+        self.assertIn('no structured error was recorded', annotations[0])
+
     def test_unfinished_test_annotations_are_bounded_and_escaped(self):
         ok, _, annotations = report(events(
             *({'type': 'testStart', 'test': {'id': i, 'name': 'hang,\n::warning::' + 'x' * 50000}}

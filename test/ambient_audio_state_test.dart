@@ -306,72 +306,82 @@ void main() {
       expect(players.single.audible, isFalse);
     },
   );
-  testWidgets('a silent sleep deadline cannot create listening history', (
-    tester,
-  ) async {
-    app.startSleepTimer(1);
-    await tester.pump(const Duration(seconds: 61));
-    await flushAmbient();
-    expect(app.isSleepTimerRunning, isFalse);
-    expect(app.sleepTimerRemainingSec, isNull);
-    expect(app.activeAmbientTracks, isEmpty);
-    expect(app.sessions, isEmpty);
-    expect(app.showMoodDialog, isFalse);
-  });
+  testWidgets(
+    'a silent sleep deadline cannot create listening history',
+    (tester) async {
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 61));
+      await flushAmbient();
+      expect(app.isSleepTimerRunning, isFalse);
+      expect(app.sleepTimerRemainingSec, isNull);
+      expect(app.activeAmbientTracks, isEmpty);
+      expect(app.sessions, isEmpty);
+      expect(app.showMoodDialog, isFalse);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
-  testWidgets('failed audio plus a timer is not a completed sleep session', (
-    tester,
-  ) async {
-    factory = () => FakeAmbientAudioPlayer()..failLoads = true;
-    // Finish asynchronous failed-source cleanup before advancing the fake clock.
-    // The timer assertions below still run against deterministic virtual time.
-    await tester.runAsync(
-      () => app.updateSoundTrackVolume('Mountain Stream', .4),
-    );
-    expect(app.ambientTrackError('Mountain Stream'), isNotNull);
-    app.startSleepTimer(1);
-    await tester.pump(const Duration(seconds: 61));
-    await flushAmbient();
-    expect(app.isSleepTimerRunning, isFalse);
-    expect(app.sessions, isEmpty);
-    expect(app.showMoodDialog, isFalse);
-  });
+  testWidgets(
+    'failed audio plus a timer is not a completed sleep session',
+    (tester) async {
+      factory = () => FakeAmbientAudioPlayer()..failLoads = true;
+      // Finish asynchronous failed-source cleanup before advancing the fake clock.
+      // The timer assertions below still run against deterministic virtual time.
+      printOnFailure('Failed-source fixture: starting asynchronous cleanup.');
+      await tester.runAsync(
+        () => app.updateSoundTrackVolume('Mountain Stream', .4),
+      );
+      printOnFailure('Failed-source fixture: cleanup returned.');
+      expect(app.ambientTrackError('Mountain Stream'), isNotNull);
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 61));
+      await flushAmbient();
+      expect(app.isSleepTimerRunning, isFalse);
+      expect(app.sessions, isEmpty);
+      expect(app.showMoodDialog, isFalse);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
-  testWidgets('sleep expiry stops a mix without inventing listened minutes', (
-    tester,
-  ) async {
-    await app.updateSoundTrackVolume('Soft Rain', .5);
-    app.startSleepTimer(1);
-    await tester.pump(const Duration(seconds: 20));
-    await app.stopAllAudio();
-    await tester.pump(const Duration(seconds: 41));
-    await flushAmbient();
-    expect(players.single.audible, isFalse);
-    expect(players.single.volume, 0);
-    expect(app.isSleepTimerRunning, isFalse);
-    expect(app.sessions, isEmpty);
-    expect(app.showMoodDialog, isFalse);
-  });
+  testWidgets(
+    'sleep expiry stops a mix without inventing listened minutes',
+    (tester) async {
+      await app.updateSoundTrackVolume('Soft Rain', .5);
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 20));
+      await app.stopAllAudio();
+      await tester.pump(const Duration(seconds: 41));
+      await flushAmbient();
+      expect(players.single.audible, isFalse);
+      expect(players.single.volume, 0);
+      expect(app.isSleepTimerRunning, isFalse);
+      expect(app.sessions, isEmpty);
+      expect(app.showMoodDialog, isFalse);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
-  testWidgets('sleep expiry fences an ambient load that finishes later', (
-    tester,
-  ) async {
-    final gate = Completer<Duration?>();
-    factory = () => FakeAmbientAudioPlayer()..loadGate = gate;
-    final loading = app.updateSoundTrackVolume('Soft Rain', .5);
-    await flushAmbient();
-    expect(app.isAmbientTrackLoading('Soft Rain'), isTrue);
-    app.startSleepTimer(1);
-    await tester.pump(const Duration(seconds: 61));
-    await flushAmbient();
-    gate.complete(const Duration(seconds: 30));
-    await loading;
-    expect(players.single.playCalls, 0);
-    expect(players.single.disposed, isTrue);
-    expect(app.activeAmbientTracks, isEmpty);
-    expect(app.sessions, isEmpty);
-    expect(app.showMoodDialog, isFalse);
-  });
+  testWidgets(
+    'sleep expiry fences an ambient load that finishes later',
+    (tester) async {
+      final gate = Completer<Duration?>();
+      factory = () => FakeAmbientAudioPlayer()..loadGate = gate;
+      final loading = app.updateSoundTrackVolume('Soft Rain', .5);
+      await flushAmbient();
+      expect(app.isAmbientTrackLoading('Soft Rain'), isTrue);
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 61));
+      await flushAmbient();
+      gate.complete(const Duration(seconds: 30));
+      await loading;
+      expect(players.single.playCalls, 0);
+      expect(players.single.disposed, isTrue);
+      expect(app.activeAmbientTracks, isEmpty);
+      expect(app.sessions, isEmpty);
+      expect(app.showMoodDialog, isFalse);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
   test(
     'cold-player eviction releases the player and its event subscription',

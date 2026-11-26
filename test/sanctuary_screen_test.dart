@@ -504,7 +504,8 @@ void main() {
       await reveal(tester, browse);
       expect(find.text('Show featured practices'), findsOneWidget);
       await tester.tap(browse);
-      await tester.pump();
+      // Shrinking the lazy list must also settle its corrected scroll extent.
+      await tester.pumpAndSettle();
       expect(count(), 3);
       expect(app.guidedRequests, isEmpty);
       expect(app.active, isEmpty);

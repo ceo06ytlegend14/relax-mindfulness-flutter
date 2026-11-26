@@ -124,6 +124,11 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey('library-available')),
       );
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('library-available')).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey('library-available')));
       await tester.pump();
       expect(mixer.categoryCount('all'), 18);
@@ -407,6 +412,10 @@ void main() {
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.pump();
+        await tester.ensureVisible(options);
+        await tester.pump();
+        expect(options.hitTestable(), findsOneWidget);
         await tester.tap(options);
         await tester.pumpAndSettle();
         final select = find.byKey(
@@ -445,11 +454,23 @@ void main() {
       await tester.tap(preview);
       await tester.pump();
       expect(app.previewDucked, isTrue);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
       await tester.pump();
       expect(player.disposed, isTrue);
       expect(app.previewDucked, isFalse);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      for (final state in [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
       await tester.pump();
       expect(player.playCalls, 1);
       expect(app.active, isEmpty);
