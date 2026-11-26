@@ -609,11 +609,24 @@ void main() {
           tester.widget<Text>(find.byKey(const ValueKey('vibe-set-name'))).data,
           soundSet.name,
         );
-        await tester.tap(find.byKey(const ValueKey('mixer-play')));
+        final pause = find.byKey(const ValueKey('mixer-play'));
+        // The master controls can be outside the lazy viewport after revealing
+        // a recipe; scroll back before exercising the actual pause button.
+        await tester.scrollUntilVisible(
+          pause,
+          -300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pump();
+        expect(pause.hitTestable(), findsOneWidget);
+        await tester.tap(pause);
         await tester.pump();
         expect(app.activeAmbientTracks, isEmpty);
         expect(app.cached, soundSet.levels);
-        expect(find.byKey(const ValueKey('vibe-set-details')), findsOneWidget);
+        final recipe = find.byKey(const ValueKey('vibe-set-details'));
+        await tester.ensureVisible(recipe);
+        await tester.pump();
+        expect(recipe, findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

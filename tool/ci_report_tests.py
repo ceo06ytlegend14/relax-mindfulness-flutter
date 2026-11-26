@@ -71,8 +71,10 @@ def report(source):
                 'no structured error was recorded. It may have been interrupted.'
             ]
     annotations = []
-    # Keep diagnostics bounded while covering a multi-suite regression batch.
-    for test_id, messages in list(errors.items())[:32]:
+    extra_failures = []
+    # Actions caps error annotations per step. Keep the first eight detailed
+    # errors and group later diagnostics into bounded notices; exit still fails.
+    for index, (test_id, messages) in enumerate(list(errors.items())[:32]):
         test = tests.get(test_id, {})
         name = test.get('name', f'Test {test_id}')
         path = suites.get(test.get('suiteID'), '')
@@ -85,7 +87,17 @@ def report(source):
                 pass
         detail = list(prints.get(test_id, [])) + messages
         body = '\n\n'.join(dict.fromkeys(detail))[:14000]
-        annotations.append(f'::error title={escape(name[:220], prop=True)}{location}::{escape(body)}')
+        if index < 8:
+            annotations.append(f'::error title={escape(name[:220], prop=True)}{location}::{escape(body)}')
+        else:
+            extra_failures.append(f'{name[:220]}\n{body[:1200]}')
+    for offset in range(0, len(extra_failures), 8):
+        batch = extra_failures[offset:offset + 8]
+        body = '\n\n'.join(batch)[:14000]
+        annotations.append(
+            f'::notice title=Additional Flutter failures {offset + 9}-{offset + 8 + len(batch)}'
+            f'::{escape(body)}'
+        )
     if finish is None:
         annotations.append('::error title=Incomplete Flutter test stream::No final Dart test event was recorded; inspect the test process output.')
     elif not finish and not errors:
