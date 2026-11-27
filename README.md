@@ -1,122 +1,95 @@
 # Sanctuary — Relax & Mindfulness
 
-A Flutter app for ambient sound mixing, timed calming sessions, breathing and sleep routines. **Home / Sounds / Meditate / Sleep** keep distinct screens and share playback state.
+A Flutter app for ambient sound mixing, timed unguided practices, breathing and sleep routines. The current experience is **Home / Sounds / Meditate / Sleep**, with midnight-blue surfaces, a floating footer and shared playback state. There is **no in-page Install app button**.
 
-**Status: pre-release / launch blocked.** Stop adding features while rights, credentials, reviewed release evidence and human/device audio checks are open. The [launch-hardening handoff](docs/LAUNCH_HARDENING.md) includes the offline evidence gate and an unfilled [device/listening checklist](docs/release/DEVICE_QA.md); the [prioritized release plan](docs/LAUNCH_READINESS.md) remains the overall ledger. No release, sales activation or spending is authorized.
+<img src="design/home-no-install-mobile-preview.png" alt="The current Sanctuary Home, with midnight-blue styling and no Install app button" width="418">
 
-## Current design
+[Sounds](design/sounds-no-install-mobile-preview.png) · [Meditate](design/meditate-no-install-mobile-preview.png) · [Sleep](design/sleep-no-install-mobile-preview.png) · [Preview guide](design/README.md)
 
-Keep the approved **midnight-blue Home / Sounds / Meditate / Sleep** experience and floating footer. The in-page **Install app** button is removed; the rest of Home is unchanged.
+These are **independent HTML captures**, not compiled Flutter or native-device screenshots. The same approved visual direction is implemented in the Flutter source, but browser behavior does not verify physical-device behavior.
 
-<img src="design/home-no-install-mobile-preview.png" alt="Sanctuary Home with the approved midnight-blue design and no Install app button" width="418">
+## Status
 
-[Current Meditate view](design/meditate-no-install-mobile-preview.png) · [Design history](design/README.md). These are **independent HTML previews**, not native-device screenshots. Older captures and feature sections below record earlier iterations, not the current visual target or a fresh verification result.
+**Pre-release / launch BLOCKED. Purchases remain off.** There are **202 pending rights reviews and release gates**; passing tests is not permission to publish, sign, upload to TestFlight/stores, enable purchases or spend money. See [readiness](docs/LAUNCH_READINESS.md), [launch hardening](docs/LAUNCH_HARDENING.md) and the unfilled [device/listening checklist](docs/release/DEVICE_QA.md).
 
-When the older screen was reported, default `main` still pointed at the initial `c48f2d3` app; the newer source was on [`arena/6ab3ce1c-relax-mindfulness-flutter`](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/arena/6ab3ce1c-relax-mindfulness-flutter). Pushing a working branch does not update `main` or deploy a site. No GitHub Pages site was configured at inspection. A default-branch merge needs owner approval and passing current checks; it is not a store release.
+The owner-approved [PR #1](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/pull/1) brought the current design into `main`. Both pre-merge runs and the [post-merge main run](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45795349126) passed all four jobs: **429 Flutter tests**, analysis/scoped formatting, web compilation, browser/Python checks, Android debug/unsigned release and unsigned iOS compilation. Those results identify the **pre-cleanup** source; see [exact-source build evidence](docs/release/BUILD_CHECKS.md) for the current cleanup's verification boundary. A source merge is not a website deployment or an installable iPhone build.
 
-**Latest local checks: 326/326 web + 93/93 Python passed.** A controlled 418 × 885 Home comparison changed zero pixels outside the removed button. The inspected `b2e2a1a` hosted run passed browser/Android/unsigned-iOS jobs but failed three Flutter assertions (426 passed). Test corrections are prepared, not yet freshly Flutter-verified at this checkpoint. [Exact-source evidence and live checks](docs/release/BUILD_CHECKS.md). Release remains **BLOCKED / 202 pending** and purchases stay off.
+**Fresh cleanup checks:** **326/326 web + 97/97 Python**, zero failures/skips; all four tab captures are pixel-identical before/after cleanup, with 24 responsive tab checks passing. Hosted Flutter/native results must identify this cleanup's exact source revision; the green pre-cleanup baseline does not certify later changes.
 
-## Active project goals
+## What stays in the app
 
-[Tracked goals and acceptance checks](docs/PROJECT_GOALS.md): **launch hardening and the explicitly requested ambient-player/stutter correction; other features and custom icons deferred**. The newly approved player flow is documented below; earlier stability work remains separate from release approval. The first preview-stability batch now distinguishes confirmed playback from loading/failed selections, preserves healthy layers on retry and fences cancelled loads. Native source now also separates requested ambient levels from ready/playing state, keeps pending playback cancellable and adds per-layer retry without restarting healthy loops. Timer expiry no longer generates unsupported listening history. The earlier readiness/controller/widget additions are now included in the full hosted Flutter suite; see the [current build-check record](docs/release/BUILD_CHECKS.md). They have not run on physical devices or through a local Flutter SDK. The four custom navigation icons are queued; existing layouts and preferred Sleep controls are unchanged.
+- **Home:** the daily calm, shortcuts, shared soundscape and wellbeing destinations.
+- **Sounds:** 18 bundled sources by default; all 77 stable catalog identities remain behind explicit unfinished-catalog review. Keep independent levels, ten [exact curated recipes](docs/CURATED_SOUND_MIXES.md), eight legacy mixes, favorites, custom saves and [safe recording replacement](docs/SOUND_LIBRARY.md).
+- **Playback:** individual switches/sliders stay on Sounds with the mini-player. Deliberate whole-mix starts may expand the player; minimizing never stops a healthy mix. Loading, retry, cancellation, pause, timers/fades and availability stay truthful. [Player behavior and limits](docs/AMBIENT_PLAYER.md).
+- **Meditate:** today plus three starters, all 14 practices reachable, Save/filters and source-labeled ambient arrangements—not spoken guidance. [Library flow](docs/SIMPLE_LIBRARY_FLOW.md) · [23 session arrangements](docs/SESSION_AUDIO.md).
+- **Sleep:** moonlit artwork, preferred outlined mixer controls, playlists, nighttime journeys and auto-fade timer. No invented story narration or listening history.
+- **Wellbeing:** breathing, actual recorded progress, local reflection and staged [native backup/restore](docs/BACKUPS.md). The browser preview has separate local history and a clearly labeled layout-only backup page.
 
-After reviewing Home, the user approved the **softer treatment across all pages**. Matte teal/navy panels and solid actions now extend through Sounds, Meditate, Sleep, players/chooser, wellbeing tools and installation help. Focus rings, 44px controls and non-color selected cues remain; the preferred outlined Sleep drawings/gold Thunder and playback engines are untouched. [Sounds](design/soft-surfaces-sounds-mobile-preview.png) · [Meditate](design/soft-surfaces-meditate-mobile-preview.png) · [Sleep](design/soft-surfaces-sleep-mobile-preview.png) · [All current captures](design/README.md#current-softer-surface-rollout). These are independent HTML renders; matching Flutter styles and surface/contrast/widget regressions are included in hosted automation, **not physical-device verification**.
+Temporary loop edits are **not new recordings or rights clearance**. The target remains **18 sounds × 3 genuinely different recordings = 54 choices**, plus varied long loops. [Development audio scope](docs/PLACEHOLDER_AUDIO.md) · [recording provenance](docs/audio-licenses/ambient-pack-2026-11-19.md).
 
-## Simpler library and Meditate
+## Project layout and cleanup
 
-**Sounds** opens on **Available (18)**. The unfinished inventory is reachable only through **Review unfinished catalog → Full catalog (77)**, with explicit 18-local / 23-stream-only / 36-no-recording context. Saved non-bundled selections have a non-destructive review route. Stream-only/missing sources are labeled honestly; browsing never rewrites saved selections or starts playback. **Change sound** offers all 18 bundled sources; **Choose recording (2)** is limited to the real Fire and Birds pairs. There are no invented alternate rain takes.
+| Path | Purpose |
+| --- | --- |
+| `design/preview/` | The working interactive browser preview. Its asset/installer links use the canonical source files, not copied bundles. |
+| `design/*.png` | Only the four current tab captures above. Superseded screenshots remain recoverable from Git history. |
+| `lib/` | Flutter app code needed for the real phone application. Not a duplicate preview folder to delete. |
+| `assets/` | Actual audio, artwork, authored fonts and their provenance/licence records. |
+| `android/`, `ios/` | Native build projects; app identities and signing safeguards are preserved. |
+| `web/` | Flutter web bootstrap, PWA/offline support, privacy and existing owner utility pages. |
+| `test/`, `tool/`, `.github/` | Regression tests, media/build verification and configured non-deploying CI. |
+| `docs/` | Focused behavior, release, phone-testing and business handoffs. |
 
-**Meditate** starts with today and three compact practices, visible Save, ingredients, **All / Calm / Focus / Rest / Saved** and **Browse all 14 practices**. Playback identities, player behavior, matte styling, four tabs and preferred Sleep controls remain. No new locks or checkout were enabled. Browser app-stream choices now declare their limitation before playback; unavailable requests leave the current audio/timer intact and show exact source details rather than a vague toast. [Implemented behavior, checks and native limits](docs/SIMPLE_LIBRARY_FLOW.md) · [Meditate capture](design/simple-meditate-mobile-preview.png) · [Library capture](design/simple-library-mobile-preview.png) · [Recording chooser](design/recording-choice-mobile-preview.png). All captures are independent HTML, not native screenshots.
+The cleanup removes **57 superseded screenshots, nine old Flutter-export artifacts and two unreferenced showcases**. It retains the working preview, active native routes, all declared bundled assets, source licences and every regression. Old export manifests, copied icon/font/shader files and the generated aggregate `NOTICES` belonged to a previous build; Flutter regenerates its dependency assets/notices under `build/`. Ignore rules prevent those leftovers from being re-added.
 
-## Ten requested one-tap sound mixes
+This reduces the **current source checkout**, not Git history or the installed-app size by the same amount. No history rewrite or audio recompression is involved. See the [cleanup verification](docs/release/BUILD_CHECKS.md#source-cleanup--local-verification).
 
-**Sounds → Curated one-tap mixes** now leads with **Rainy Window Café, Enchanted Forest Morning, Ocean Deep Sleep, Mountain Meditation, Cozy Fireplace Night, Tropical Rainforest, Zen Temple Sanctuary, Midnight Focus, Campfire Under Stars and Peaceful Ocean Journey**. These replace the preceding featured ten with the user’s exact names, main purposes and volume percentages. They use 3–4 layers from 15 existing bundled recordings; no sound files or stock images were added. [Exact recipes and behavior](docs/CURATED_SOUND_MIXES.md) · [Paused Rainy Window Café phone capture](design/requested-curated-mixes-mobile-preview.png).
-
-One tap updates switches/sliders immediately and leaves every unselected sound off at 0%. Editing creates a custom selection; Save stores it separately without modifying the original preset. Percentages need not total 100%: requested totals are 110–165%, while existing master output gain/ducking/fade safeguards remain active without rewriting slider values. All 18 bundled sounds, 77 catalog cards, eight legacy presets, saved snapshots, share/backup formats, four tabs and Sleep controls remain. Matching Flutter source and the set-related native cases are covered by the full pinned Flutter suite. Actual device/listening verification remains open; browser playback is not native verification.
-
-## Full ambient player and loop continuity
-
-Explicit whole-mix starts **automatically open the full player** with the actual selected sounds, individual percentages and truthful per-layer status/retry. Individual Sounds switches/sliders stay inline with the mini-player. Minimize without stopping; tap the mini-player to reopen on any of the four tabs, even while paused. Full-player edits keep a paused mix paused, and Save makes a separate custom mix. Volume/timer refreshes now also preserve an interrupted browser clock; the matching native source retains platform pauses and failed-layer errors until an explicit transport/retry action (hosted regressions now pass; device listening remains unverified). No fake narrated-session timeline is shown for continuous ambience. Flutter source mirrors this flow and is checked by hosted CI, not by a locally installed Flutter SDK or physical device.
-
-The independent browser preview now decodes the same local MP3s into audio-clock loops instead of seeking/rebuffering a media element at each repeat. A measured 67-second forest run crossed eight loop boundaries on four unchanged nodes with **zero runtime rebuffer events**, versus eight before. A progressing-download deadline also replaces the old absolute ten-second timeout. This is **browser telemetry, not native/device or human-listening certification**; full-file decode can take longer initially on a slow connection. [Implementation, measured results and limits](docs/AMBIENT_PLAYER.md) · [Full player](design/ambient-player-mobile-preview.png) · [Minimized on Sleep](design/ambient-mini-player-mobile-preview.png).
-
-## Wellbeing, Meditate and sound-library update
-
-- **Home → Your wellbeing** now opens a solid-color hub with separate breathing, progress, reflection and backup pages. Progress uses recorded sessions, not sample history. Breathing has pattern/duration selection, pause/resume/reset and foreground safeguards.
-- **Meditate** uses the shared midnight-blue background and compact thumbnail-led cards with inset arched artwork. Today and three starters lead, with all 14 practices reachable through Browse all, five simple filters, Begin/Pause and visible Save/options. Each practice has its own source-labeled ambient mix, **not spoken guidance**. Full-player and Sleep artwork are separate and retained.
-- **Distinct session audio:** 23 two-source arrangements cover the daily practice, 14 Meditate cards and eight nighttime journeys. No universal-sample fallback remains; missing content errors honestly. These are approximately 30-second repeating mixes of **14 existing recordings**, not new narrated works. Home and Meditate intentionally share the same daily practice. [Routes, ingredients, measurements and rebuild guide](docs/SESSION_AUDIO.md).
-- **Sleep** restores the preferred larger outline mixer symbols, playback-driven mint glow, matte navy cards and compact four-cover phone layout. Moonlit artwork, playback bindings and the four-tab footer remain. [Updated browser capture](design/soft-surfaces-sleep-mobile-preview.png); see the current hosted compilation record; actual Sleep/background device checks remain open.
-- All **75 familiar sound cards and covers remain**, joined by Woodland Morning and Fireplace: **77 cards** total. **⋯ → Change sound → explicit Preview → Use sound** now offers **18 distinct local sources**, with search and credits for the additions. Opening/searching/selecting never autoplays. Using a sound preserves that layer's level, other layers and the paused state; saved mixes keep the real chosen name.
-- The **12 additions** are seven recordings with recording-specific CC0/public-domain source-page evidence, plus five generated noises. See the [audio manifest](assets/sounds/ambient_pack.json) and [licence/provenance evidence](docs/audio-licenses/ambient-pack-2026-11-19.md). These grants do not clear the six legacy clips or remote streams; owner/content review and a human listening pass remain necessary.
-- Current configuration: **41 of 77 card names have a source — 18 bundled and 23 stream-only; 36 still need recordings.** This is not a count of cleared or device-verified recordings. Missing cards stay explicit rather than silently playing unrelated rain. Personal-file imports and alternate takes for every card are not implemented. [Full inventory and safeguards](docs/SOUND_LIBRARY.md).
-
-## Run the Flutter app
-
-Minimum **Flutter 3.32 / Dart 3.8**, matching `pubspec.lock`. Quality automation pins **Flutter 3.38.10**, Android API **36** / minimum **24**, Java **17** and **Xcode 26.3**. See the [native build runbook](docs/NATIVE_RELEASE.md).
-
-```sh
-flutter pub get --enforce-lockfile
-flutter run
-```
-
-Core screens and bundled audio require no private API key. Reflection studio is an explicitly **local writing template**, not an AI/music service. The owner still needs to revoke/rotate a historically exposed provider credential.
-
-**New subscription purchases are disabled by default.** Access/restore use SDK entitlements, never local premium/trial flags. The paywall uses real localized store offerings; see [billing configuration and sandbox gates](docs/BILLING.md). `.env.example` is guidance only, not automatically loaded by Flutter. The owner must supply approved platform-specific **public SDK keys**, legal URLs and explicit opt-in before new sales. Never compile a secret REST key, signing password or AI credential via Dart defines; client values are recoverable. No live billing changes or spending occurred.
-
-## Quality checks and evidence
-
-The [historical exact-source build-check record](docs/release/BUILD_CHECKS.md) records the earlier candidate below; it does not certify the subsequent design/audio changes or the current checkout. For source **`ccb302b`**, hosted Flutter **3.38.10** analysis, scoped formatting, **409/409 Flutter tests** (no failures/skips), release web compilation and the browser/PWA/platform job have passed. The Android debug/explicitly unsigned release and unsigned iOS statuses are recorded against the same source in that handoff. The [exact-source workflow](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45739413274) and [branch workflow history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/workflows/quality.yml?query=branch%3Aarena%2F6ab3ce1c-relax-mindfulness-flutter) are the outcome records, not an older green run.
-
-Additional local checks at that historical checkpoint: **75/75 Python tests**, **26/26 Node source/configuration tests**, **20 preview asset versions** and clean patch whitespace. **262 preserved media/preview/platform/catalog/engine/fixture paths** match the recovered checkpoint. Flutter/Dart/Xcode are still not installed in the local sandbox; the new Flutter evidence comes from hosted SDK execution, not WASM parsing.
-
-The earlier **289 web / 71 Python**, **55 live-player checks**, captures and loop telemetry describe previous local runs. They are not re-certified measurements of physical output. The independent HTML suite exercises bundled sources, exact mixes, session arrangements, gain/readiness/retry/cancellation, storage, keyboard and large-text behavior; it is not the compiled Flutter playback engine. Real-device listening, loop joins, background/interruption/routes, signing and install/upgrade behavior still require the owner checklist.
-
-`python3 tool/launch_preflight.py` intentionally remains **1 / BLOCKED**: **118 local media/font reviews, 75 effective legacy-inclusive stream bindings and nine release gates (202 total)** are pending. The CI inventory-only check can pass while launch is blocked. No review was auto-approved, purchase enabled or release authorized. [Hardening and owner next steps](docs/LAUNCH_HARDENING.md).
-
-With the pinned Flutter SDK:
-
-```sh
-flutter analyze --no-fatal-infos
-flutter test
-flutter build web --release
-# Development smoke build, not a store release:
-flutter build apk --debug
-```
-
-Development-only browser and Python checks:
-
-```sh
-npm ci --ignore-scripts
-npx playwright install --with-deps chromium
-npm run test:web
-python3 -m unittest discover -s tool -p 'test_*.py' -v
-python3 tool/verify_ambient_pack.py
-# Optional full decode/level check with an installed FFmpeg:
-python3 tool/verify_ambient_pack.py --ffmpeg /path/to/ffmpeg --report build/audio-qc.json
-python3 tool/prepare_session_soundscapes.py --verify --ffmpeg /path/to/ffmpeg --report build/session-audio-qc.json
-```
-
-For checks without a browser download: `npm run test:pwa` and `npm run test:platform`. `PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can point to existing tools; see [PWA checks](docs/PWA.md#checks).
-
-`.github/workflows/quality.yml` has read-only, SHA-pinned browser, Flutter, Android debug/unsigned release and unsigned iOS jobs. Failed tests/builds, lock drift and analyzer errors/warnings fail the job; stylistic infos are advisory. No workflow deploys, submits to stores, uploads an app binary, accesses production signing/billing secrets or launches ads. Android release signing fails closed without owner credentials or explicit compilation-only unsigned opt-in.
-
-## Preview the design
+## Open the interactive preview
 
 ```sh
 node tool/version_preview_assets.mjs
 python3 -m http.server 3000 --bind 0.0.0.0 --directory design/preview
 ```
 
-Run the first command after editing preview CSS/JS so a returning browser loads fresh assets. Reload any already-open preview tab; see the [Sleep controls and cache-upgrade check](design/README.md#open-the-interactive-preview). Saved selections are not cleared.
+Open `/`, `/#sounds`, `/#meditate` or `/#sleep`. If a healthy port-3000 server already exists, reuse it. Run the versioning command after changing preview CSS/JS, then reload; do not clear saved selections. [Preview and cache details](design/README.md#open-the-interactive-preview).
 
-[Current softer-surface page/player/chooser screenshots](design/README.md) are **independent HTML captures**, not compiled Flutter/device screenshots. The preview plays local samples and has its own PWA identity. Its breathing history belongs only to that browser; its backup page is **layout-only** and cannot access Flutter data.
+Only local sources play in this independent preview; app-stream and missing sources are disclosed without substitution. Installing the **Sanctuary Design Preview** does not install Flutter, cache the full audio library or validate a native app.
 
-## Backup and privacy
+## Run the Flutter app
 
-From **Home → Your wellbeing → Backup & restore**, copy a private JSON backup or stage an import for review and explicit replacement confirmation. Malformed input is validated before profile mutation; purchases, API keys and notification permissions do not transfer. Preferences and backups are not an encrypted vault or automatic cloud sync. See [backup guarantees and limits](docs/BACKUPS.md).
+Minimum Flutter **3.32 / Dart 3.8**, with the committed lockfile. Quality automation pins **Flutter 3.38.10**, Java **17**, Android target **36** / minimum **24**, and Xcode **26.3**. [Native runbook](docs/NATIVE_RELEASE.md) · [iPhone-only preparation](docs/IPHONE_FIRST_TESTING.md).
 
-There is no verified feedback delivery endpoint. The former false “message received” control remains removed. The progress redesign does not configure notifications; existing reminder preferences/services are retained, but reminder controls and real permission/scheduling behavior need a separate reviewed pass.
+```sh
+flutter pub get --enforce-lockfile
+flutter run
+```
 
-## Installable web app
+Core screens and bundled audio need no private API key. Reflection is a local writing template, not an AI/music service. `.env.example` is guidance, not automatically loaded Flutter configuration. Never compile secret REST keys or signing credentials into a client app.
 
-Sanctuary retains home-screen icons and standalone launch, but has **no in-page Install app button**. Use the browser menu or Safari’s Share → Add to Home Screen if desired. Serve a **built Flutter web app over HTTPS**. Installation does not download the full app or audio library for offline use. See [PWA installation/deployment](docs/PWA.md).
+## Checks
+
+```sh
+# Development-only browser and Python checks:
+npm ci --ignore-scripts
+npx playwright install --with-deps chromium
+npm run test:web
+python3 -m unittest discover -s tool -p 'test_*.py' -v
+python3 tool/launch_preflight.py --inventory-only
+
+# With the pinned Flutter SDK:
+flutter analyze --no-fatal-infos
+flutter test
+flutter build web --release
+```
+
+`PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can reuse existing browser tools. `npm run test:pwa` and `npm run test:platform` run the static subsets. Full preflight without `--inventory-only` intentionally exits **1 / BLOCKED** while evidence is pending; inventory-only success is not release approval.
+
+The SHA-pinned [quality workflow](.github/workflows/quality.yml) has no production signing secrets, app-binary upload, deployment or store-submission step. Test failures, lock drift and analyzer errors/warnings fail their jobs; advisory analyzer infos do not.
+
+## Owner-controlled next steps
+
+- Review rights/claims and perform actual device/audio/background/interruption/accessibility tests. HTML screenshots, browser telemetry and unsigned compilation are separate evidence.
+- Confirm existing store identities before any change; the iOS source identity is still **Zen Night / `com.sagozen.zennight`**. No signing or TestFlight upload has occurred.
+- Resolve the historical exposed-credential incident through owner-controlled revocation/rotation and usage review. Removing files does not revoke a key or erase history.
+- Approve real support/privacy/terms destinations and complete the [billing sandbox gates](docs/BILLING.md) before enabling sales. Existing restore/access relies on SDK entitlements, not local premium flags.
+- Follow the [revenue roadmap](docs/REVENUE_ROADMAP.md), [interview kit](docs/business/CUSTOMER_INTERVIEWS.md) and [blank scorecard](docs/business/weekly-scorecard-template.csv): useful conversations, a cleared/device-tested approved beta, returning testers, then genuine payers. Demand and monthly income are not guaranteed; ads remain **$0** pending evidence and separate approval.

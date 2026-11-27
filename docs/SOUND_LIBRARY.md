@@ -46,7 +46,7 @@ Percentages are **independent volume sliders**, not a 100% split. Requested tota
 - The 77-card catalog, 18 bundled source choices, audio/artwork bytes, aliases, player/readiness/availability guards, Sleep drawings and all 23 session arrangements are unchanged. No stock/example image from the supplied links was imported or treated as licensed.
 - Results at completion of the requested-recipe batch (before launch hardening): **22/22 browser playback/UI cases + 9/9 source/parity guards**; full **244/244 web + 41/41 Python**, zero failures/skips. **50/50 live recipe/viewport checks** cover 320/390/431/823/1440px. **147 protected hashes** and the inline engine remain unchanged from this pass’s baseline. The 34 set-related native cases (22 model/provider/controller + 12 widget, two newly added) remain **unexecuted** without Flutter.
 
-[Exact behavior, independent recipe contract and limits](CURATED_SOUND_MIXES.md) · [Current paused Rainy Window Café capture](../design/requested-curated-mixes-mobile-preview.png). The earlier [Rainlit Cabin capture](../design/vibe-sets-mobile-preview.png) and 202-test/52–70% evidence are historical, not current recipe settings. Browser decoding is not native/device or human-listening certification.
+[Exact behavior, independent recipe contract and limits](CURATED_SOUND_MIXES.md) · [current four-tab gallery](../design/README.md). Historical paused Rainy Window Café and earlier Rainlit Cabin captures remain in [Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not the current source tree. The earlier 202-test/52–70% evidence is not current recipe settings. Browser decoding is not native/device or human-listening certification.
 
 ## Meditate / nighttime session audio
 
@@ -232,6 +232,6 @@ python3 tool/prepare_ambient_pack.py --download --ffmpeg /path/to/ffmpeg
 
 The rebuild defaults to `build/rebuilt-ambient-pack`. Changing reviewed bundled files requires **both** `--output-dir assets/sounds --update-manifest`; a scratch rebuild cannot rewrite the bundled manifest. Different encoder builds can produce different hashes: review/recheck the files and update the encoder/evidence description when deliberately replacing them. Raw downloads and QC reports stay in ignored `build/` storage.
 
-[Updated sound-search capture](../design/sound-library-search-mobile-preview.png) and [card covers](../design/mixer-covers-mobile-preview.png) are independent HTML screenshots, not native captures. The search screenshot is paused; filtering/selecting did not create a player.
+Historical sound-search and card-cover captures remain in [pre-cleanup Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not the current tree. They are independent HTML, not native captures; the search image was paused and filtering/selecting did not create a player. See the separate [current four-tab gallery](../design/README.md).
 
 No signed distribution, store submission, live billing change, public launch or spending was performed by this follow-up. See [launch readiness](LAUNCH_READINESS.md) for the owner-controlled gates.

@@ -22,7 +22,7 @@ In Flutter source, mixer level/retry updates pass `expandPlayer: false` to the s
 
 **Current local checks:** **312/312 web/browser/PWA/catalog/configuration tests and 75/75 Python tests passed**, with zero failures or skips. Eight new browser cases cover the exact two-layer example at 320/390/823px, first/add/remove/re-enable gestures, mini reopen without new media requests, first-slider keyboard focus, pending cancellation/late completion, same-source failure retry and timed-session exclusivity. Eight new Dart cases (three controller, three real-AppState/fake-audio, two shell widgets) are authored but **not executed**. All six touched Dart sources passed WASM parsing; five are canonically formatted and unrelated pre-existing AppState formatting is retained. The sandbox still has no Flutter/Dart SDK, so there is no fresh native analysis, test or compiled-build result.
 
-Inspected independent HTML captures: [Sounds overview](../design/sounds-toggle-inline-mobile-preview.png) and [the enabled Fireplace switch at its retained scroll position](../design/sounds-toggle-inline-control-preview.png), both **390 × 844**, with real local playback and the same 30%/30% levels. These are not native screenshots, physical-output recordings, new loop telemetry or human-listening evidence. The shared midnight palette, floating footer, all ten exact recipes, legacy mixes, catalog/favorites/custom saves and release/purchase gates are unchanged by this correction.
+At that checkpoint, two inspected **390 × 844 independent HTML captures** showed the Sounds overview and the enabled Fireplace switch with real local playback at 30%/30%. They are retained in [the pre-cleanup Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not duplicated in the current tree. The [current four-tab gallery](../design/README.md) is separate, with no audio playing. Neither set is native-device, physical-output or human-listening evidence. The shared midnight palette, footer, exact recipes, saved identities and release/purchase gates are unchanged.
 
 ## User flow
 
@@ -105,7 +105,7 @@ The PWA visibility helper now tracks full-player owners, preventing disposal of 
 - **71/71** Python tests, no failures/skips. Media/provenance/recipe checks remain unchanged.
 - **55/55** original-player checks (not rerun for the non-visual safety follow-up) against the existing port-3000 preview at 320 / 390 / 431 / 823 / 1440px; no page errors or player/layer overflow. Four exact layers/gains, automatic expansion, minimize/reopen identity, paused persistence and 44px targets checked.
 - **20** CSS/JS content versions verified; JavaScript syntax and `git diff --check` pass. Existing mixer/availability tests now deliberately minimize before using background controls; none force-click through a modal or disable the new flow.
-- Inspected actual independent HTML captures: [full ambient mix, 390 × 1100](../design/ambient-player-mobile-preview.png) and [minimized on Sleep, 390 × 844](../design/ambient-mini-player-mobile-preview.png). These are **not native screenshots**.
+- Inspected historical independent HTML captures showed the full ambient mix at 390 × 1100 and its Sleep mini-player at 390 × 844. They remain in [pre-cleanup Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not the current tree. These are **not native screenshots**.
 
 ```sh
 npm run test:web

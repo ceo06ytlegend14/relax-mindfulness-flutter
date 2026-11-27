@@ -55,7 +55,7 @@ Executed locally for these exact recipes:
 
 **Native execution is pending:** Flutter/Dart are unavailable here. The set-related native test coverage now comprises **22 model/provider/controller + 12 widget cases** (34 total; two added, the preceding cases updated), including exact recipes/purposes, zeroed unselected layers, custom saves, output gain, retry/cancellation and narrow layouts. These remain unexecuted; existing readiness and simplification native gates also remain open. Do not treat an earlier CI run as verification of this change.
 
-[Paused Rainy Window Café mobile capture](../design/requested-curated-mixes-mobile-preview.png) — inspected 390 × 1100 independent HTML, not a native screenshot. The first recipe was actually started, checked and then paused; 65/25/15/10 remain selected.
+The historical paused Rainy Window Café capture is preserved in [pre-cleanup Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not duplicated in the current tree. It was inspected 390 × 1100 independent HTML, not a native screenshot: the recipe was started, checked and paused with 65/25/15/10 selected. The [current four-tab gallery](../design/README.md) is a separate visual reference, not a rerun of that playback measurement.
 
 Reproduce with `npm run test:web`, `python3 -m unittest discover -s tool -p 'test_*.py' -v` and `node tool/version_preview_assets.mjs --check`. Focused browser source: `test/web/vibe_sets_browser_test.mjs`; parity: `test/web/catalog_sync_test.mjs`; native: `test/vibe_sound_sets_test.dart` and `test/mixer_screen_test.dart`.
 

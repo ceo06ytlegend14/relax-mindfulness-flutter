@@ -6,6 +6,16 @@
 build/
 *.dill
 
+# Old Flutter web export artifacts; generated builds belong in build/.
+# Keep authored images, audio, fonts and their licences tracked.
+/assets/AssetManifest.*
+/assets/FontManifest.json
+/assets/NOTICES
+/assets/assets/
+/assets/packages/
+/assets/fonts/MaterialIcons-Regular.otf
+/assets/shaders/ink_sparkle.frag
+
 # Development-only browser checks
 node_modules/
 playwright-report/
