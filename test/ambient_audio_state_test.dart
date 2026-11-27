@@ -438,6 +438,11 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(app.sleepTimerRemainingSec, 899);
     expect(updates, 2);
+    // The widget binding verifies pending timers before package:test tearDown;
+    // this deliberately unfinished 45-minute fixture must cancel its clock now.
+    app.cancelSleepTimer();
+    expect(app.isSleepTimerRunning, isFalse);
+    await app.stopAllAudio();
   });
 
   testWidgets('background fade still applies gains without rebuilding the UI', (

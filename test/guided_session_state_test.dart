@@ -352,6 +352,11 @@ void main() {
     await flushSessionMicrotasks();
     expect(app.hasGuidedSession, isFalse);
     expect(audio.audible, isFalse);
+    // Completed listening is pending until the existing mood check-in is
+    // submitted/skipped. Background scheduling must not bypass that contract.
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
     expect(app.sessions.single.durationMinutes, 1);
     await tester.pump(const Duration(minutes: 1));
     expect(app.sessions, hasLength(1));
@@ -367,6 +372,9 @@ void main() {
       await flushSessionMicrotasks();
       expect(app.hasGuidedSession, isFalse);
       expect(audio.audible, isFalse);
+      expect(app.showMoodDialog, isTrue);
+      expect(app.sessions, isEmpty);
+      app.dismissMood();
       expect(app.sessions.single.durationMinutes, 35);
       app.setBackgroundMode(true);
       app.setBackgroundMode(false);
@@ -391,6 +399,9 @@ void main() {
     await tester.pump(const Duration(seconds: 59));
     await flushSessionMicrotasks();
     expect(app.hasGuidedSession, isFalse);
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
     expect(app.sessions.single.durationMinutes, 2);
   });
 
@@ -413,6 +424,9 @@ void main() {
     await flushSessionMicrotasks();
     expect(app.hasGuidedSession, isFalse);
     expect(audio.audible, isFalse);
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
     expect(app.sessions.single.durationMinutes, 1);
     expect(audio.loadedSources, hasLength(1));
   });
