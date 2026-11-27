@@ -46,6 +46,8 @@ Record a non-sensitive evidence file per platform with build/device/OS, steps, e
 
 An automated failure-injection result does not substitute for a clean, unmodified signed release test. Unsigned compilation, static library alignment and fake audio players are separate engineering evidence.
 
+For long-session heat/battery comparisons, follow the [energy-efficiency protocol](../ENERGY_EFFICIENCY.md#required-physical-device-check--not-run): record exact hardware/OS, candidate, duration, brightness, charging/network/output conditions and before/after battery observations. Browser scheduling counters are not phone-temperature or battery-life evidence. **These device checks remain not run.**
+
 ## Human mix listening — all ten required
 
 Play each official recipe for **at least five minutes and at least three complete wraps of every ingredient**, then try pause/resume and volume/fade changes. Listen on speakers and comfortable headphones; record perceived balance, identifiable ingredients, repeats/clicks, harshness and any masking. Source files loop independently; there is no fixed mix ending. Longer listening is still needed above.

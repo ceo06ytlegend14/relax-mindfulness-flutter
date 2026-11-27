@@ -333,6 +333,104 @@ void main() {
     expect(app.sessions, hasLength(1));
   });
 
+  testWidgets('background guided playback has no per-second UI heartbeat', (
+    tester,
+  ) async {
+    await app.playGuidedSession('Gentle Relief & Comfort', 1);
+    app.setBackgroundMode(true);
+    var updates = 0;
+    app.addListener(() => updates++);
+    now = now.add(const Duration(seconds: 50));
+    await tester.pump(const Duration(seconds: 50));
+    expect(updates, 0);
+    expect(app.guidedRemainingSec, 10);
+    expect(audio.audible, isTrue);
+    expect(audio.playCalls, 1);
+    expect(audio.loadedSources, hasLength(1));
+    now = now.add(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 10));
+    await flushSessionMicrotasks();
+    expect(app.hasGuidedSession, isFalse);
+    expect(audio.audible, isFalse);
+    // Completed listening is pending until the existing mood check-in is
+    // submitted/skipped. Background scheduling must not bypass that contract.
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
+    expect(app.sessions.single.durationMinutes, 1);
+    await tester.pump(const Duration(minutes: 1));
+    expect(app.sessions, hasLength(1));
+  });
+
+  test(
+    'foreground resume reconciles an overdue guided deadline once',
+    () async {
+      await app.playGuidedSession('The Starry Night', 35);
+      app.setBackgroundMode(true);
+      now = now.add(const Duration(minutes: 40));
+      app.setBackgroundMode(false);
+      await flushSessionMicrotasks();
+      expect(app.hasGuidedSession, isFalse);
+      expect(audio.audible, isFalse);
+      expect(app.showMoodDialog, isTrue);
+      expect(app.sessions, isEmpty);
+      app.dismissMood();
+      expect(app.sessions.single.durationMinutes, 35);
+      app.setBackgroundMode(true);
+      app.setBackgroundMode(false);
+      await flushSessionMicrotasks();
+      expect(app.sessions, hasLength(1));
+    },
+  );
+
+  testWidgets('extending a background session replaces its deadline wake', (
+    tester,
+  ) async {
+    await app.playGuidedSession('Gentle Relief & Comfort', 1);
+    app.setBackgroundMode(true);
+    app.extendGuidedSession(1);
+    now = now.add(const Duration(seconds: 61));
+    await tester.pump(const Duration(seconds: 61));
+    expect(app.guidedRemainingSec, 59);
+    expect(audio.audible, isTrue);
+    expect(audio.playCalls, 1);
+    expect(app.sessions, isEmpty);
+    now = now.add(const Duration(seconds: 59));
+    await tester.pump(const Duration(seconds: 59));
+    await flushSessionMicrotasks();
+    expect(app.hasGuidedSession, isFalse);
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
+    expect(app.sessions.single.durationMinutes, 2);
+  });
+
+  testWidgets('background pause cancels shutdown until an explicit resume', (
+    tester,
+  ) async {
+    await app.playGuidedSession('Gentle Relief & Comfort', 1);
+    app.setBackgroundMode(true);
+    now = now.add(const Duration(seconds: 30));
+    await tester.pump(const Duration(seconds: 30));
+    await app.pauseGuidedSession();
+    now = now.add(const Duration(minutes: 5));
+    await tester.pump(const Duration(minutes: 5));
+    expect(app.guidedRemainingSec, 30);
+    expect(app.hasGuidedSession, isTrue);
+    expect(app.sessions, isEmpty);
+    await app.resumeGuidedSession();
+    now = now.add(const Duration(seconds: 30));
+    await tester.pump(const Duration(seconds: 30));
+    await flushSessionMicrotasks();
+    expect(app.hasGuidedSession, isFalse);
+    expect(audio.audible, isFalse);
+    expect(app.showMoodDialog, isTrue);
+    expect(app.sessions, isEmpty);
+    app.dismissMood();
+    expect(app.sessions.single.durationMinutes, 1);
+    expect(audio.loadedSources, hasLength(1));
+  });
+
   test(
     'unavailable sources leave a paused, retryable session with no timer loss',
     () async {

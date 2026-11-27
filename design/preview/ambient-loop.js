@@ -7,6 +7,31 @@ const ambientLoopEngine = {
   cache: new Map(),
   players: new Set(),
   cacheBudget: 64 * 1024 * 1024,
+  idleTimer: null,
+  cancelIdleSuspend() {
+    clearTimeout(this.idleTimer);
+    this.idleTimer = null;
+  },
+  hasPlaybackIntent() {
+    // Use intent, not the paused getter: a platform-interrupted clock still
+    // owns live nodes which only an explicit Resume may unlock.
+    return [...this.players].some(player => !player._paused);
+  },
+  suspendIfIdle() {
+    const context = this.context;
+    if (!context || context.state !== 'running' || this.hasPlaybackIntent()) {
+      this.cancelIdleSuspend();
+      return;
+    }
+    if (this.idleTimer !== null) return; // Paused gain edits must not postpone sleep.
+    // Coalesce rapid mix switches. Never keep an empty audio rendering graph
+    // running indefinitely, and never suspend a pending decode or healthy loop.
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      if (this.context !== context || context.state !== 'running' || this.hasPlaybackIntent()) return;
+      context.suspend().catch(() => {}); // A later Play still resumes in its gesture.
+    }, 1000);
+  },
   getContext() {
     if (this.context?.state === 'closed') this.context = null;
     if (!this.context) {
@@ -146,6 +171,7 @@ class BufferedAmbientLoop extends EventTarget {
       this.ended = true;
       this._stopNode();
       this.dispatchEvent(new Event('ended'));
+      ambientLoopEngine.suspendIfIdle();
     };
     source.start(0, this.duration > 0 ? this._offset % this.duration : 0);
   }
@@ -182,6 +208,7 @@ class BufferedAmbientLoop extends EventTarget {
   }
   play() {
     if (!this.src) return Promise.reject(new Error('No recording configured'));
+    ambientLoopEngine.cancelIdleSuspend();
     if (!this._paused && this.sourceNode) {
       // Resume a suspended audio clock without replacing any healthy source.
       return ambientLoopEngine.getContext().resume().then(() => {
@@ -222,6 +249,7 @@ class BufferedAmbientLoop extends EventTarget {
           this._pending = null;
           this._controller = null;
         }
+        ambientLoopEngine.suspendIfIdle();
       }
     })();
     this._pending = operation;
@@ -239,6 +267,7 @@ class BufferedAmbientLoop extends EventTarget {
     ambientLoopEngine.release(this.currentSrc, this);
     this._buffer = null; // The bounded cache, not paused players, retains PCM.
     if (changed) this.dispatchEvent(new Event('pause'));
+    ambientLoopEngine.suspendIfIdle();
   }
   getAttribute(name) {
     return name === 'src' ? this.src || null : null;

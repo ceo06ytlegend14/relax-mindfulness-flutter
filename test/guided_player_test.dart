@@ -21,6 +21,7 @@ Future<FakeMixerAppState> mountSessionPlayer(
   double textScale = 1,
   String title = 'Gentle Relief & Comfort',
   int minutes = 15,
+  bool disableAnimations = true,
 }) async {
   await tester.binding.setSurfaceSize(Size(width, height));
   final app = FakeMixerAppState();
@@ -43,7 +44,7 @@ Future<FakeMixerAppState> mountSessionPlayer(
         theme: const CupertinoThemeData(brightness: Brightness.dark),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            disableAnimations: true,
+            disableAnimations: disableAnimations,
             padding: const EdgeInsets.only(top: 24, bottom: 34),
             textScaler: TextScaler.linear(textScale),
           ),
@@ -75,6 +76,71 @@ void main() {
         ))
         .load();
     // Do not load either icon font: all new player and Sleep symbols are vectors.
+  });
+
+  testWidgets('countdown updates do not rebuild the structural app shell', (
+    tester,
+  ) async {
+    final app = await mountSessionPlayer(tester);
+    final scaffold = tester.widget<CupertinoTabScaffold>(
+      find.byType(CupertinoTabScaffold),
+    );
+    app.guidedSeconds--;
+    app.notifyListeners();
+    await tester.pump();
+    expect(
+      tester.widget<CupertinoTabScaffold>(find.byType(CupertinoTabScaffold)),
+      same(scaffold),
+    );
+    expect(find.text('14:59'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('inactive and background stop guided motion, never its audio', (
+    tester,
+  ) async {
+    final app = await mountSessionPlayer(tester, disableAnimations: false);
+    final animation =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.byKey(const ValueKey('guided-artwork-animation')),
+                )
+                .animation
+            as AnimationController;
+    expect(animation.isAnimating, isTrue);
+    // The covered tab stack must not animate behind the full-screen player.
+    expect(
+      TickerMode.of(tester.element(find.byType(CupertinoTabScaffold))),
+      isFalse,
+    );
+    try {
+      for (final lifecycle in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(lifecycle);
+        await tester.pump();
+        expect(app.isBackgroundMode, isTrue);
+        expect(animation.isAnimating, isFalse);
+        expect(app.guidedPlaying, isTrue);
+        expect(app.guidedCompletions, isEmpty);
+      }
+    } finally {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+    }
+    expect(app.isBackgroundMode, isFalse);
+    expect(animation.isAnimating, isTrue);
+    expect(app.purchaseRefreshes, 1);
+    app.minimizeGuidedPlayer();
+    await tester.pump();
+    expect(
+      TickerMode.of(tester.element(find.byType(CupertinoTabScaffold))),
+      isTrue,
+    );
+    expect(app.guidedPlaying, isTrue);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('player route exposes explicit accessible control nodes', (

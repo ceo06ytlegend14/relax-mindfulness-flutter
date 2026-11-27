@@ -87,6 +87,7 @@ class _AmbientPlayerOverlayState extends State<AmbientPlayerOverlay>
     final animate =
         mixer.isPlaying &&
         !app.isBackgroundMode &&
+        TickerMode.of(context) &&
         !MediaQuery.of(context).disableAnimations &&
         !MediaQuery.of(context).accessibleNavigation;
     if (_pulsing != animate) {
@@ -187,6 +188,9 @@ class _AmbientPlayerOverlayState extends State<AmbientPlayerOverlay>
                               ),
                               const SizedBox(height: 14),
                               AnimatedBuilder(
+                                key: const ValueKey(
+                                  'ambient-artwork-animation',
+                                ),
                                 animation: _breath,
                                 builder: (context, _) => _BreathingArtwork(
                                   size: cover,

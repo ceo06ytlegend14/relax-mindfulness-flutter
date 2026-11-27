@@ -59,6 +59,8 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
     if (!app.hasGuidedSession) return const SizedBox.shrink();
     final animate =
         app.isGuidedPlaying &&
+        !app.isBackgroundMode &&
+        TickerMode.of(context) &&
         !MediaQuery.of(context).disableAnimations &&
         !MediaQuery.of(context).accessibleNavigation;
     if (_pulsing != animate) {
@@ -196,6 +198,9 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
                                     ),
                                     SizedBox(height: 20 * s),
                                     AnimatedBuilder(
+                                      key: const ValueKey(
+                                        'guided-artwork-animation',
+                                      ),
                                       animation: _breath,
                                       builder: (context, _) =>
                                           _BreathingArtwork(
@@ -634,89 +639,91 @@ class _BreathingArtwork extends StatelessWidget {
   final String artwork;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: size + 32 * scale,
-    width: double.infinity,
-    child: Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        for (final factor in const [1.02, 1.15, 1.28])
-          Transform.scale(
-            scale: 1 + pulse * 0.025,
-            child: Container(
-              width: size * factor,
-              height: size * factor,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Color.fromRGBO(
-                    211,
-                    255,
-                    243,
-                    0.15 - (factor - 1) * 0.24,
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: SizedBox(
+      height: size + 32 * scale,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          for (final factor in const [1.02, 1.15, 1.28])
+            Transform.scale(
+              scale: 1 + pulse * 0.025,
+              child: Container(
+                width: size * factor,
+                height: size * factor,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Color.fromRGBO(
+                      211,
+                      255,
+                      243,
+                      0.15 - (factor - 1) * 0.24,
+                    ),
                   ),
+                  boxShadow: factor == 1.02
+                      ? [
+                          BoxShadow(
+                            color: _mint.withOpacity(0.08 + pulse * 0.06),
+                            blurRadius: 44,
+                            spreadRadius: 12,
+                          ),
+                        ]
+                      : null,
                 ),
-                boxShadow: factor == 1.02
-                    ? [
-                        BoxShadow(
-                          color: _mint.withOpacity(0.08 + pulse * 0.06),
-                          blurRadius: 44,
-                          spreadRadius: 12,
-                        ),
-                      ]
-                    : null,
               ),
             ),
-          ),
-        Container(
-          key: const ValueKey('player-artwork-frame'),
-          width: size,
-          height: size,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28 * scale),
-          ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(
-                artwork,
-                fit: BoxFit.cover,
-                excludeFromSemantics: true,
-              ),
-              Positioned(
-                top: 12 * scale,
-                right: 12 * scale,
-                child: _PlayerGlass(
-                  radius: 100,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10 * scale,
-                      vertical: 6 * scale,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SanctuaryIcon(
-                          SanctuarySymbol.leaf,
-                          size: 13 * scale,
-                          color: _mint,
-                        ),
-                        SizedBox(width: 5 * scale),
-                        Text(
-                          'Relax',
-                          style: _type(10 * scale, weight: FontWeight.w500),
-                        ),
-                      ],
+          Container(
+            key: const ValueKey('player-artwork-frame'),
+            width: size,
+            height: size,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28 * scale),
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  artwork,
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
+                ),
+                Positioned(
+                  top: 12 * scale,
+                  right: 12 * scale,
+                  child: _PlayerGlass(
+                    radius: 100,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10 * scale,
+                        vertical: 6 * scale,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SanctuaryIcon(
+                            SanctuarySymbol.leaf,
+                            size: 13 * scale,
+                            color: _mint,
+                          ),
+                          SizedBox(width: 5 * scale),
+                          Text(
+                            'Relax',
+                            style: _type(10 * scale, weight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

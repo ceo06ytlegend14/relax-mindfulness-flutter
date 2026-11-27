@@ -9,6 +9,8 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   final Set<String> ambientBuffering = {};
   final Set<String> ambientPaused = {};
   bool previewDucked = false;
+  bool background = false;
+  int purchaseRefreshes = 0;
 
   @override
   String? ambientTrackError(String name) => ambientErrors[name];
@@ -105,7 +107,19 @@ class FakeMixerAppState extends ChangeNotifier implements AppState {
   @override
   bool get isPlayingAny => isAnyAudioPlaying;
   @override
-  bool get isBackgroundMode => false;
+  bool get isBackgroundMode => background;
+  @override
+  void setBackgroundMode(bool value) {
+    if (background == value) return;
+    background = value;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> refreshPurchaseStatus() async {
+    purchaseRefreshes++;
+  }
+
   @override
   AppWallpaper get wallpaper => AppWallpaper.pureObsidian;
   @override

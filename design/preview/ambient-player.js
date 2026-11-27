@@ -161,6 +161,11 @@ function createAmbientLayer(name) {
   row.append(header, slider, retry);
   return row;
 }
+function updateAmbientTimer() {
+  const timer = timerRemaining();
+  $('ambient-timer').querySelector('span').textContent = timer === null ? 'Set auto-fade' : `${clock(timer)} · Cancel fade`;
+  $('ambient-timer').setAttribute('aria-label', timer === null ? 'Set sleep auto-fade timer' : `Cancel auto-fade timer, ${clock(timer)} remaining`);
+}
 function updateAmbientPlayer() {
   if (!ambientHasSession) return;
   const selected = ambientSelectedLayers();
@@ -170,14 +175,12 @@ function updateAmbientPlayer() {
   $('ambient-art').src = ambientArtwork();
   $('ambient-status').textContent = ambientPlaybackLabel(state);
   $('ambient-live-dot').classList.toggle('is-playing', state.active.length > 0);
-  $('ambient-breathing-art').classList.toggle('is-breathing', state.active.length > 0 && !document.hidden);
+  syncPlayerMotion();
   $('ambient-layer-count').textContent = `${selected.length} selected`;
   $('ambient-pause').setAttribute('aria-label', ambientTransportLabel(state));
   $('ambient-pause').setAttribute('aria-busy', String(state.pending.length > 0));
   $('ambient-pause').innerHTML = svg(state.canPause ? state.active.length ? 'pause' : 'close' : 'play');
-  const timer = timerRemaining();
-  $('ambient-timer').querySelector('span').textContent = timer === null ? 'Set auto-fade' : `${clock(timer)} · Cancel fade`;
-  $('ambient-timer').setAttribute('aria-label', timer === null ? 'Set sleep auto-fade timer' : `Cancel auto-fade timer, ${clock(timer)} remaining`);
+  updateAmbientTimer();
   const list = $('ambient-layers');
   const names = new Set(selected.map(([name]) => name));
   for (const row of [...list.children]) if (!names.has(row.dataset.ambientLayer)) {

@@ -167,6 +167,19 @@ class _IOSScrollBehavior extends ScrollBehavior {
   };
 }
 
+// Only structural state belongs in the shell. Countdown/volume notifications
+// are consumed by their own controls, not a rebuild of every tab and overlay.
+typedef _ShellPresentation = ({
+  AppTab tab,
+  bool background,
+  bool guidedExpanded,
+  bool ambientExpanded,
+  bool hasAmbientSession,
+  bool hasAmbientRequest,
+  bool hasGuidedSession,
+  bool showMoodDialog,
+});
+
 // ─── AppShell — CupertinoTabScaffold with synced AppState ─────────────────────
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -220,23 +233,32 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
-    // Thermal & battery optimization: pause high-power UI animations on screen sleep
-    if (lifecycleState == AppLifecycleState.paused ||
-        lifecycleState == AppLifecycleState.hidden) {
-      context.read<AppState>().setBackgroundMode(true);
-    } else if (lifecycleState == AppLifecycleState.resumed) {
-      final app = context.read<AppState>();
-      app.setBackgroundMode(false);
+    // Stop decorative work for screen lock, app switching and iOS inactive
+    // overlays too. Audio ownership is outside the widget/ticker lifecycle.
+    final app = context.read<AppState>();
+    app.setBackgroundMode(lifecycleState != AppLifecycleState.resumed);
+    if (lifecycleState == AppLifecycleState.resumed) {
       unawaited(app.refreshPurchaseStatus());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
+    return Selector<AppState, _ShellPresentation>(
+      selector: (_, state) => (
+        tab: state.tab,
+        background: state.isBackgroundMode,
+        guidedExpanded: state.isGuidedPlayerExpanded,
+        ambientExpanded: state.isAmbientPlayerExpanded,
+        hasAmbientSession: state.hasAmbientSession,
+        hasAmbientRequest: state.hasAmbientPlaybackRequest,
+        hasGuidedSession: state.hasGuidedSession,
+        showMoodDialog: state.showMoodDialog,
+      ),
+      builder: (context, presentation, _) {
+        final state = context.read<AppState>();
         // ── Sync CupertinoTabController → AppState ──
-        final expectedIndex = _appTabToIndex(state.tab);
+        final expectedIndex = _appTabToIndex(presentation.tab);
         if (_tabController.index != expectedIndex) {
           // Avoid setState loop — just set index directly
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -275,104 +297,121 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        // Page backgrounds are local solid colors. Decorative
-                        // artwork belongs inside cards, not behind the tabs or
-                        // pushed wellbeing tools. Do not request a wallpaper
-                        // which an opaque page immediately hides.
-                        // A floating capsule, with Cupertino tab stacks preserved.
-                        CupertinoTabScaffold(
-                          backgroundColor: Colors.transparent,
-                          controller: _tabController,
-                          tabBar: SanctuaryTabBar(
-                            labelScale: navLabelScale,
-                            onTap: (index) {
-                              HapticFeedback.selectionClick();
-                              state.setTab(_indexToAppTab(index));
-                            },
-                            backgroundColor: MixerTheme.navigation,
-                            border: null,
-                            activeColor: MixerTheme.mintLight,
-                            inactiveColor: MixerTheme.muted,
-                            iconSize: 24,
-                            height: navHeight,
-                            currentIndex: _appTabToIndex(state.tab),
-                            items: const [
-                              BottomNavigationBarItem(
-                                icon: SanctuaryIcon(SanctuarySymbol.home),
-                                activeIcon: SanctuaryIcon(SanctuarySymbol.home),
-                                label: 'Home',
+                    child: TickerMode(
+                      key: const ValueKey('app-motion'),
+                      enabled: !presentation.background,
+                      child: Stack(
+                        children: [
+                          // Page backgrounds are local solid colors. Decorative
+                          // artwork belongs inside cards, not behind the tabs or
+                          // pushed wellbeing tools. Do not request a wallpaper
+                          // which an opaque page immediately hides.
+                          // A floating capsule, with Cupertino tab stacks preserved.
+                          TickerMode(
+                            key: const ValueKey('tab-motion'),
+                            enabled:
+                                !presentation.guidedExpanded &&
+                                !presentation.ambientExpanded &&
+                                !presentation.showMoodDialog,
+                            child: CupertinoTabScaffold(
+                              backgroundColor: Colors.transparent,
+                              controller: _tabController,
+                              tabBar: SanctuaryTabBar(
+                                labelScale: navLabelScale,
+                                onTap: (index) {
+                                  HapticFeedback.selectionClick();
+                                  state.setTab(_indexToAppTab(index));
+                                },
+                                backgroundColor: MixerTheme.navigation,
+                                border: null,
+                                activeColor: MixerTheme.mintLight,
+                                inactiveColor: MixerTheme.muted,
+                                iconSize: 24,
+                                height: navHeight,
+                                currentIndex: _appTabToIndex(presentation.tab),
+                                items: const [
+                                  BottomNavigationBarItem(
+                                    icon: SanctuaryIcon(SanctuarySymbol.home),
+                                    activeIcon: SanctuaryIcon(
+                                      SanctuarySymbol.home,
+                                    ),
+                                    label: 'Home',
+                                  ),
+                                  BottomNavigationBarItem(
+                                    icon: SanctuaryIcon(SanctuarySymbol.sounds),
+                                    activeIcon: SanctuaryIcon(
+                                      SanctuarySymbol.sounds,
+                                    ),
+                                    label: 'Sounds',
+                                  ),
+                                  BottomNavigationBarItem(
+                                    icon: SanctuaryIcon(
+                                      SanctuarySymbol.meditate,
+                                    ),
+                                    activeIcon: SanctuaryIcon(
+                                      SanctuarySymbol.meditate,
+                                    ),
+                                    label: 'Meditate',
+                                  ),
+                                  BottomNavigationBarItem(
+                                    icon: SanctuaryIcon(SanctuarySymbol.sleep),
+                                    activeIcon: SanctuaryIcon(
+                                      SanctuarySymbol.sleep,
+                                    ),
+                                    label: 'Sleep',
+                                  ),
+                                ],
                               ),
-                              BottomNavigationBarItem(
-                                icon: SanctuaryIcon(SanctuarySymbol.sounds),
-                                activeIcon: SanctuaryIcon(
-                                  SanctuarySymbol.sounds,
-                                ),
-                                label: 'Sounds',
-                              ),
-                              BottomNavigationBarItem(
-                                icon: SanctuaryIcon(SanctuarySymbol.meditate),
-                                activeIcon: SanctuaryIcon(
-                                  SanctuarySymbol.meditate,
-                                ),
-                                label: 'Meditate',
-                              ),
-                              BottomNavigationBarItem(
-                                icon: SanctuaryIcon(SanctuarySymbol.sleep),
-                                activeIcon: SanctuaryIcon(
-                                  SanctuarySymbol.sleep,
-                                ),
-                                label: 'Sleep',
-                              ),
-                            ],
-                          ),
-                          tabBuilder: (context, index) {
-                            final tab = _indexToAppTab(index);
-                            return CupertinoTabView(
-                              builder: (ctx) => RepaintBoundary(
-                                child: _buildScreen(tab, ctx),
-                              ),
-                            );
-                          },
-                        ),
-
-                        // ── 🎵 Floating Mini Player ───────────────────────────────────
-                        if (!state.isGuidedPlayerExpanded &&
-                            !state.isAmbientPlayerExpanded &&
-                            (state.hasAmbientSession ||
-                                state.hasAmbientPlaybackRequest ||
-                                state.hasGuidedSession))
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: navHeight + bottomInset + 8,
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              heightFactor: 1,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 560,
-                                ),
-                                child: const SanctuaryMiniPlayer(),
-                              ),
+                              tabBuilder: (context, index) {
+                                final tab = _indexToAppTab(index);
+                                return CupertinoTabView(
+                                  builder: (ctx) => RepaintBoundary(
+                                    child: _buildScreen(tab, ctx),
+                                  ),
+                                );
+                              },
                             ),
                           ),
 
-                        // ── 😊 Mood Check-In Dialog ───────────────────────────────────
-                        if (state.showMoodDialog)
-                          MoodCheckInDialog(
-                            onMoodSelected: (rating) =>
-                                state.submitMood(rating),
-                            onSkip: () => state.dismissMood(),
-                          ),
+                          // ── 🎵 Floating Mini Player ───────────────────────────────────
+                          if (!presentation.guidedExpanded &&
+                              !presentation.ambientExpanded &&
+                              (presentation.hasAmbientSession ||
+                                  presentation.hasAmbientRequest ||
+                                  presentation.hasGuidedSession))
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: navHeight + bottomInset + 8,
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                heightFactor: 1,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 560,
+                                  ),
+                                  child: const SanctuaryMiniPlayer(),
+                                ),
+                              ),
+                            ),
 
-                        // ── 🎧 Full-Screen Guided Player ──────────────────────────────
-                        if (state.isGuidedPlayerExpanded)
-                          const Positioned.fill(child: GuidedPlayerOverlay()),
-                        if (state.isAmbientPlayerExpanded)
-                          const Positioned.fill(child: AmbientPlayerOverlay()),
-                      ],
+                          // ── 😊 Mood Check-In Dialog ───────────────────────────────────
+                          if (presentation.showMoodDialog)
+                            MoodCheckInDialog(
+                              onMoodSelected: (rating) =>
+                                  state.submitMood(rating),
+                              onSkip: () => state.dismissMood(),
+                            ),
+
+                          // ── 🎧 Full-Screen Guided Player ──────────────────────────────
+                          if (presentation.guidedExpanded)
+                            const Positioned.fill(child: GuidedPlayerOverlay()),
+                          if (presentation.ambientExpanded)
+                            const Positioned.fill(
+                              child: AmbientPlayerOverlay(),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
