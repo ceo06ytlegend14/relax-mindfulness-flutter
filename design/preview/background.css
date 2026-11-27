@@ -1,0 +1,25 @@
+/* One static, bundled Sleep sky, matching Flutter's SanctuaryBackground.
+   The app layer is pinned outside all page scrolls. Dialog players live outside
+   .app, so they use the same paint recipe in their own non-scrolling layer. */
+html, body, .app { background: var(--page-background, #02132c); }
+.app-background, .player-backdrop {
+  height: calc(620px * clamp(.38, var(--s), 1));
+  pointer-events: none;
+  background-image: linear-gradient(0deg, #02132c, #02132c1f 50%, #02132c00), url('assets/images/sleep/night_sky.webp');
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+}
+.app-background {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 823px);
+  z-index: -1;
+}
+.player-backdrop {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+}

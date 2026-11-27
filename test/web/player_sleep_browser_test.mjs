@@ -1,6 +1,7 @@
 // Exercises the independent browser preview, not a compiled Flutter application.
 import assert from 'node:assert/strict';
 import { minimizeAmbientForBackgroundControls } from './support/ambient_player_helpers.mjs';
+import { expectSharedBackground } from './support/shared_background_helpers.mjs';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
@@ -215,8 +216,7 @@ for (const [width, height] of [[320, 640], [390, 844], [431, 809], [823, 1568], 
     assert(last.x >= tray.x - 2 && last.x + last.width <= tray.x + tray.width + 2, 'The fifth playlist remains reachable');
     await page.evaluate(() => scrollTo(0, document.querySelector('#quick-mixer').getBoundingClientRect().top + scrollY - 120));
     assert(await page.evaluate(() => scrollY > 0));
-    assert.equal(await page.locator('#sleep-page .scenery').evaluate(node => node.getBoundingClientRect().y), 0,
-      'The starfield stays behind the scrolled Sleep content, as in Flutter');
+    await expectSharedBackground(page);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   });
 }
@@ -324,6 +324,9 @@ test('the ambient mini-player reopens its full layers and stops real samples', a
   await beginOcean(page);
   await page.locator('#mini-open').click();
   assert.equal(await page.locator('#ambient-dialog').isVisible(), true);
+  await expectSharedBackground(page, { player: '#ambient-dialog' });
+  await page.locator('#ambient-dialog .player-scroll').evaluate(node => node.scrollTo(0, node.scrollHeight));
+  await expectSharedBackground(page, { player: '#ambient-dialog' });
   assert.equal(await page.evaluate(() => currentTab), 'sleep');
   assert.equal(await page.locator('[data-ambient-layer="Ocean Waves"] output').textContent(), '70%');
   await page.locator('#ambient-edit').click();
@@ -382,7 +385,7 @@ test('the player uses high-resolution local artwork and the real catalog duratio
   assert.equal(await page.locator('#session-title').textContent(), 'Gentle Relief & Comfort');
   assert.equal(await page.evaluate(() => guidedSession.total), 900);
   assert.match(await page.locator('#session-art').getAttribute('src'), /player\/comfort_art\.webp$/);
-  assert.match(await page.locator('#session-dialog .player-backdrop').evaluate(node => getComputedStyle(node).backgroundImage), /player\/lake_dawn\.webp/);
+  await expectSharedBackground(page, { player: '#session-dialog' });
   assert.equal(await page.locator('#session-art').evaluate(image => image.naturalWidth >= 800), true);
   assert.equal(await page.getByText('Fastest', { exact: true }).count(), 0);
   assert.equal(await page.getByText('HD', { exact: true }).count(), 0);
@@ -540,6 +543,7 @@ for (const [width, height] of [[320, 640], [390, 844], [823, 1568], [1440, 1000]
       assert(bounds.width >= 44 && bounds.height >= 44);
     }
     assert.equal(await page.locator('#session-dialog .breathing-ring').first().evaluate(node => getComputedStyle(node).animationName), 'none');
+    await expectSharedBackground(page, { player: '#session-dialog' });
   });
 }
 

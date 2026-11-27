@@ -10,6 +10,7 @@ import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/screens/sounds_screen.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/shared_background.dart';
 import 'support/fake_sound_preview_player.dart';
 import 'package:relax_mindfulness/services/sound_preview_controller.dart';
 
@@ -49,6 +50,7 @@ Future<FakeMixerAppState> mountMixer(
     ),
   );
   await tester.pump(const Duration(milliseconds: 300));
+  expectSharedBackground(tester);
   return app;
 }
 

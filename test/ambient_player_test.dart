@@ -9,6 +9,7 @@ import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/shared_background.dart';
 
 const _forest = {
   'Woodland Morning': .65,
@@ -209,6 +210,7 @@ void main() {
     'full player displays actual selection, percentages and layer statuses',
     (tester) async {
       final state = await mountAmbientPlayer(tester);
+      expectSharedBackground(tester, within: find.byType(AmbientPlayerOverlay));
       expect(
         find.byKey(const ValueKey('ambient-player-title')),
         findsOneWidget,

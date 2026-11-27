@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
@@ -56,8 +57,7 @@ class HomeScreen extends StatelessWidget {
         final dailyPlaying =
             app.isGuidedPlaying &&
             app.currentGuidedTitle == dailyMeditation.title;
-        return CupertinoPageScaffold(
-          backgroundColor: MixerTheme.background,
+        return SanctuaryPageScaffold(
           child: Stack(
             children: [
               SafeArea(

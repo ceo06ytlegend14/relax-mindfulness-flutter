@@ -13,6 +13,7 @@ import 'package:relax_mindfulness/providers/mixer_controller.dart';
 import 'package:relax_mindfulness/screens/home_screen.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/shared_background.dart';
 
 Future<({FakeMixerAppState app, MixerController mixer})> mountHome(
   WidgetTester tester, {
@@ -49,6 +50,7 @@ Future<({FakeMixerAppState app, MixerController mixer})> mountHome(
     ),
   );
   await tester.pump(const Duration(milliseconds: 300));
+  expectSharedBackground(tester);
   return (app: app, mixer: mixer);
 }
 

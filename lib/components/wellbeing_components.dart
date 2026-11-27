@@ -5,7 +5,7 @@ import 'package:relax_mindfulness/services/pwa_player_visibility.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
 
 /// The wellbeing tools are ordinary pushed pages, not extra footer tabs.
-/// Opaque, local-color surfaces also work without an image/network connection.
+/// They share Sleep's bundled night sky and keep their matte content surfaces.
 class WellbeingPage extends StatefulWidget {
   const WellbeingPage({
     required this.title,
@@ -41,8 +41,7 @@ class _WellbeingPageState extends State<WellbeingPage> {
   }
 
   @override
-  Widget build(BuildContext context) => CupertinoPageScaffold(
-    backgroundColor: MixerTheme.background,
+  Widget build(BuildContext context) => SanctuaryPageScaffold(
     navigationBar: CupertinoNavigationBar(
       backgroundColor: MixerTheme.background,
       border: null,

@@ -4,6 +4,7 @@ import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -36,30 +37,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Same soft midnight background as the app's four destinations.
           const Positioned.fill(
-            child: ColoredBox(color: MixerTheme.background),
+            child: SanctuaryBackground(child: SizedBox.expand()),
           ),
-
-          // Subtle background ambient light glow
-          Positioned(
-            top: -60,
-            right: -40,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 600),
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _page == 0
-                    ? tealPrimary.withOpacity(0.12)
-                    : _page == 1
-                    ? mintAccent.withOpacity(0.12)
-                    : coralAccent.withOpacity(0.12),
-              ),
-            ),
-          ),
-
           SafeArea(
             child: Column(
               children: [

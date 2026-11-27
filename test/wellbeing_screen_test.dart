@@ -16,6 +16,7 @@ import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/inert_audio_player.dart';
+import 'support/shared_background.dart';
 
 Future<AppState> mountWellbeing(
   WidgetTester tester, {
@@ -60,6 +61,7 @@ Future<AppState> mountWellbeing(
     ),
   );
   await tester.pump(const Duration(milliseconds: 350));
+  expectSharedBackground(tester);
   return app;
 }
 
@@ -88,19 +90,28 @@ void main() {
 
   for (final width in [320.0, 390.0, 823.0]) {
     testWidgets(
-      'wellbeing is a plain, scrollable page with real zero activity at $width',
+      'wellbeing shares the sky and stays scrollable with real zero activity at $width',
       (tester) async {
         final app = await mountWellbeing(tester, width: width, textScale: 1.28);
         expect(find.byKey(const ValueKey('wellbeing-title')), findsOneWidget);
         expect(find.text('0 / 7'), findsOneWidget);
         expect(find.textContaining('A fresh page.'), findsOneWidget);
-        expect(find.byType(Image), findsNothing);
+        expect(
+          find.byType(Image),
+          findsOneWidget,
+          reason:
+              'Only the shared decorative sky, never fictional activity artwork',
+        );
         expect(find.byType(PracticeWeek), findsOneWidget);
         expect(app.sessions, isEmpty);
         final scaffold = tester.widget<CupertinoPageScaffold>(
           find.byType(CupertinoPageScaffold),
         );
-        expect(scaffold.backgroundColor, MixerTheme.background);
+        expect(scaffold.backgroundColor, CupertinoColors.transparent);
+        expect(
+          (scaffold.navigationBar! as CupertinoNavigationBar).backgroundColor,
+          MixerTheme.background,
+        );
         await tester.ensureVisible(
           find.byKey(const ValueKey('open-data-backup')),
         );

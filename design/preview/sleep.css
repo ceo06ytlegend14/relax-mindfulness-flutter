@@ -1,22 +1,10 @@
 /* Preferred moonlit Sleep look: large outline orbs, compact playlist covers
-   and a pinned starfield. The teal four-tab footer is deliberately unchanged. */
+   and the shared starfield in background.css. The footer is unchanged. */
 .sleep-page {
-  background: #02132c;
   --mist: #c0cee8;
 }
 .sleep-page .retreat-inner { padding-top: calc(32px * var(--s)); padding-left: max(14px, calc(29px * var(--s))); padding-right: max(14px, calc(29px * var(--s))); }
 .sleep-page .page-heading { min-height: 44px; }
-.sleep-page .scenery {
-  /* Match Flutter's backdrop outside its CustomScrollView. A document-scrolling
-     image disappears before the mixer and made the revised page feel flat. */
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(100%, 823px);
-  height: calc(620px * var(--s));
-  opacity: 1;
-  background-image: linear-gradient(0deg, #02132c, #02132c1f 50%, #02132c00), url('assets/images/sleep/night_sky.webp');
-}
 .sleep-page .sleep-welcome { display: flex; align-items: center; gap: calc(9px * var(--s)); margin-top: calc(12px * var(--s)); font-size: max(12px, calc(21px * var(--t))); color: #b9c5dd; }
 .sleep-welcome > svg { width: max(14px, calc(21px * var(--t))); height: max(14px, calc(21px * var(--t))); color: #f5c96d; }
 .sleep-page .night-surface { background: linear-gradient(135deg, #203c69dc, #091d3ce2); border-color: #88a6d945; }

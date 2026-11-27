@@ -1,6 +1,6 @@
 # Sanctuary — Relax & Mindfulness
 
-A Flutter app for ambient sound mixing, timed unguided practices, breathing and sleep routines. The current experience is **Home / Sounds / Meditate / Sleep**, with midnight-blue surfaces, a floating footer and shared playback state. There is **no in-page Install app button**.
+A Flutter app for ambient sound mixing, timed unguided practices, breathing and sleep routines. The current experience is **Home / Sounds / Meditate / Sleep**, with one shared Sleep night-sky background, midnight-blue surfaces, a floating footer and shared playback state. There is **no in-page Install app button**.
 
 <img src="design/home-no-install-mobile-preview.png" alt="The current Sanctuary Home, with midnight-blue styling and no Install app button" width="418">
 

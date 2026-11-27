@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/services/subscription_controller.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
@@ -66,8 +67,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
         final selected = _selected;
         final active = _billing.hasFullAccess;
         final waiting = _billing.isBusy || _billing.isLoading;
-        return CupertinoPageScaffold(
-          backgroundColor: MixerTheme.background,
+        return SanctuaryPageScaffold(
           navigationBar: const CupertinoNavigationBar(
             middle: Text('Sanctuary Premium'),
             backgroundColor: MixerTheme.background,

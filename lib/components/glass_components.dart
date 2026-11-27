@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
@@ -1298,31 +1299,11 @@ class _ZenFullscreenModalState extends State<ZenFullscreenModal>
     final trackNames = requested.keys.join(' + ');
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: MixerTheme.background,
       body: Stack(
         children: [
-          // 🌧️ Atmospheric Rain Droplets Wallpaper
-          Positioned.fill(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1200&q=80',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
-          ),
-          // Dark Radial Vignette
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.1,
-                  colors: [
-                    const Color(0xFF0F172A).withOpacity(0.4),
-                    Colors.black.withOpacity(0.92),
-                  ],
-                ),
-              ),
-            ),
+          const Positioned.fill(
+            child: SanctuaryBackground(child: SizedBox.expand()),
           ),
 
           // Central Breathing Halo

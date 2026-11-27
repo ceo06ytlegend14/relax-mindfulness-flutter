@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/mixer_waveform.dart';
 import 'package:relax_mindfulness/components/mixer_artwork.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 import 'package:relax_mindfulness/components/sound_replacement_sheet.dart';
 import 'package:relax_mindfulness/services/sound_preview_controller.dart';
 import 'package:relax_mindfulness/models/mixer_catalog.dart';
@@ -173,8 +174,7 @@ class SoundsScreen extends StatelessWidget {
             candidate != null && candidate.matchesLevels(mixer.levels)
             ? candidate
             : null;
-        return CupertinoPageScaffold(
-          backgroundColor: MixerTheme.background,
+        return SanctuaryPageScaffold(
           child: Stack(
             children: [
               SafeArea(

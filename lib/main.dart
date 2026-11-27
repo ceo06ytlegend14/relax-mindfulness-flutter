@@ -302,10 +302,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       enabled: !presentation.background,
                       child: Stack(
                         children: [
-                          // Page backgrounds are local solid colors. Decorative
-                          // artwork belongs inside cards, not behind the tabs or
-                          // pushed wellbeing tools. Do not request a wallpaper
-                          // which an opaque page immediately hides.
+                          // Each route uses the same static, bundled Sleep sky.
+                          // Keep page-owned backdrops outside scrolling content
+                          // so pushed routes and players work independently too.
                           // A floating capsule, with Cupertino tab stacks preserved.
                           TickerMode(
                             key: const ValueKey('tab-motion'),

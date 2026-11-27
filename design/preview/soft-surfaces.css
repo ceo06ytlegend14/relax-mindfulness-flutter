@@ -17,10 +17,6 @@
   --soft-night-control: #223f5c;
 }
 
-html, body, .app { background:var(--page-background); }
-.app > .backdrop { display:none; }
-main.content { background:var(--page-background); }
-
 /* Shared Sounds surfaces and actions. No broad SVG/path reset: strokes are
    drawings, not panel borders. Selected switches keep their moving thumb. */
 .surface { background: var(--soft-surface); border: 0; box-shadow: none; }
@@ -87,7 +83,7 @@ dialog button.primary { background: var(--soft-primary); color: var(--soft-on-pr
 .practice-action-list button { background: var(--soft-action); }
 @media (max-width: 360px) { .story-buttons button { width: 44px; min-width: 44px; } }
 
-/* Player backdrop and breathing rings are retained. Opaque controls replace
+/* Players share the static night sky and retain breathing rings. Controls replace
    outlined glass, gradients and decorative glow, including the minimized bar. */
 .player-glass { background: var(--soft-surface); border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .player-cover { border: 0; box-shadow: none; }

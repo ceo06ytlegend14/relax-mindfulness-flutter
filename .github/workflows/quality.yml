@@ -96,6 +96,7 @@ jobs:
           lib/screens/wellbeing_screen.dart lib/screens/mindfulness_screen.dart
           lib/screens/breathe_screen.dart lib/screens/meditation_screen.dart
           lib/screens/sleep_screen.dart test/wellbeing_screen_test.dart
+          test/shared_background_test.dart test/support/shared_background.dart
       - name: Run Flutter regressions
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         # Leave time for failure annotations, event retention and the independent

@@ -60,6 +60,70 @@ class SanctuaryMetrics {
   );
 }
 
+/// One static, bundled Sleep background for every full page and player.
+/// Keep it outside scroll views and isolate its paint from changing controls.
+class SanctuaryBackground extends StatelessWidget {
+  const SanctuaryBackground({required this.child, super.key});
+
+  static const asset = 'assets/images/sleep/night_sky.webp';
+  static const referenceHeight = 620.0;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: MixerTheme.background,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final width = math.min(constraints.maxWidth, MixerTheme.maxWidth);
+        final metrics = SanctuaryMetrics(width);
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned(
+              top: 0,
+              left: (constraints.maxWidth - width) / 2,
+              width: width,
+              child: IgnorePointer(
+                child: RepaintBoundary(
+                  child: SanctuaryBackdrop(
+                    asset: asset,
+                    color: MixerTheme.background,
+                    height: metrics.space(referenceHeight),
+                  ),
+                ),
+              ),
+            ),
+            child,
+          ],
+        );
+      },
+    ),
+  );
+}
+
+/// Preserve Cupertino navigation, safe areas and scrolling while exposing the
+/// same pinned backdrop behind each route. Navigation bars remain matte.
+class SanctuaryPageScaffold extends StatelessWidget {
+  const SanctuaryPageScaffold({
+    required this.child,
+    this.navigationBar,
+    super.key,
+  });
+
+  final Widget child;
+  final ObstructingPreferredSizeWidget? navigationBar;
+
+  @override
+  Widget build(BuildContext context) => SanctuaryBackground(
+    child: CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.transparent,
+      navigationBar: navigationBar,
+      child: child,
+    ),
+  );
+}
+
 class SanctuaryBackdrop extends StatelessWidget {
   const SanctuaryBackdrop({
     required this.asset,

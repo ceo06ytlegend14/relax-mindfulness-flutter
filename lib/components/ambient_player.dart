@@ -112,27 +112,12 @@ class _AmbientPlayerOverlayState extends State<AmbientPlayerOverlay>
             autofocus: true,
             child: Material(
               key: const ValueKey('ambient-player'),
-              color: const Color(0xFF092334),
+              color: MixerTheme.background,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/images/player/lake_dawn.webp',
-                    fit: BoxFit.cover,
-                    excludeFromSemantics: true,
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x7A102D43),
-                          Color(0xA309253C),
-                          Color(0xF2061728),
-                        ],
-                      ),
-                    ),
+                  const Positioned.fill(
+                    child: SanctuaryBackground(child: SizedBox.expand()),
                   ),
                   SafeArea(
                     child: LayoutBuilder(

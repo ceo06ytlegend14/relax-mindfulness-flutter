@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/components/sanctuary_components.dart';
-import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
@@ -13,6 +12,7 @@ import 'package:relax_mindfulness/screens/meditation_screen.dart';
 import 'package:relax_mindfulness/screens/sleep_screen.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/shared_background.dart';
 
 Future<FakeMixerAppState> mountSanctuary(
   WidgetTester tester,
@@ -50,6 +50,7 @@ Future<FakeMixerAppState> mountSanctuary(
     ),
   );
   await tester.pump(const Duration(milliseconds: 300));
+  expectSharedBackground(tester);
   return app;
 }
 
@@ -87,12 +88,11 @@ void main() {
       expect(find.text('Calm Mountain Horizon'), findsOneWidget);
       expect(app.guidedRequests, isEmpty);
       expect(app.active, isEmpty);
-      expect(find.byType(SanctuaryBackdrop), findsNothing);
       expect(
         tester
             .widget<CupertinoPageScaffold>(find.byType(CupertinoPageScaffold))
             .backgroundColor,
-        MixerTheme.background,
+        CupertinoColors.transparent,
       );
       expect(find.textContaining('No spoken guidance.'), findsOneWidget);
       expect(tester.takeException(), isNull);

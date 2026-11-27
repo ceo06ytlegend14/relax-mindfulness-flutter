@@ -1,7 +1,6 @@
-/* Independent HTML rendition; keep the page solid midnight blue. The featured arch
+/* Independent HTML rendition, over the app's shared night sky. The featured arch
    and the compact, art-first library have deliberately different rhythms. */
-#meditate-page { background:var(--page-background,#02132c); background-image:none; color:#f5fafa; }
-#meditate-page .scenery { display:none; background:none; }
+#meditate-page { color:#f5fafa; }
 #meditate-page .retreat-inner { padding:max(30px,calc(54px * var(--s))) max(18px,calc(32px * var(--s))) 40px; }
 #meditate-page .page-heading { font-size:max(40px,calc(72px * var(--t))); overflow-wrap:anywhere; }
 #meditate-page .med-audio-note { margin-top:10px; color:#b9c5dd; font-size:max(12px,calc(18px * var(--t))); line-height:1.5; }

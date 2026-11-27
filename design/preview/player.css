@@ -16,18 +16,12 @@ body.player-open { overflow: hidden; }
   border-radius: 0;
   overflow: hidden;
   isolation: isolate;
-  background: #092334;
+  background: #02132c;
   color: #f7faf5;
   text-align: center;
   font-family: MixerSans, sans-serif;
 }
-:is(#session-dialog, #ambient-dialog)::backdrop { background: #00131c; backdrop-filter: none; }
-.player-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(180deg, #102d437a, #1732494a 34%, #09253ca3 72%, #061728c2), url('assets/images/player/lake_dawn.webp') center/cover;
-}
+:is(#session-dialog, #ambient-dialog)::backdrop { background: #02132c; backdrop-filter: none; }
 .player-scroll {
   height: 100%;
   overflow-y: auto;

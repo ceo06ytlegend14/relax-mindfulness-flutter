@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 import 'package:relax_mindfulness/components/sanctuary_icon.dart';
 import 'package:relax_mindfulness/theme/mixer_theme.dart';
 import 'package:relax_mindfulness/models/sanctuary_catalog.dart';
@@ -86,30 +87,12 @@ class _GuidedPlayerOverlayState extends State<GuidedPlayerOverlay>
           child: FocusScope(
             autofocus: true,
             child: Material(
-              color: const Color(0xFF092334),
+              color: MixerTheme.background,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/images/player/lake_dawn.webp',
-                    key: const ValueKey('player-landscape'),
-                    fit: BoxFit.cover,
-                    excludeFromSemantics: true,
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x7A102D43),
-                          Color(0x4A173249),
-                          Color(0xA309253C),
-                          Color(0xC2061728),
-                        ],
-                        stops: [0, 0.34, 0.72, 1],
-                      ),
-                    ),
+                  const Positioned.fill(
+                    child: SanctuaryBackground(child: SizedBox.expand()),
                   ),
                   SafeArea(
                     child: LayoutBuilder(

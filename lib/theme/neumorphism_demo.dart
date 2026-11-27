@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 
 // ─── Twilight Lavender Dark Neumorphic Soft UI Showcase ──────────────────────
 class NeumorphismDemoScreen extends StatefulWidget {
@@ -59,37 +60,12 @@ class _NeumorphismDemoScreenState extends State<NeumorphismDemoScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) {
-        final wallpaper = state.wallpaper;
-
         return Scaffold(
-          backgroundColor: _neuDarkSurface,
+          backgroundColor: Colors.transparent,
           body: Stack(
             children: [
-              // 🖼️ Dynamic Living Wallpaper Background
-              if (wallpaper.imageUrl.isNotEmpty)
-                Positioned.fill(
-                  child: Image.network(
-                    wallpaper.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-
-              // Dark Atmospheric Vignette Overlay
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        _neuDarkSurface.withOpacity(0.85),
-                        _neuDarkSurface.withOpacity(0.95),
-                        _neuDarkSurface,
-                      ],
-                    ),
-                  ),
-                ),
+              const Positioned.fill(
+                child: SanctuaryBackground(child: SizedBox.expand()),
               ),
 
               // Content
@@ -139,7 +115,7 @@ class _NeumorphismDemoScreenState extends State<NeumorphismDemoScreen> {
                               ],
                             ),
                           ),
-                          // 🖼️ Wallpaper Switcher
+                          // Shared background information (one sky app-wide).
                           Container(
                             decoration: const BoxDecoration(
                               color: _neuDarkSurface,
@@ -150,37 +126,19 @@ class _NeumorphismDemoScreenState extends State<NeumorphismDemoScreen> {
                               ],
                             ),
                             child: IconButton(
+                              tooltip: 'Shared night-sky background',
                               icon: const Icon(CupertinoIcons.photo_on_rectangle, color: _neuLavender, size: 18),
                               onPressed: () {
                                 HapticFeedback.lightImpact();
-                                showCupertinoModalPopup(
+                                showCupertinoModalPopup<void>(
                                   context: context,
                                   builder: (ctx) => CupertinoActionSheet(
-                                    title: const Text('Atmospheric Background 🖼️'),
-                                    message: const Text('Change the ambient living backdrop across all pages:'),
-                                    actions: AppWallpaper.values.map((w) {
-                                      final isCurrent = state.wallpaper == w;
-                                      return CupertinoActionSheetAction(
-                                        onPressed: () {
-                                          state.setWallpaper(w);
-                                          Navigator.pop(ctx);
-                                        },
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(w.displayName),
-                                            if (isCurrent) ...[
-                                              const SizedBox(width: 8),
-                                              const Icon(CupertinoIcons.checkmark_alt, color: tealPrimary, size: 16),
-                                            ],
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
+                                    title: const Text('Night sky'),
+                                    message: const Text('The same calm Sleep background is used on every page. It is bundled, static and available offline.'),
                                     cancelButton: CupertinoActionSheetAction(
                                       isDefaultAction: true,
                                       onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('Cancel'),
+                                      child: const Text('Done'),
                                     ),
                                   ),
                                 );

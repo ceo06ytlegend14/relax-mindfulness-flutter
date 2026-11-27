@@ -185,20 +185,9 @@ class _SleepScreenState extends State<SleepScreen> {
                   !_savedStoriesOnly || app.isFavoriteSoundId(story.favoriteId),
             )
             .toList();
-        return CupertinoPageScaffold(
-          backgroundColor: SanctuaryPalette.navy,
+        return SanctuaryPageScaffold(
           child: Stack(
             children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SanctuaryBackdrop(
-                  asset: 'assets/images/sleep/night_sky.webp',
-                  color: SanctuaryPalette.navy,
-                  height: m.space(620),
-                ),
-              ),
               SafeArea(
                 bottom: false,
                 child: CustomScrollView(
@@ -519,7 +508,7 @@ class _SleepScreenState extends State<SleepScreen> {
                                           ),
                                           SizedBox(height: m.space(4)),
                                           Text(
-                                            'Haptic dials, mood orb & living wallpaper',
+                                            'Haptic dials, mood orb & night sky',
                                             style: m.sans(
                                               17,
                                               min: 11,

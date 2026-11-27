@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:relax_mindfulness/services/cms_service.dart';
 import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/components/glass_components.dart';
+import 'package:relax_mindfulness/components/sanctuary_components.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -91,8 +92,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgDark,
+    final page = Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Row(
           children: [
@@ -315,5 +316,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
     );
+    return SanctuaryBackground(child: page);
   }
 }

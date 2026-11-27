@@ -1,6 +1,7 @@
 // Checks the independent HTML design preview, not a compiled Flutter build.
 import assert from 'node:assert/strict';
 import { minimizeAmbientForBackgroundControls } from './support/ambient_player_helpers.mjs';
+import { expectSharedBackground } from './support/shared_background_helpers.mjs';
 import { createServer } from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
@@ -265,11 +266,60 @@ for (const tab of ['home', 'sounds', 'meditate', 'sleep']) {
   });
 }
 
+for (const width of [320, 390, 823, 1440]) {
+  test(`one persistent Sleep sky serves every tab and wellbeing route at ${width}px`, async t => {
+    const { page } = await open(t, { width });
+    const original = await page.locator('.app-background').elementHandle();
+    const paints = [];
+    for (const tab of ['home', 'sounds', 'meditate', 'sleep']) {
+      await go(page, tab);
+      paints.push((await expectSharedBackground(page)).image);
+      await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+      await expectSharedBackground(page);
+      assert.equal(await original.evaluate(node => node === document.querySelector('.app-background')), true, 'Navigation reuses the same static layer');
+    }
+    for (const section of ['hub', 'breathing', 'progress', 'reflection', 'backup']) {
+      await page.evaluate(section => openWellbeing(section), section);
+      paints.push((await expectSharedBackground(page)).image);
+      await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+      await expectSharedBackground(page);
+      assert.equal(await original.evaluate(node => node === document.querySelector('.app-background')), true);
+    }
+    assert.equal(new Set(paints).size, 1, 'Not just a shared color: every destination exposes the exact Sleep image and fade');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+  });
+}
+
+test('an unavailable background image falls back to midnight without blocking navigation or audio controls', async t => {
+  const { page, context } = await open(t);
+  let blocked = 0;
+  await context.route('**/assets/images/sleep/night_sky.webp', route => { blocked++; return route.abort(); });
+  await page.reload({ waitUntil: 'networkidle' });
+  assert(blocked > 0, 'The failure simulation actually blocked the shared image');
+  for (const tab of ['home', 'sounds', 'meditate', 'sleep']) {
+    await go(page, tab);
+    await expectSharedBackground(page);
+  }
+  const screenshot = await page.screenshot({ animations: 'disabled' });
+  const corner = await page.evaluate(async bytes => {
+    const image = await createImageBitmap(new Blob([Uint8Array.from(atob(bytes), c => c.charCodeAt(0))], { type: 'image/png' }));
+    const canvas = new OffscreenCanvas(image.width, image.height), context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    return [...context.getImageData(1, 1, 1, 1).data];
+  }, screenshot.toString('base64'));
+  assert.deepEqual(corner, [2, 19, 44, 255], 'The actual painted fallback, not only a CSS declaration');
+  await go(page, 'sounds');
+  assert.equal(await page.locator('#master-play').isEnabled(), true);
+  assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
+});
+
 for (const width of [320, 390, 823]) {
-  test(`Meditate has a solid background, creative inset cards and working filters at ${width}px`, async t => {
+  test(`Meditate shares the night sky, creative inset cards and working filters at ${width}px`, async t => {
     const { page } = await open(t, { route: '/#meditate', width });
     const background = await page.locator('#meditate-page').evaluate(node => ({ color:getComputedStyle(node).backgroundColor, image:getComputedStyle(node).backgroundImage }));
-    assert.deepEqual(background, { color:'rgb(2, 19, 44)', image:'none' });
+    assert.deepEqual(background, { color:'rgba(0, 0, 0, 0)', image:'none' });
+    await expectSharedBackground(page);
     assert.equal(await page.locator('#meditate-page .scenery').count(), 0);
     assert.equal(await page.locator('.practice-orbit .arched-art').first().evaluate(image => image.naturalWidth > 0), true);
     await page.locator('[data-intent="Calm"]').click();
@@ -286,12 +336,12 @@ for (const width of [320, 390, 823]) {
     assert.equal(await page.locator('[data-practice]').count(), 14);
   });
 
-  test(`all wellbeing destinations remain plain and scrollable at ${width}px`, async t => {
+  test(`all wellbeing destinations share the sky and remain scrollable at ${width}px`, async t => {
     const { page } = await open(t, {route:'/#wellbeing/hub',width});
     for (const section of ['hub','breathing','progress','reflection','backup']) {
       await page.evaluate(section=>openWellbeing(section), section);
       assert.equal(await page.locator('#wellbeing-page').isVisible(), true);
-      assert.equal(await page.locator('#wellbeing-page').evaluate(node=>getComputedStyle(node).backgroundImage), 'none');
+      await expectSharedBackground(page);
       assert.equal(await page.locator('#wellbeing-page img').count(), 0);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), true);
       assert.equal(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('data-tab'), 'home');
@@ -510,7 +560,7 @@ test('soft pages: shared panels are matte while Sleep symbols and selected navig
   await expectMatte(page, '.master.surface, #tracks .track');
   assert.equal(await page.locator('.section-heading').first().evaluate(node => getComputedStyle(node, '::after').content), 'none');
   await go(page, 'meditate');
-  assert.equal(await page.locator('#meditate-page').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(2, 19, 44)');
+  await expectSharedBackground(page);
   await expectMatte(page, '#meditate-page .daily-journey, #meditate-page .practice-card');
   await go(page, 'sleep');
   await expectMatte(page, '#sleep-page .night-surface');
@@ -733,7 +783,7 @@ for (const width of [320, 390, 538, 823, 1440]) {
     for (const [tab, panel] of [['home', '.home-soundscape'], ['sounds', '.master.surface'], ['meditate', '.practice-card'], ['sleep', '.timer-bar']]) {
       await go(page, tab);
       const activePage = page.locator('main:visible');
-      assert.equal(await activePage.evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(2, 19, 44)', 'One shared midnight page color');
+      await expectSharedBackground(page);
       assert.equal(await activePage.locator(panel).first().evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(18, 41, 69)', 'The same soft blue surface as Sleep');
       assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'), '#02132c');
       const footer = await page.locator('.bottom-nav').boundingBox();
@@ -752,8 +802,8 @@ for (const width of [320, 390, 538, 823, 1440]) {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     }
     await expectContrast(page, [['.nav-item.active', '.nav-item.active'], ['.nav-item:not(.active)', '.bottom-nav']]);
-    assert.equal(await page.locator('#home-page').evaluate(node => getComputedStyle(node, '::before').content), 'none', 'No old teal forest sits behind the shared page color');
-    assert.equal(await page.locator('.app > .backdrop').evaluate(node => getComputedStyle(node).display), 'none');
+    assert.equal(await page.locator('#home-page').evaluate(node => getComputedStyle(node, '::before').content), 'none', 'No per-page wallpaper covers the shared night sky');
+    assert.equal(await page.locator('.app > .backdrop').count(), 0);
     assert.equal(await page.evaluate(() => playing || !!guidedSession?.playing), false);
   });
 }
@@ -807,7 +857,7 @@ test('moonlight shell: a paused mini-player and final page actions stay above th
   await page.locator('#home-wellbeing').click();
   for (const route of ['hub', 'breathing', 'progress', 'reflection', 'backup']) {
     await page.evaluate(route => openWellbeing(route), route);
-    assert.equal(await page.locator('#wellbeing-page').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(2, 19, 44)');
+    await expectSharedBackground(page);
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     const end = await page.locator('.wellbeing-preview-label').boundingBox();
     const mini = await page.locator('#shared-mini-player').boundingBox();

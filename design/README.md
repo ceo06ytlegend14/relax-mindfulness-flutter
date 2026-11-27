@@ -2,9 +2,9 @@
 
 This folder contains the **working interactive HTML preview** and a small gallery of its current four tabs. It is not a second Flutter project or an installable iPhone build. Flutter app source remains in `lib/`, with its native projects in `ios/` and `android/`.
 
-## Current visual target — no Install app button
+## Current visual target — one Sleep background everywhere
 
-Keep the owner-selected midnight-blue Home, compact art-first Meditate, preferred moonlit Sleep, inline Sounds controls and floating **Home / Sounds / Meditate / Sleep** footer. The shared controller no longer creates an in-page **Install app** entry.
+Use the owner-selected **Sleep night sky on every page**, with the same midnight fade. Keep Home's dashboard, compact art-first Meditate, moonlit Sleep cards, inline Sounds controls and floating **Home / Sounds / Meditate / Sleep** footer. The shared controller does not create an in-page **Install app** entry.
 
 | Current tab | Capture |
 | --- | --- |
@@ -17,7 +17,10 @@ These are inspected **independent HTML / Chromium captures**, not compiled Flutt
 
 ## Shared appearance and behavior
 
-- Page **`#02132C`**, surface **`#122945`**, active surface **`#193853`**, controls **`#223F5C`**. Artwork stays inside its intended cards/player; the old Home/Sounds forest wallpaper is not the target.
+- **One background:** the existing `assets/images/sleep/night_sky.webp` (14,736 bytes), top-center/cover, pinned outside scrolling content, fading into **`#02132C`** over a 620px reference height scaled with the 823px canvas (scale clamped to 0.38–1). It is a static bundled image, not an animated or network wallpaper. Card and player-cover artwork stays unchanged.
+- Flutter's `SanctuaryBackground` / `SanctuaryPageScaffold` in `lib/components/sanctuary_components.dart` supplies the same paint to all four tabs, wellbeing/breathing/progress/reflection/backup, Premium, onboarding, Twilight controls, the legacy Zen player and the admin page. Existing matte navigation headers, safe areas, scroll keys and tab stacks remain intact. The old persisted wallpaper preference is retained for data compatibility; Twilight's image button now explains the single background instead of offering alternatives.
+- The independent browser preview has one persistent `.app-background` outside all page scrolls. Full-screen players are top-layer dialogs outside `.app`, so their own `.player-backdrop` uses the exact same recipe from `preview/background.css`. Do not restore per-page scenery, an invisible downloading backdrop, or separate player landscapes. A missing image still leaves the midnight fallback and usable controls.
+- Surface **`#122945`**, active surface **`#193853`**, controls **`#223F5C`**. Matte cards, symbols, cover art and playback glow are separate from the page background.
 - Floating navy footer in the same four-tab order, at most 520px wide, inset 16px on phones and lifted 12px above the system safe area. Keep non-color selection cues, visible focus and at least 44px navigation targets. The mini-player sits separately above it.
 - Individual sound switches/sliders stay **on Sounds**. Reopen the full player deliberately through the mini-player; explicit whole-mix starts can expand it. Healthy audio, independent levels, pause state and scroll position are preserved. [Player contract](../docs/AMBIENT_PLAYER.md).
 - Sounds opens with **18 bundled choices**; the unfinished 77-entry inventory needs deliberate review. No source substitution or invented alternate recording. [Library and chooser](../docs/SOUND_LIBRARY.md) · [ten exact recipes](../docs/CURATED_SOUND_MIXES.md).
@@ -48,7 +51,9 @@ Stylesheets/scripts carry content-version queries. Run the versioning command af
 
 ## Verification
 
-Fresh cleanup suites pass **326/326 web + 97/97 Python**, zero failures/skips. All 21 preview script/stylesheet versions, relative documentation targets and patch whitespace pass. The four source-hygiene cases were observed failing before cleanup; no existing regression was removed or skipped.
+The single-background regressions check the exact shared image/fade (not only the color), persistent/pinned scrolling layers, both dialog players, image-failure fallback, safe areas and non-intercepted controls. Native coverage includes all four tabs, the shared wellbeing wrapper, Premium, onboarding, Twilight and the legacy Zen player. Existing audio, energy, artwork, contrast and 44px-target tests remain enabled. Current-candidate results must come from the current source; the historical cleanup figures below do not certify this later visual change.
+
+Historical cleanup suites passed **326/326 web + 97/97 Python**, zero failures/skips. All 21 preview script/stylesheet versions, relative documentation targets and patch whitespace pass. The four source-hygiene cases were observed failing before cleanup; no existing regression was removed or skipped.
 
 The pre-cleanup source was merged into `main` through [PR #1](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/pull/1) after both exact-head workflows passed all four jobs. The [main post-merge workflow](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45795349126) also passed, including **429 Flutter tests, zero failed/skipped**. Those runs are not a fresh hosted verification of this later cleanup; see [the current evidence record](../docs/release/BUILD_CHECKS.md#source-cleanup--local-verification).
 

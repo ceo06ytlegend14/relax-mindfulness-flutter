@@ -6,6 +6,7 @@ import 'package:relax_mindfulness/screens/premium_screen.dart';
 import 'package:relax_mindfulness/services/subscription_controller.dart';
 
 import 'support/billing_fixtures.dart';
+import 'support/shared_background.dart';
 
 Future<SubscriptionController> mountPremium(
   WidgetTester tester,
@@ -44,6 +45,7 @@ Future<SubscriptionController> mountPremium(
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
+  expectSharedBackground(tester);
   return billing;
 }
 

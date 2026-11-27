@@ -127,8 +127,7 @@ class _MeditationScreenState extends State<MeditationScreen> {
                 ),
               )
               .toList();
-    return CupertinoPageScaffold(
-      backgroundColor: MixerTheme.background,
+    return SanctuaryPageScaffold(
       child: LayoutBuilder(
         builder: (context, constraints) {
           final m = SanctuaryMetrics(constraints.maxWidth);

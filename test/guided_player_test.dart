@@ -13,6 +13,7 @@ import 'package:relax_mindfulness/providers/app_state.dart';
 import 'package:relax_mindfulness/providers/mixer_controller.dart';
 
 import 'support/fake_mixer_app_state.dart';
+import 'support/shared_background.dart';
 
 Future<FakeMixerAppState> mountSessionPlayer(
   WidgetTester tester, {
@@ -176,7 +177,7 @@ void main() {
       tester,
     ) async {
       await mountSessionPlayer(tester, width: size.width, height: size.height);
-      expect(find.byKey(const ValueKey('player-landscape')), findsOneWidget);
+      expectSharedBackground(tester, within: find.byType(GuidedPlayerOverlay));
       expect(find.byKey(const ValueKey('guided-player-title')), findsOneWidget);
       expect(
         find.byKey(const ValueKey('guided-session-sources')),
