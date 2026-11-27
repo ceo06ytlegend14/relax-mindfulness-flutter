@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:relax_mindfulness/providers/app_state.dart';
-import 'package:relax_mindfulness/theme/app_theme.dart';
 import 'package:relax_mindfulness/components/sanctuary_components.dart';
 
 // ─── Twilight Lavender Dark Neumorphic Soft UI Showcase ──────────────────────

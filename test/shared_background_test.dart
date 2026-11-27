@@ -143,7 +143,16 @@ void main() {
                   DefaultMaterialLocalizations.delegate,
                 ],
                 theme: const CupertinoThemeData(brightness: Brightness.dark),
-                home: Material(child: entry.value),
+                // These legacy widgets inherit a platform body font. Use the
+                // bundled face, not test-only Ahem squares, without changing
+                // their font sizes, control dimensions or overflow assertions.
+                home: Theme(
+                  data: ThemeData(
+                    brightness: Brightness.dark,
+                    fontFamily: MixerTheme.font,
+                  ),
+                  child: Material(child: entry.value),
+                ),
               ),
             ),
           );
