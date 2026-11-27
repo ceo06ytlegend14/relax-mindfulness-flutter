@@ -94,9 +94,9 @@ Local execution logs: `/tmp/arena-simple-flow-all-web-final.log`, `/tmp/arena-si
 
 ### Visual review
 
-[Simple Meditate](../design/simple-meditate-mobile-preview.png) · [Available library](../design/simple-library-mobile-preview.png) · [Two Fire recordings](../design/recording-choice-mobile-preview.png).
+The [current four-tab gallery](../design/README.md) replaces overlapping historical captures in the working tree. The earlier Simple Meditate, Available library and two-Fire-recording images remain in [Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design).
 
-These are independent HTML renders, **not compiled Flutter or native-device screenshots**. The first two use a 390px-wide full-content viewport to show the page without repeating/overlaying the fixed footer; the chooser uses 390 × 844. Normal phone heights are exercised separately above. Existing four-tab navigation, matte surfaces, artwork and preferred Sleep controls are retained.
+Those historical images are independent HTML renders, **not compiled Flutter or native-device screenshots**. Their first two used 390px-wide full-content viewports; the chooser used 390 × 844. They are not relabeled as current renders or fresh tests. Existing navigation, surfaces, artwork and preferred Sleep controls remain.
 
 ## Browser availability follow-up
 
@@ -118,7 +118,7 @@ The browser fix does not acquire a missing file, substitute rain for wind/thunde
 - **148/148 protected files unchanged**: all native source, audio/artwork/fonts, source/recipe catalogs and preview session/player/chooser engines/styles. Existing nav/Sleep vector definitions and five quick-source bindings are byte-identical. The ambient readiness/ownership engine is byte-identical; the sync loop differs only at the named missing-source diagnostic. Browser intent/preflight/presentation code is deliberately changed.
 - All **18 CSS/JS content versions**, JS/inline syntax and patch whitespace pass. No new Flutter/native execution, listening, signing, publishing, licence acquisition or billing activation is claimed. Prior native verification gates remain open.
 
-[Source-detail capture](../design/preview-availability-details-mobile.png) · [Sleep app-stream labels](../design/preview-sleep-stream-labels-mobile.png). These are inspected 390 × 844 independent HTML screenshots, not native captures; the retained Ocean Sleep mix is actually playing in the labels capture.
+The historical source-detail and Sleep app-stream-label captures remain in [pre-cleanup Git history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/tree/cbaf083108a106dc7f6f6aeea17883c9b9890725/design), not the current tree. They were inspected 390 × 844 independent HTML, not native captures; Ocean Sleep was actually playing in the labels image. The separate [current gallery](../design/README.md) does not claim to repeat that playback measurement.
 
 Logs: `/tmp/arena-preview-availability-focused.log`, `/tmp/arena-preview-availability-all-web.log`, `/tmp/arena-preview-availability-python.log`. Ignored baseline/live evidence: `build/preview-availability-protected-before.json`, `build/preview-availability-live-check.json`. Reproduce with the existing full browser/Python commands or `node --test test/web/preview_availability_browser_test.mjs` with Playwright/Chromium installed. Temporary evidence may not persist; the test source does.
 

@@ -1,6 +1,27 @@
 # Candidate build-check evidence — not launch approval
 
-## Subsequent checkpoint `b2e2a1a` — not a green run
+## Verified current-design baseline — `cbaf083` and main merge `0830d28`
+
+The owner approved [PR #1](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/pull/1) merging the selected midnight-blue design into `main` only after fresh checks passed. Exact source **`cbaf083108a106dc7f6f6aeea17883c9b9890725`** passed all four jobs in both [push run 45793507523](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45793507523) and [PR run 45793622507](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45793622507):
+
+- **429 Flutter tests passed, 0 failed, 0 skipped**, plus pinned analysis/scoped formatting and release web compilation. The prior three asset-path/lazy-list failures below are resolved without skipping assertions.
+- Browser/PWA/platform checks, Python fixtures and inventory-only accounting passed.
+- Android debug/explicitly unsigned release compilation, signing rejection and compiled-artifact checks passed.
+- Xcode 26 unsigned iOS device compilation passed; no signed archive, IPA, install or TestFlight upload.
+
+The merge **`0830d28ed31f5901b65429eb74ff85692017d847`** has exactly the verified source tree **`3a979841ecfd0a2126b801824dc75f0ca53eb6d4`**. [Post-merge main run 45795349126](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45795349126) also completed successfully in all four jobs. The working branch was retained; no history rewrite, website deployment or store distribution occurred.
+
+## Source cleanup — local verification
+
+The later cleanup removes **57 superseded PNGs, nine undeclared old Flutter-export files and two unreferenced theme showcases**, replacing the gallery with four current tab captures. Only the obsolete demo URL is removed from the existing sitemap; other owner URLs/identities are unchanged. Active native routes, preview HTML/CSS/JS/symlinks, dependency locks, all **96 declared bundled inputs**, source licences/provenance, tests and CI are protected. The similarly named native Neumorphism page is still used by Sleep and is retained.
+
+A controlled **418 × 885** before/after comparison found **zero changed pixels on each of Home, Sounds, Meditate and Sleep**. Another **24 tab/viewport checks** passed: no overflow, page errors or failed responses, ≥44px navigation targets, and the footer retained. The healthy existing port-3000 process was reused. These are independent HTML/Chromium checks, not native-device or listening evidence.
+
+Current cleanup runtime fingerprint: **`bc0000ea70d7319b7870dac1bede4a3527565bb27369797b521e8e8e7ce7f06e`**. The fingerprint changes when unused Dart/web demo sources and sitemap metadata are removed; no active engine, source binding, recipe or media input changes. Fresh cleanup checks pass **326/326 web + 97/97 Python**, zero failures/skips; the Python total includes four new source-hygiene cases, observed failing before the cleanup. All **21 preview content versions**, relative documentation targets and patch whitespace also pass. Hosted cleanup Flutter/native results must be matched to the exact pushed source in the [branch workflow history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/workflows/quality.yml?query=branch%3Aarena%2F6ab3ce1c-relax-mindfulness-flutter), separately from the pre-cleanup runs above. Local checks and those older runs alone do not establish cleanup Flutter execution.
+
+All **118 local rights reviews + 75 stream reviews + nine release gates = 202 pending** remain unchanged; purchases stay off. Removing build leftovers does not grant rights or shrink Git history, and the source-tree saving is not an installed-app-size measurement.
+
+## Historical checkpoint `b2e2a1a` — failed before the verified correction
 
 [Run 45782497839](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45782497839) completed for `b2e2a1a8aa5f5cad4604e2520d1ad19862422328`, whose two-parent merge preserved checkpoint `5a65abc` exactly and retained the existing GitHub history. **Browser/PWA/platform, Android debug/unsigned release and unsigned iOS compilation passed. The Flutter job failed: 426 passed, 3 failed, 0 skipped.** This is not all-target approval or device verification.
 
