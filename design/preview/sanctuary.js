@@ -168,8 +168,8 @@ $('quick-mixer').querySelectorAll('[data-quick]').forEach(button=>button.onclick
   pauseGuided();
   applyMix(active,null);
 });
-function setSleepTimer(minutes){sleepTimerTotal=minutes*60;sleepDeadline=Date.now()+sleepTimerTotal*1000;selectedTimerMinutes=minutes;updateSleepState()}
-function cancelSleepTimer(){sleepDeadline=null;sleepTimerTotal=0;syncAudio();updateSleepState()}
+function setSleepTimer(minutes){sleepTimerTotal=minutes*60;sleepDeadline=Date.now()+sleepTimerTotal*1000;selectedTimerMinutes=minutes;syncSanctuaryClock();updateSleepState()}
+function cancelSleepTimer(){sleepDeadline=null;sleepTimerTotal=0;syncSanctuaryClock();syncAudio();updateSleepState()}
 function timerRemaining(){return sleepDeadline===null?null:Math.max(0,(sleepDeadline-Date.now())/1000)}
 function playSoundscape(s){if(!canPreviewMix(s.levels,s.title))return;pauseGuided();setSleepTimer(s.minutes);applyMix(s.levels,s.title)}
 function oceanIsSelected(){const selected=Object.entries(levels).filter(([,v])=>v>0);return playing&&levels['Ocean Waves']>0&&levels['Soft Rain']>0&&selected.every(([name])=>Object.hasOwn(OCEAN_JOURNEY.levels,name))}
@@ -178,9 +178,32 @@ function oceanIsLoading(){return oceanIsSelected()&&Object.keys(OCEAN_JOURNEY.le
 $('begin-ocean').onclick=$('ocean-circle').onclick=()=>{if(oceanIsPlaying()||oceanIsLoading()){playing=false;syncAudio();render()}else playSoundscape(OCEAN_JOURNEY)};
 $('sleep-timer-button').onclick=()=>{if(sleepDeadline!==null)cancelSleepTimer();else{$('timer-minutes').value=selectedTimerMinutes;$('timer-dialog').showModal()}};dialogs.querySelectorAll('[data-timer-minutes]').forEach(b=>b.onclick=()=>{$('timer-minutes').value=b.dataset.timerMinutes});$('timer-form').onsubmit=e=>{e.preventDefault();const minutes=Number($('timer-minutes').value);if(!Number.isInteger(minutes)||minutes<1||minutes>1439)return;setSleepTimer(minutes);$('timer-dialog').close()};
 function artworkForTrack(name){const scene=SLEEP_SCENES.find(s=>s.title===name);if(scene)return scene.artwork;return {'Soft Rain':'assets/images/sleep/rain_window.webp','Rain on Window':'assets/images/sleep/rain_window.webp','Soothing Breeze':'assets/images/meditate/quiet_mind.webp','Mountain Stream':'assets/images/meditate/quiet_mind.webp'}[name]||'assets/images/sleep/continue_listening.webp'}
+function sleepContinueSubtitle(state, remaining, unavailable) {
+  const suffix = ambientStatusSuffix(state), hasTimer = remaining !== null;
+  return state.active.length
+    ? (hasTimer ? Math.ceil(remaining / 60) + ' min remaining' : 'Your nighttime soundscape') + (suffix ? ' · ' + suffix : '')
+    : state.pending.length ? 'Preparing soundscape…'
+      : unavailable.length ? `${unavailable.length} not in this preview · Review your selected mix`
+        : state.failed.length ? 'Audio unavailable · Retry this recording'
+        : hasTimer ? Math.ceil(remaining / 60) + ' min remaining · Playback paused' : 'Your soundscape, ready when you are';
+}
+function updateSleepClock() {
+  const remaining = timerRemaining();
+  if (remaining === null) return;
+  // Only time-dependent, visible UI changes on a clock tick. Playback events
+  // still refresh all controls; a countdown need not replace dozens of icons.
+  if (currentTab === 'sleep') {
+    const pct = Math.round(Math.max(0, Math.min(1, 1 - remaining / sleepTimerTotal)) * 100);
+    $('sleep-timer-label').textContent = 'Auto-Fade Timer · ' + clock(remaining);
+    $('continue-subtitle').textContent = sleepContinueSubtitle(ambientPlaybackState(), remaining, previewUnavailableNames());
+    $('sleep-progress-fill').style.width = pct + '%';
+    $('sleep-progress-value').textContent = pct + '%';
+    $('sleep-progress').setAttribute('aria-valuenow', pct);
+  }
+  if (typeof updateAmbientTimer === 'function' && document.querySelector('#ambient-dialog[open]')) updateAmbientTimer();
+}
 function updateSleepState() {
   const state = ambientPlaybackState();
-  const suffix = ambientStatusSuffix(state);
   const unavailable = previewUnavailableNames();
   const remaining = timerRemaining(), hasTimer = remaining !== null;
   const selected = [...state.selected].sort((a, b) => b[1] - a[1]);
@@ -191,12 +214,7 @@ function updateSleepState() {
   $('sleep-timer-button').style.color = hasTimer ? '#f5c96d' : '';
   $('continue-art').src = selectedPreset === OCEAN_JOURNEY.title ? OCEAN_JOURNEY.artwork : artworkForTrack(mainTrack);
   $('continue-name').textContent = selectedPreset || (selected.length <= 1 ? mainTrack : mainTrack + ' + ' + (selected.length - 1) + ' more');
-  $('continue-subtitle').textContent = state.active.length
-    ? (hasTimer ? Math.ceil(remaining / 60) + ' min remaining' : 'Your nighttime soundscape') + (suffix ? ' · ' + suffix : '')
-    : state.pending.length ? 'Preparing soundscape…'
-      : unavailable.length ? `${unavailable.length} not in this preview · Review your selected mix`
-        : state.failed.length ? 'Audio unavailable · Retry this recording'
-        : hasTimer ? Math.ceil(remaining / 60) + ' min remaining · Playback paused' : 'Your soundscape, ready when you are';
+  $('continue-subtitle').textContent = sleepContinueSubtitle(state, remaining, unavailable);
   $('progress-label').textContent = hasTimer ? 'Auto-fade' : 'Level';
   $('sleep-progress-fill').style.width = pct + '%';
   $('sleep-progress-value').textContent = pct + '%';
@@ -288,6 +306,49 @@ function selectRetreatTab(tab){
 nav.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>selectRetreatTab(b.dataset.tab));
 function applySleepFade(){const remaining=timerRemaining();if(remaining===null||remaining>30)return;const sum=Object.values(levels).reduce((a,b)=>a+b,0),gain=Math.min(1,1/(sum||1)),fade=remaining/30;for(const [name,audio]of players)audio.volume=Math.min(.85,(levels[name]||0)*gain*soundPreviewDuck)*fade}
 const originalSyncAudio=syncAudio;syncAudio=function(...args){originalSyncAudio(...args);applySleepFade()};
-setInterval(()=>{if(sleepDeadline!==null){if(timerRemaining()<=0){sleepDeadline=null;sleepTimerTotal=0;stopPreviewAudio();toast('Your sleep timer has ended. Rest easy.')}else{applySleepFade();updateSleepState()}}if(guidedSession?.playing){updateSession();if(guidedSession.remaining<=0){finishGuidedSession({automatic:true})}}},1000);
+// Demand-driven clocks: indefinite ambience is run by the audio engine, not a
+// JavaScript heartbeat. Hidden pages wake for deadlines and the final fade only.
+let sanctuaryClockTimer = null;
+function syncSanctuaryClock() {
+  clearTimeout(sanctuaryClockTimer);
+  sanctuaryClockTimer = null;
+  const now = Date.now(), deadlines = [];
+  if (sleepDeadline !== null) deadlines.push(sleepDeadline - now);
+  if (guidedSession?.playing) deadlines.push(guidedSession.deadline - now);
+  if (!deadlines.length) return;
+  let delay = Math.max(0, Math.min(...deadlines));
+  if (!document.hidden) delay = Math.min(delay, 1000);
+  else if (sleepDeadline !== null) {
+    const untilFade = sleepDeadline - now - 30000;
+    delay = Math.min(delay, untilFade > 0 ? untilFade : 1000);
+  }
+  sanctuaryClockTimer = setTimeout(tickSanctuaryClock, delay);
+}
+function tickSanctuaryClock() {
+  clearTimeout(sanctuaryClockTimer);
+  sanctuaryClockTimer = null;
+  if (sleepDeadline !== null) {
+    if (timerRemaining() <= 0) {
+      sleepDeadline = null;
+      sleepTimerTotal = 0;
+      stopPreviewAudio();
+      toast('Your sleep timer has ended. Rest easy.');
+    } else {
+      applySleepFade();
+      if (!document.hidden) updateSleepClock();
+    }
+  }
+  if (guidedSession?.playing) {
+    syncGuidedRemaining();
+    if (guidedSession.remaining <= 0) finishGuidedSession({ automatic: true });
+    else if (!document.hidden && playerDialog.open) updateSessionClock();
+  }
+  if (!document.hidden && typeof updateMiniPlayerClock === 'function') updateMiniPlayerClock();
+  syncSanctuaryClock();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) syncSanctuaryClock();
+  else tickSanctuaryClock(); // Reconcile an overdue, browser-throttled deadline.
+});
 renderIntents();renderPractices();renderStories();selectRetreatTab(['home','sounds','meditate','sleep'].includes(location.hash.slice(1))?location.hash.slice(1):'home');
 addEventListener('hashchange',()=>selectRetreatTab(location.hash.slice(1)));

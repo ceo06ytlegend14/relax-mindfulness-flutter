@@ -28,7 +28,9 @@ void main() {
   late AppState app;
   late List<FakeAmbientAudioPlayer> players;
   late FakeAmbientAudioPlayer Function() factory;
+  late Duration clockOffset;
   setUp(() {
+    clockOffset = Duration.zero;
     players = [];
     factory = FakeAmbientAudioPlayer.new;
     app = AppState(
@@ -37,6 +39,14 @@ void main() {
         final player = factory();
         players.add(player);
         return player;
+      },
+      // Sleep shutdown is deadline-based, not a count of delivered callbacks.
+      // Read the binding clock lazily so widget pumps advance the real contract.
+      now: () {
+        final binding = TestWidgetsFlutterBinding.instance;
+        return (binding.inTest ? binding.clock.now() : DateTime.now()).add(
+          clockOffset,
+        );
       },
     );
   });
@@ -407,6 +417,113 @@ void main() {
       expect(players.single.audible, isFalse);
     },
   );
+  testWidgets('a long background sleep timer has no per-second UI work', (
+    tester,
+  ) async {
+    await app.updateSoundTrackVolume('Soft Rain', .5);
+    app.startSleepTimer(45);
+    app.setBackgroundMode(true);
+    var updates = 0;
+    app.addListener(() => updates++);
+    final volumeCalls = players.single.volumes.length;
+    await tester.pump(const Duration(minutes: 30));
+    expect(updates, 0);
+    expect(players.single.volumes, hasLength(volumeCalls));
+    expect(players.single.audible, isTrue);
+    expect(players.single.playCalls, 1);
+    expect(players.single.sources, hasLength(1));
+    expect(app.sleepTimerRemainingSec, 15 * 60);
+    app.setBackgroundMode(false);
+    expect(updates, 1);
+    await tester.pump(const Duration(seconds: 1));
+    expect(app.sleepTimerRemainingSec, 899);
+    expect(updates, 2);
+  });
+
+  testWidgets('background fade still applies gains without rebuilding the UI', (
+    tester,
+  ) async {
+    await app.updateSoundTrackVolume('Soft Rain', .6);
+    app.startSleepTimer(1);
+    app.setBackgroundMode(true);
+    var updates = 0;
+    app.addListener(() => updates++);
+    await tester.pump(const Duration(seconds: 29));
+    expect(players.single.volume, closeTo(.6, .0001));
+    await tester.pump(const Duration(seconds: 16));
+    expect(app.sleepTimerRemainingSec, 15);
+    expect(players.single.volume, closeTo(.3, .0001));
+    expect(updates, 0);
+    expect(players.single.playCalls, 1);
+    app.setAmbientPreviewDucking(true);
+    expect(players.single.volume, closeTo(.06, .0001));
+    app.cancelSleepTimer();
+    expect(players.single.volume, closeTo(.12, .0001));
+    app.setAmbientPreviewDucking(false);
+    await tester.pump(const Duration(minutes: 2));
+    expect(players.single.volume, closeTo(.6, .0001));
+    expect(players.single.audible, isTrue);
+  });
+
+  testWidgets('a delayed foreground clock expires from time, not tick count', (
+    tester,
+  ) async {
+    await app.updateSoundTrackVolume('Soft Rain', .4);
+    app.startSleepTimer(1);
+    clockOffset = const Duration(minutes: 3);
+    await tester.pump(const Duration(seconds: 1));
+    await flushAmbient();
+    expect(app.sleepTimerRemainingSec, isNull);
+    expect(app.sleepTimerTotalSec, isNull);
+    expect(players.single.audible, isFalse);
+    expect(app.sessions, isEmpty);
+    expect(app.showMoodDialog, isFalse);
+  });
+
+  testWidgets(
+    'resume immediately reconciles an overdue background sleep timer',
+    (tester) async {
+      await app.updateSoundTrackVolume('Soft Rain', .4);
+      app.startSleepTimer(1);
+      app.setBackgroundMode(true);
+      clockOffset = const Duration(minutes: 3);
+      app.setBackgroundMode(false);
+      await flushAmbient();
+      expect(app.sleepTimerRemainingSec, isNull);
+      expect(players.single.audible, isFalse);
+      expect(app.sessions, isEmpty);
+      await tester.pump(const Duration(minutes: 2));
+      expect(app.sessions, isEmpty);
+      expect(app.showMoodDialog, isFalse);
+    },
+  );
+
+  testWidgets(
+    'replacement and cancellation revoke old background timer wakes',
+    (tester) async {
+      await app.updateSoundTrackVolume('Soft Rain', .4);
+      app.startSleepTimer(1);
+      app.setBackgroundMode(true);
+      await tester.pump(const Duration(seconds: 20));
+      app.startSleepTimer(2);
+      await tester.pump(const Duration(seconds: 41));
+      expect(app.sleepTimerRemainingSec, 79);
+      expect(players.single.volume, closeTo(.4, .0001));
+      expect(players.single.audible, isTrue);
+      app.cancelSleepTimer();
+      await tester.pump(const Duration(minutes: 3));
+      expect(app.sleepTimerRemainingSec, isNull);
+      expect(players.single.audible, isTrue);
+      expect(players.single.playCalls, 1);
+      app.startSleepTimer(1);
+      await tester.pump(const Duration(seconds: 60));
+      await flushAmbient();
+      expect(app.sleepTimerRemainingSec, isNull);
+      expect(players.single.audible, isFalse);
+      expect(app.sessions, isEmpty);
+    },
+  );
+
   testWidgets(
     'a silent sleep deadline cannot create listening history',
     (tester) async {

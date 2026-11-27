@@ -21,6 +21,20 @@ const breathPatterns = [
   {id:'power626',name:'Steady 6-2-6',steps:[6,2,6,2]},
 ];
 let breathing = {pattern:0,minutes:3,remaining:180,cycleTick:0,running:false,completed:false,startedAt:0,ticks:0};
+let breathingClockTimer = null;
+function syncBreathingClock() {
+  clearTimeout(breathingClockTimer);
+  breathingClockTimer = null;
+  if (!breathing.running) return;
+  // The displayed values change once a second. CSS handles the smooth orb;
+  // no polling at all is needed for an idle, paused or completed practice.
+  const delay = 1000 - ((Date.now() - breathing.startedAt) % 1000);
+  breathingClockTimer = setTimeout(() => {
+    breathingClockTimer = null;
+    if (document.hidden || wellbeingRoute !== 'breathing') pauseBreathing();
+    else { advanceBreathing(); syncBreathingClock(); }
+  }, delay);
+}
 const breathingHistoryNotice = 'Independent HTML design preview · Activity here belongs only to this browser, not your Flutter app.';
 const wellbeingText = text => `<p class="wellbeing-copy">${text}</p>`;
 const wellbeingStat = (value,label) => `<div class="wellbeing-stat"><strong>${value}</strong><span>${label}</span></div>`;
@@ -77,6 +91,7 @@ function advanceBreathing() {
   const ticks = Math.floor((Date.now()-breathing.startedAt)/1000);
   const delta = Math.min(breathing.remaining,Math.max(0,ticks-breathing.ticks));
   breathing.ticks = ticks;
+  if (!delta) return;
   breathing.remaining -= delta;
   const cycle = breathPatterns[breathing.pattern].steps.reduce((n,d)=>n+d,0);
   breathing.cycleTick = (breathing.cycleTick+delta)%cycle;
@@ -92,10 +107,12 @@ function advanceBreathing() {
 function pauseBreathing() {
   if (breathing.running) advanceBreathing();
   breathing.running=false;
+  syncBreathingClock();
   updateBreathing();
 }
 function resetBreathing() {
   breathing={...breathing,remaining:breathing.minutes*60,cycleTick:0,running:false,completed:false,ticks:0};
+  syncBreathingClock();
   updateBreathing();
 }
 function renderPreviewProgress() {
@@ -119,7 +136,7 @@ function wireWellbeing() {
   if (wellbeingRoute==='breathing') {
     $('breathing-toggle').onclick = () => {
       if (breathing.running) pauseBreathing();
-      else { if(breathing.completed)resetBreathing();breathing.running=true;breathing.startedAt=Date.now();breathing.ticks=0;updateBreathing(); }
+      else { if(breathing.completed)resetBreathing();breathing.running=true;breathing.startedAt=Date.now();breathing.ticks=0;updateBreathing();syncBreathingClock(); }
     };
     $('breathing-reset').onclick = resetBreathing;
     wellbeingPage.querySelectorAll('[data-breathing-pattern]').forEach(button=>button.onclick=()=>{breathing.pattern=Number(button.dataset.breathingPattern);resetBreathing();renderWellbeingRoute();});
@@ -165,5 +182,4 @@ $('home-wellbeing').onclick=()=>openWellbeing();
 $('wellbeing-back').onclick=()=>wellbeingRoute==='hub'?selectRetreatTab('home'):openWellbeing('hub');
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseBreathing();});
 addEventListener('pagehide',pauseBreathing);
-setInterval(()=>{if(breathing.running){if(document.hidden||wellbeingRoute!=='breathing')pauseBreathing();else advanceBreathing();}},250);
 if(typeof initialWellbeingHash==='string'&&initialWellbeingHash)showWellbeing(initialWellbeingHash.slice(1).split('/')[1]||'hub');

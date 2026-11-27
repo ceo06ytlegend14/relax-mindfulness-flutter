@@ -23,6 +23,7 @@ Future<({FakeMixerAppState app, MixerController mixer})> mountAmbientPlayer(
   double height = 844,
   double textScale = 1,
   bool start = true,
+  bool disableAnimations = true,
 }) async {
   await tester.binding.setSurfaceSize(Size(width, height));
   final app = FakeMixerAppState();
@@ -45,7 +46,7 @@ Future<({FakeMixerAppState app, MixerController mixer})> mountAmbientPlayer(
         theme: const CupertinoThemeData(brightness: Brightness.dark),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            disableAnimations: true,
+            disableAnimations: disableAnimations,
             padding: const EdgeInsets.only(top: 24, bottom: 34),
             textScaler: TextScaler.linear(textScale),
           ),
@@ -76,6 +77,39 @@ void main() {
           rootBundle.load('assets/fonts/editorial/CormorantGaramond.ttf'),
         ))
         .load();
+  });
+
+  testWidgets('covered tab motion and background artwork never drive audio', (
+    tester,
+  ) async {
+    final state = await mountAmbientPlayer(tester, disableAnimations: false);
+    final animation =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.byKey(const ValueKey('ambient-artwork-animation')),
+                )
+                .animation
+            as AnimationController;
+    expect(animation.isAnimating, isTrue);
+    expect(
+      TickerMode.of(tester.element(find.byType(CupertinoTabScaffold))),
+      isFalse,
+    );
+    state.app.setBackgroundMode(true);
+    await tester.pump();
+    expect(animation.isAnimating, isFalse);
+    expect(state.app.activeAmbientTracks, _forest);
+    state.app.setBackgroundMode(false);
+    await tester.pump();
+    expect(animation.isAnimating, isTrue);
+    state.app.minimizeAmbientPlayer();
+    await tester.pump();
+    expect(
+      TickerMode.of(tester.element(find.byType(CupertinoTabScaffold))),
+      isTrue,
+    );
+    expect(state.app.activeAmbientTracks, _forest);
+    expect(tester.takeException(), isNull);
   });
 
   for (final width in [390.0, 823.0]) {

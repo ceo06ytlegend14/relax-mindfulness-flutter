@@ -282,14 +282,22 @@ class AppState extends ChangeNotifier {
   double _masterGain = 1.0;
   double _fadeMaster = 1.0;
 
-  // Global Sleep Auto-Fade Timer
+  // Global Sleep Auto-Fade Timer. A deadline survives delayed/background ticks;
+  // the UI clock is not the source of truth for shutdown or fade gain.
   Timer? _sleepTimer;
-  int? _sleepTimerRemainingSec;
+  DateTime? _sleepDeadline;
   int? _sleepTimerTotalSec;
 
-  int? get sleepTimerRemainingSec => _sleepTimerRemainingSec;
+  int? get sleepTimerRemainingSec {
+    final deadline = _sleepDeadline;
+    if (deadline == null) return null;
+    return ((deadline.difference(_now()).inMilliseconds + 999) ~/ 1000)
+        .clamp(0, _sleepTimerTotalSec ?? 0)
+        .toInt();
+  }
+
   int? get sleepTimerTotalSec => _sleepTimerTotalSec;
-  bool get isSleepTimerRunning => _sleepTimerRemainingSec != null && _sleepTimerRemainingSec! > 0;
+  bool get isSleepTimerRunning => (sleepTimerRemainingSec ?? 0) > 0;
 
   bool get isGuidedPlaying => _isGuidedPlaying;
   bool get isGuidedLoading => _isGuidedLoading;
@@ -424,10 +432,13 @@ class AppState extends ChangeNotifier {
   bool _isBackgroundMode = false;
   bool get isBackgroundMode => _isBackgroundMode;
   void setBackgroundMode(bool value) {
-    if (_isBackgroundMode != value) {
-      _isBackgroundMode = value;
-      notifyListeners();
-    }
+    if (_guidedDisposed || _isBackgroundMode == value) return;
+    _isBackgroundMode = value;
+    // Keep real audio/deadlines running without one-second UI notifications
+    // while the phone is locked. Resume reconciles overdue deadlines at once.
+    _scheduleGuidedTimer();
+    _updateSleepTimer(notify: false);
+    notifyListeners();
   }
 
   // ─── Manual device backup (not automatic sync or eviction prevention) ─────
@@ -867,15 +878,8 @@ class AppState extends ChangeNotifier {
     final now = _now();
     _guidedDeadline = now.add(Duration(seconds: _guidedRemainingSec));
     _guidedListeningStartedAt = now;
-    _guidedTimer?.cancel();
-    _guidedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!_isCurrentGuidedRequest(request) || !_isGuidedPlaying) return;
-      if (guidedRemainingSec <= 0) {
-        unawaited(stopGuidedSession(completed: true));
-      } else {
-        notifyListeners();
-      }
-    });
+    _scheduleGuidedTimer();
+    if (!_isCurrentGuidedRequest(request) || !_isGuidedPlaying) return;
     notifyListeners();
     // just_audio's play future finishes when playback stops, not when it starts.
     unawaited(
@@ -883,6 +887,37 @@ class AppState extends ChangeNotifier {
         _failGuidedPlayback(request, error);
       }),
     );
+  }
+
+  void _scheduleGuidedTimer() {
+    _guidedTimer?.cancel();
+    _guidedTimer = null;
+    final request = _guidedRequest;
+    final deadline = _guidedDeadline;
+    if (!_isCurrentGuidedRequest(request) ||
+        !_isGuidedPlaying ||
+        deadline == null)
+      return;
+    final remaining = deadline.difference(_now());
+    if (remaining <= Duration.zero) {
+      unawaited(stopGuidedSession(completed: true));
+    } else if (_isBackgroundMode) {
+      // One wake at the deadline, not a UI heartbeat throughout a long session.
+      _guidedTimer = Timer(remaining, () {
+        if (_isCurrentGuidedRequest(request) && _isGuidedPlaying) {
+          _scheduleGuidedTimer();
+        }
+      });
+    } else {
+      _guidedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!_isCurrentGuidedRequest(request) || !_isGuidedPlaying) return;
+        if (guidedRemainingSec <= 0) {
+          unawaited(stopGuidedSession(completed: true));
+        } else {
+          notifyListeners();
+        }
+      });
+    }
   }
 
   void _freezeGuidedClock() {
@@ -983,6 +1018,7 @@ class AppState extends ChangeNotifier {
     _guidedTotalSec += extra;
     if (_guidedDeadline != null) {
       _guidedDeadline = _guidedDeadline!.add(Duration(seconds: extra));
+      _scheduleGuidedTimer();
     }
     notifyListeners();
   }
@@ -1379,42 +1415,66 @@ class AppState extends ChangeNotifier {
 
   // ─── Global Sleep Auto-Fade Timer ───────────────────────────────────────────
   void startSleepTimer(int minutes) {
+    if (_guidedDisposed || minutes <= 0) return;
     _sleepTimer?.cancel();
     final total = minutes * 60;
     _sleepTimerTotalSec = total;
-    _sleepTimerRemainingSec = total;
+    _sleepDeadline = _now().add(Duration(seconds: total));
     _fadeMaster = 1.0;
     _recalculateGainAndApply();
+    _scheduleSleepTimer();
     notifyListeners();
+  }
 
-    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (t) async {
-      if (_sleepTimerRemainingSec == null || _sleepTimerRemainingSec! <= 0) {
-        t.cancel();
-        _sleepTimer = null;
-        _sleepTimerRemainingSec = null;
-        _sleepTimerTotalSec = null;
-        _fadeMaster = 1.0;
-        await stopAllAudio();
-        // An auto-fade deadline is a shutdown control, not proof of listening.
-        // It can expire while paused, loading or after every source has failed.
-        // Do not manufacture a session or mood check-in from its chosen length.
-        if (!_guidedDisposed) notifyListeners();
-      } else {
-        _sleepTimerRemainingSec = _sleepTimerRemainingSec! - 1;
-        // Last 30 seconds: smooth linear volume fade out
-        if (_sleepTimerRemainingSec! <= 30) {
-          _fadeMaster = (_sleepTimerRemainingSec! / 30.0).clamp(0.0, 1.0);
-          _recalculateGainAndApply();
-        }
-        notifyListeners();
-      }
-    });
+  void _scheduleSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    final deadline = _sleepDeadline;
+    if (_guidedDisposed || deadline == null) return;
+    final remaining = deadline.difference(_now());
+    final Duration delay;
+    if (remaining <= Duration.zero) {
+      delay = Duration.zero;
+    } else if (_isBackgroundMode && remaining > const Duration(seconds: 30)) {
+      // Outside the final fade there is no volume work or visible countdown.
+      delay = remaining - const Duration(seconds: 30);
+    } else {
+      delay = remaining < const Duration(seconds: 1)
+          ? remaining
+          : const Duration(seconds: 1);
+    }
+    _sleepTimer = Timer(delay, () => _updateSleepTimer());
+  }
+
+  void _updateSleepTimer({bool notify = true}) {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    final deadline = _sleepDeadline;
+    if (_guidedDisposed || deadline == null) return;
+    final remaining = deadline.difference(_now()).inMilliseconds;
+    if (remaining <= 0) {
+      _sleepDeadline = null;
+      _sleepTimerTotalSec = null;
+      _fadeMaster = 1.0;
+      // Clear ownership before asynchronous shutdown: a cancelled/replaced
+      // timer cannot later mutate a new countdown or revive a pending source.
+      // A shutdown deadline is never proof of listening or a completed session.
+      unawaited(stopAllAudio());
+      return;
+    }
+    final fade = (remaining / 30000.0).clamp(0.0, 1.0).toDouble();
+    if (_fadeMaster != fade) {
+      _fadeMaster = fade;
+      _recalculateGainAndApply();
+    }
+    _scheduleSleepTimer();
+    if (notify && !_isBackgroundMode) notifyListeners();
   }
 
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepTimerRemainingSec = null;
+    _sleepDeadline = null;
     _sleepTimerTotalSec = null;
     _fadeMaster = 1.0;
     _recalculateGainAndApply();
