@@ -14,7 +14,7 @@ These are **independent HTML captures**, not compiled Flutter or native-device s
 
 The owner-approved [PR #1](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/pull/1) brought the current design into `main`. Both pre-merge runs and the [post-merge main run](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45795349126) passed all four jobs: **429 Flutter tests**, analysis/scoped formatting, web compilation, browser/Python checks, Android debug/unsigned release and unsigned iOS compilation. Those results identify the **pre-cleanup** source; see [exact-source build evidence](docs/release/BUILD_CHECKS.md) for the current cleanup's verification boundary. A source merge is not a website deployment or an installable iPhone build.
 
-**Fresh cleanup checks:** **326/326 web + 97/97 Python**, zero failures/skips; all four tab captures are pixel-identical before/after cleanup, with 24 responsive tab checks passing. Hosted Flutter/native results must identify this cleanup's exact source revision; the green pre-cleanup baseline does not certify later changes.
+**Shared-background checks:** **350/350 browser/Node + 97/97 Python**, zero failures/skips; 56 foreground comparisons preserve layout/styles and 54 responsive checks pass. The original Sleep page remains pixel-identical at five sizes; the other pages intentionally gain its sky. All 96 declared bundled inputs are unchanged. [Current verification and hosted-check boundary](docs/release/BUILD_CHECKS.md#shared-sleep-background--current-visual-change). Historical cleanup/main results do not certify this later change.
 
 ## What stays in the app
 

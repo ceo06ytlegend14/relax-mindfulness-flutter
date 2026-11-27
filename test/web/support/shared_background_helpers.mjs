@@ -1,5 +1,17 @@
 import assert from 'node:assert/strict';
 
+// CSSOM may serialize identical layer values once (Chromium 159) or once per
+// layer (158). Apply CSS list repetition, then verify both paint layers exactly.
+export function expectNightSkyPaintLists({ size, position }) {
+  const layers = value => {
+    const values = value.split(',').map(item => item.trim());
+    assert(values.length === 1 || values.length === 2, 'Only the fade and image layers');
+    return values.length === 1 ? [values[0], values[0]] : values;
+  };
+  assert.deepEqual(layers(size), ['cover', 'cover'], 'The fade and sky both cover the shared canvas');
+  assert.deepEqual(layers(position), ['50% 0%', '50% 0%'], 'Both layers are pinned top-center');
+}
+
 // The preview has one persistent page layer; top-layer dialog players reuse the
 // same recipe because they are deliberately mounted outside .app.
 export async function expectSharedBackground(page, { player } = {}) {
@@ -16,8 +28,7 @@ export async function expectSharedBackground(page, { player } = {}) {
   });
   assert.match(paint.image, /sleep\/night_sky\.webp/);
   assert.doesNotMatch(paint.image, /lake_dawn|moonlit_ocean|forest_sunrise|moonlit_forest/);
-  assert.equal(paint.size, 'cover, cover');
-  assert.equal(paint.position, '50% 0%, 50% 0%');
+  expectNightSkyPaintLists(paint);
   assert.equal(paint.pointer, 'none');
   assert.equal(paint.animation, 'none');
   assert.equal(paint.filter, 'none');

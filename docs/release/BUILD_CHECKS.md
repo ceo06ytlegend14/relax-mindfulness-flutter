@@ -1,6 +1,23 @@
 # Candidate build-check evidence — not launch approval
 
-## Verified current-design baseline — `cbaf083` and main merge `0830d28`
+## Shared Sleep background — current visual change
+
+The owner requested one Sleep night sky on every page. Flutter now uses a reusable, static `SanctuaryBackground` / `SanctuaryPageScaffold`; the independent preview uses the same bundled image and fade in a persistent page layer and both dialog players. Other page wallpaper choices are removed, not card/cover artwork. Safe areas, page content, typography, navigation, inline Sounds controls and playback contracts are retained.
+
+Current runtime fingerprint: **`77219cebb4d1bf80422c94ac494ef7cc9be8c79d3a418d61659aeb2533a6ffc4`**. Against the clean pre-background checkpoint **`10d07aba3056aaac55129cd3b3855ab60183fbc4`**, all **353 baseline paths, seven symlinks and 96 declared bundled inputs** remain present and unchanged in type/target or media bytes. Assets, providers, services, models, native platform projects, canonical `web/` files and dependency locks are unchanged. The background reuses the existing **14,736-byte** `night_sky.webp`; it adds no network wallpaper, animation or repeated refresh work.
+
+Fresh local verification for this change:
+
+- **350/350 browser/Node tests + 97/97 Python tests**, zero failures/skips. This includes shared-image/pinned-scroll/fallback/player coverage and preserves all existing audio/energy regressions. Browser tests exercise the independent HTML implementation, not native audio.
+- **56 foreground geometry/style comparisons** against the pre-background checkpoint have no differences across nine destinations/six viewports and both full-screen players. Only Twilight's background-description text is normalized; its geometry is still compared. Intentional wallpaper pixel changes on formerly solid/lake-backed pages are not described as zero-pixel matches.
+- **54 responsive checks** pass, including no horizontal overflow, unchanged footer positioning and ≥44px navigation targets. The original Sleep view is **pixel-identical** at **320×640, 390×844, 431×809, 823×1568 and 1440×1000**. No CSS overrides, screenshot masks or pixel tolerances are used.
+- All **22 preview script/stylesheet content versions**, patch whitespace and the unchanged release inventory pass. Inventory accounting still reports **BLOCKED / 202 pending**; it is not release approval.
+
+Hosted Flutter/native results must identify the final source revision in the [branch workflow history](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/workflows/quality.yml?query=branch%3Aarena%2F6ab3ce1c-relax-mindfulness-flutter). Checkpoint `72cdd88d7d2658c55c49af73754f9543677e8cd5` already passed Flutter analysis/formatting, **448 Flutter tests** and web compilation, plus Android debug/explicitly unsigned release compilation. Its hosted browser annotations exposed only a CSSOM serialization mismatch (`cover` versus equivalent `cover, cover`); the helper now applies CSS list repetition and has three tests retaining rejection of wrong size/alignment/extra entries. Those prior results are not an all-green claim for the later test-correction revision. No local Flutter/Dart/Xcode SDK is installed.
+
+No new PR merge, signing, app-binary upload, deployment, store submission, purchase enablement or device/thermal/listening clearance is implied. The following sections are historical evidence, not certification of the shared-background change.
+
+## Verified historical design baseline — `cbaf083` and main merge `0830d28`
 
 The owner approved [PR #1](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/pull/1) merging the selected midnight-blue design into `main` only after fresh checks passed. Exact source **`cbaf083108a106dc7f6f6aeea17883c9b9890725`** passed all four jobs in both [push run 45793507523](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45793507523) and [PR run 45793622507](https://github.com/ceo06ytlegend14/relax-mindfulness-flutter/actions/runs/45793622507):
 
