@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test:web": "node --test --test-timeout=180000 test/web/*.mjs",
+    "test:web": "node --test --test-timeout=180000 --test-reporter=tap --test-reporter=./tool/ci_web_reporter.mjs --test-reporter-destination=stdout --test-reporter-destination=stdout test/web/*.mjs",
     "test:platform": "node --test test/web/platform_config_test.mjs",
     "test:pwa": "node --test test/web/pwa_manifest_test.mjs"
   },
